@@ -1,49 +1,51 @@
 import Home from '@/views/oj/Home.vue'
-import SetNewPassword from "@/views/oj/user/SetNewPassword.vue"
-import UserHome from "@/views/oj/user/UserHome.vue"
-import Setting from "@/views/oj/user/Setting.vue"
-import ProblemLIst from "@/views/oj/problem/ProblemList.vue"
-import Logout from "@/views/oj/user/Logout.vue"
-import SubmissionList from "@/views/oj/status/SubmissionList.vue"
-import SubmissionDetails from "@/views/oj/status/SubmissionDetails.vue"
-import ContestList from "@/views/oj/contest/ContestList.vue"
-import Problem from "@/views/oj/problem/Problem.vue"
-import ACMRank from "@/views/oj/rank/ACMRank.vue"
-import OIRank from "@/views/oj/rank/OIRank.vue"
-import ContestDetails from "@/views/oj/contest/ContestDetails.vue"
-import ACMScoreBoard from "@/views/oj/contest/outside/ACMScoreBoard.vue"
-import OIScoreBoard from "@/views/oj/contest/outside/OIScoreBoard.vue"
-import ContestProblemList from "@/views/oj/contest/children/ContestProblemList.vue"
-import ContestRank from "@/views/oj/contest/children/ContestRank.vue"
-import ACMInfoAdmin from "@/views/oj/contest/children/ACMInfoAdmin.vue"
-import Announcements from "@/components/oj/common/Announcements.vue"
-import ContestComment from "@/views/oj/contest/children/ContestComment.vue"
-import ContestPrint from "@/views/oj/contest/children/ContestPrint.vue"
-import ContestAdminPrint from "@/views/oj/contest/children/ContestAdminPrint.vue"
-import ScrollBoard from "@/views/oj/contest/children/ScrollBoard.vue"
-import ContestRejudgeAdmin from "@/views/oj/contest/children/ContestRejudgeAdmin.vue"
-import DiscussionList from "@/views/oj/discussion/discussionList.vue"
-import Discussion from "@/views/oj/discussion/discussion.vue"
-import Introduction from "@/views/oj/about/Introduction.vue"
-import Developer from "@/views/oj/about/Developer.vue"
-import Message from "@/views/oj/message/message.vue"
-import UserMsg from "@/views/oj/message/UserMsg.vue"
-import SysMsg from "@/views/oj/message/SysMsg.vue"
-import TrainingList from "@/views/oj/training/TrainingList.vue"
-import TrainingDetails from "@/views/oj/training/TrainingDetails.vue"
-import TrainingProblemList from "@/views/oj/training/TrainingProblemList.vue"
-import TrainingRank from "@/views/oj/training/TrainingRank.vue"
-import GroupList from '@/views/oj/group/GroupList.vue'
-import GroupDetails from '@/views/oj/group/GroupDetails.vue'
-import GroupAnnouncementList from '@/views/oj/group/children/GroupAnnouncementList.vue'
-import GroupProblemList from '@/views/oj/group/children/GroupProblemList.vue'
-import GroupTrainingList from '@/views/oj/group/children/GroupTrainingList.vue'
-import GroupContestList from '@/views/oj/group/children/GroupContestList.vue'
-import GroupDiscussionList from '@/views/oj/group/children/GroupDiscussionList.vue'
-import GroupMemberList from '@/views/oj/group/children/GroupMemberList.vue'
-import GroupSetting from '@/views/oj/group/children/GroupSetting.vue'
-import GroupRank from '@/views/oj/group/children/GroupRank.vue'
-import NotFound from "@/views/404.vue"
+
+const SetNewPassword = () => import('@/views/oj/user/SetNewPassword.vue')
+const UserHome = () => import('@/views/oj/user/UserHome.vue')
+const Setting = () => import('@/views/oj/user/Setting.vue')
+const ProblemLIst = () => import('@/views/oj/problem/ProblemList.vue')
+const Logout = () => import('@/views/oj/user/Logout.vue')
+const SubmissionList = () => import('@/views/oj/status/SubmissionList.vue')
+const SubmissionDetails = () => import('@/views/oj/status/SubmissionDetails.vue')
+const ContestList = () => import('@/views/oj/contest/ContestList.vue')
+const Problem = () => import('@/views/oj/problem/Problem.vue')
+const ACMRank = () => import('@/views/oj/rank/ACMRank.vue')
+const OIRank = () => import('@/views/oj/rank/OIRank.vue')
+const ContestDetails = () => import('@/views/oj/contest/ContestDetails.vue')
+const ACMScoreBoard = () => import('@/views/oj/contest/outside/ACMScoreBoard.vue')
+const OIScoreBoard = () => import('@/views/oj/contest/outside/OIScoreBoard.vue')
+const ContestProblemList = () => import('@/views/oj/contest/children/ContestProblemList.vue')
+const ContestRank = () => import('@/views/oj/contest/children/ContestRank.vue')
+const ACMInfoAdmin = () => import('@/views/oj/contest/children/ACMInfoAdmin.vue')
+const Announcements = () => import('@/components/oj/common/Announcements.vue')
+const ContestComment = () => import('@/views/oj/contest/children/ContestComment.vue')
+const ContestPrint = () => import('@/views/oj/contest/children/ContestPrint.vue')
+const ContestAdminPrint = () => import('@/views/oj/contest/children/ContestAdminPrint.vue')
+const ScrollBoard = () => import('@/views/oj/contest/children/ScrollBoard.vue')
+const ContestRejudgeAdmin = () => import('@/views/oj/contest/children/ContestRejudgeAdmin.vue')
+const DiscussionList = () => import('@/views/oj/discussion/discussionList.vue')
+const Discussion = () => import('@/views/oj/discussion/discussion.vue')
+const Introduction = () => import('@/views/oj/about/Introduction.vue')
+const Developer = () => import('@/views/oj/about/Developer.vue')
+const Message = () => import('@/views/oj/message/message.vue')
+const UserMsg = () => import('@/views/oj/message/UserMsg.vue')
+const SysMsg = () => import('@/views/oj/message/SysMsg.vue')
+const TrainingList = () => import('@/views/oj/training/TrainingList.vue')
+const TrainingDetails = () => import('@/views/oj/training/TrainingDetails.vue')
+const TrainingProblemList = () => import('@/views/oj/training/TrainingProblemList.vue')
+const TrainingRank = () => import('@/views/oj/training/TrainingRank.vue')
+const GroupList = () => import('@/views/oj/group/GroupList.vue')
+const GroupDetails = () => import('@/views/oj/group/GroupDetails.vue')
+const GroupAnnouncementList = () => import('@/views/oj/group/children/GroupAnnouncementList.vue')
+const GroupProblemList = () => import('@/views/oj/group/children/GroupProblemList.vue')
+const GroupTrainingList = () => import('@/views/oj/group/children/GroupTrainingList.vue')
+const GroupContestList = () => import('@/views/oj/group/children/GroupContestList.vue')
+const GroupDiscussionList = () => import('@/views/oj/group/children/GroupDiscussionList.vue')
+const GroupMemberList = () => import('@/views/oj/group/children/GroupMemberList.vue')
+const GroupSetting = () => import('@/views/oj/group/children/GroupSetting.vue')
+const GroupRank = () => import('@/views/oj/group/children/GroupRank.vue')
+const LearningResource = () => import('@/views/oj/resource/LearningResource.vue')
+const NotFound = () => import('@/views/404.vue')
 
 const ojRoutes = [
   {
@@ -297,6 +299,12 @@ const ojRoutes = [
     meta: {title: 'Group'}
   },
   {
+    path: '/resource',
+    name: 'LearningResource',
+    component: LearningResource,
+    meta: {title: 'Learning Resource', requireAuth: true}
+  },
+  {
     path: '/group/:groupID',
     name: 'GroupDetails',
     component: GroupDetails,
@@ -457,7 +465,7 @@ const ojRoutes = [
     ]
   },
   {
-    path: '*',
+    path: '/:pathMatch(.*)*',
     meta: {title: '404'},
     component:NotFound,
     meta: { title: '404' }

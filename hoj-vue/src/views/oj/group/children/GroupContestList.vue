@@ -20,7 +20,7 @@
             :type="createPage ? 'warning' : 'primary'"
             size="small"
             @click="handleCreatePage"
-            :icon="createPage ? 'el-icon-back' : 'el-icon-plus'"
+            :icon="legacyElementIcons[createPage ? 'el-icon-back' : 'el-icon-plus']"
             >{{ createPage ? $t('m.Back_To_Admin_Contest_List') : $t('m.Create') }}</el-button
           >
           <el-button
@@ -28,7 +28,7 @@
             type="warning"
             size="small"
             @click="handleEditPage"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_To_Admin_Contest_List') }}</el-button
           >
           <el-button
@@ -36,7 +36,7 @@
             :type="adminPage ? 'danger' : 'success'"
             size="small"
             @click="handleAdminPage"
-            :icon="adminPage ? 'el-icon-back' : 'el-icon-s-opportunity'"
+            :icon="legacyElementIcons[adminPage ? 'el-icon-back' : 'el-icon-s-opportunity']"
             >{{ adminPage ? $t('m.Back_To_Contest_List') : $t('m.Contest_Admin') }}</el-button
           >
         </el-col>
@@ -55,28 +55,28 @@
             type="primary"
             size="small"
             @click="handleCreateProblemPage"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             >{{ $t('m.Create') }}</el-button
           >
           <el-button
             type="primary"
             size="small"
             @click="publicPage = true"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             >{{ $t('m.Add_From_Public_Problem') }}</el-button
           >
           <el-button
             type="success"
             size="small"
             @click="handleGroupPage"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             >{{ $t('m.Add_From_Group_Problem') }}</el-button
           >
           <el-button
             type="warning"
             size="small"
             @click="handleProblemPage(null)"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_To_Admin_Contest_List') }}</el-button
           >
         </el-col>
@@ -93,7 +93,7 @@
             type="primary"
             size="small"
             @click="handleEditProblemPage"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_Admin_Contest_Problem_List') }}</el-button
           >`
           <el-button
@@ -101,7 +101,7 @@
             type="primary"
             size="small"
             @click="handleCreateProblemPage"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_Admin_Contest_Problem_List') }}</el-button
           >`
         </el-col>
@@ -114,14 +114,14 @@
             type="primary"
             size="small"
             @click="handleCreateAnnouncementPage"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             >{{ $t('m.Create') }}</el-button
           >
           <el-button
             type="warning"
             size="small"
             @click="handleAnnouncementPage"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_To_Admin_Contest_List') }}</el-button
           >
         </el-col>
@@ -171,7 +171,7 @@
                     aria-hidden="true"
                     style="color: #3091f2"
                   ></i>
-                  {{ contest.startTime | localtime }}
+                  {{ $filters.localtime(contest.startTime) }}
                 </li>
                 <li>
                   <i
@@ -184,12 +184,12 @@
                 <li>
                   <template v-if="contest.type == 0">
                     <el-button
-                      size="mini"
+                      size="small"
                       round
                       :type="'primary'"
                       @click="onRuleChange(contest.type)"
                       ><i class="fa fa-trophy"></i>
-                      {{ contest.type | parseContestType }}
+                      {{ $filters.parseContestType(contest.type) }}
                     </el-button>
                   </template>
                   <template v-else>
@@ -208,12 +208,12 @@
                       placement="top"
                     >
                       <el-button
-                        size="mini"
+                        size="small"
                         round
                         :type="'warning'"
                         @click="onRuleChange(contest.type)"
                         ><i class="fa fa-trophy"></i>
-                        {{ contest.type | parseContestType }}
+                        {{ $filters.parseContestType(contest.type) }}
                       </el-button>
                     </el-tooltip>
                   </template>
@@ -254,7 +254,7 @@
                       size="small"
                       type="primary"
                       :disabled="contest.status == CONTEST_STATUS.SCHEDULED"
-                      icon="el-icon-data-analysis"
+                      :icon="legacyElementIcons['el-icon-data-analysis']"
                       @click="
                         goContestOutsideScoreBoard(contest.id, contest.type)
                       "
@@ -267,7 +267,7 @@
               <el-tag
                 effect="dark"
                 :color="CONTEST_STATUS_REVERSE[contest.status]['color']"
-                size="medium"
+                size="default"
               >
                 <i class="fa fa-circle" aria-hidden="true"></i>
                 {{ $t('m.' + CONTEST_STATUS_REVERSE[contest.status]['name']) }}
@@ -280,7 +280,7 @@
         :total="total"
         :page-size="limit"
         @on-change="currentChange"
-        :current.sync="currentPage"
+        v-model:current="currentPage"
         @on-page-size-change="onPageSizeChange"
         :layout="'prev, pager, next, sizes'"
       ></Pagination>
@@ -327,7 +327,7 @@
     <el-dialog
       :title="$t('m.Add_Contest_Problem')"
       width="90%"
-      :visible.sync="publicPage"
+      v-model="publicPage"
       :close-on-click-modal="false"
     >
       <AddPublicProblem
@@ -341,7 +341,7 @@
     <el-dialog
       :title="$t('m.Add_Contest_Problem')"
       width="350px"
-      :visible.sync="groupPage"
+      v-model="groupPage"
       :close-on-click-modal="false"
     >
       <AddGroupProblem
@@ -365,6 +365,8 @@ import AddGroupProblem from '@/components/oj/group/AddGroupProblem.vue';
 import AnnouncementList from '@/components/oj/group/AnnouncementList';
 import api from '@/common/api';
 import time from '@/common/time';
+import acmImage from '@/assets/acm.jpg'
+import oiImage from '@/assets/oi.jpg'
 import {
   CONTEST_STATUS_REVERSE,
   CONTEST_TYPE,
@@ -400,8 +402,8 @@ export default {
       createProblemPage: false,
       announcementPage: false,
       contestId: null,
-      acmSrc: require('@/assets/acm.jpg'),
-      oiSrc: require('@/assets/oi.jpg'),
+      acmSrc: acmImage,
+      oiSrc: oiImage,
     };
   },
   mounted() {
@@ -569,12 +571,35 @@ export default {
   color: #2d8cf0;
   border-bottom: 1px solid #2d8cf0;
 }
+#contest-list .contest-main .contest-title i {
+  margin-left: 5px;
+}
 #contest-list .contest-main .detail {
   padding-left: 0;
   padding-bottom: 10px;
 }
 #contest-list .contest-main li {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 10px 0 0 10px;
+}
+#contest-list .contest-main .detail :deep(.el-button),
+#contest-list > li :deep(.el-tag--dark) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+#contest-list .contest-main .detail :deep(.el-button > span),
+#contest-list > li :deep(.el-tag__content) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+#contest-list .contest-main .detail :deep(.el-button i),
+#contest-list .contest-main .detail :deep(.el-button .el-icon),
+#contest-list > li :deep(.el-tag--dark i),
+#contest-list > li :deep(.el-tag--dark .el-icon) {
+  margin-right: 0;
 }
 </style>

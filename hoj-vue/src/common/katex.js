@@ -1,36 +1,18 @@
-import 'katex'
-import renderMathInElement from 'katex/contrib/auto-render/auto-render'
+import renderMathInElement from 'katex/contrib/auto-render'
 import 'katex/dist/katex.min.css'
+import { createKatexOptions } from '@/common/katex-options.mjs'
 
-function _ () {
+export function renderKatex (el, binding = {}) {
+  renderMathInElement(el, createKatexOptions(binding.value))
 }
 
-const defaultOptions = {
-  errorCallback: _,
-  throwOnError: false,
-  delimiters: [
-    {left: '$', right: '$', display: false},
-    {left: '$$', right: '$$', display: true},
-    {left: '\\[', right: '\\]', display: true},
-    {left: '\\(', right: '\\)', display: false}
-  ],
-  ignoredTags:["script", "noscript", "style", "textarea", "code", "option",],
-}
-
-function render (el, binding) {
-  let options = {}
-  if (binding.value) {
-    options = binding.value.options || {}
-  }
-  Object.assign(options, defaultOptions)
-  renderMathInElement(el, options)
+export const katexDirective = {
+  mounted: renderKatex,
+  updated: renderKatex
 }
 
 export default {
-  install: function (Vue, options) {
-    Vue.directive('katex', {
-      bind: render,
-      componentUpdated: render
-    })
+  install (app) {
+    app.directive('katex', katexDirective)
   }
 }

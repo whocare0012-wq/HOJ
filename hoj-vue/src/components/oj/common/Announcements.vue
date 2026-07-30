@@ -1,28 +1,32 @@
 <template>
-  <el-card shadow :padding="10">
-    <div slot="header">
-      <span class="panel-title" v-if="isContest">{{ title }}</span>
-      <span v-else class="home-title panel-title"><i class="el-icon-data-board"></i> {{ title }}</span>
-      <span style="float: right">
-        <el-button
-          v-if="listVisible"
-          type="primary"
-          @click="init"
-          size="small"
-          icon="el-icon-refresh"
-          :loading="btnLoading"
-          >{{ $t('m.Refresh') }}</el-button
-        >
-        <el-button
-          v-else
-          type="primary"
-          icon="el-icon-back"
-          @click="goBack"
-          size="small"
-          >{{ $t('m.Back') }}</el-button
-        >
-      </span>
-    </div>
+  <el-card shadow="always" :padding="10">
+    <template #header>
+      <div>
+        <span class="panel-title" v-if="isContest">{{ title }}</span>
+        <span v-else class="home-title panel-title"><i class="el-icon-data-board"></i> {{ title }}</span>
+        <span style="float: right">
+          <el-button
+            v-if="listVisible"
+            class="announcement-action-button"
+            type="primary"
+            @click="init"
+            size="small"
+            :icon="legacyElementIcons['el-icon-refresh']"
+            :loading="btnLoading"
+            >{{ $t('m.Refresh') }}</el-button
+          >
+          <el-button
+            v-else
+            class="announcement-action-button"
+            type="primary"
+            :icon="legacyElementIcons['el-icon-back']"
+            @click="goBack"
+            size="small"
+            >{{ $t('m.Back') }}</el-button
+          >
+        </span>
+      </div>
+    </template>
     <transition-group name="el-zoom-in-bottom">
       <div
         class="no-announcement"
@@ -44,7 +48,7 @@
               <div class="info">
                 <span class="date">
                   <i class="el-icon-edit"></i>
-                  {{ announcement.gmtCreate | localtime }}
+                  {{ $filters.localtime(announcement.gmtCreate) }}
                 </span>
                 <span class="creator">
                   <i class="el-icon-user"></i>
@@ -68,7 +72,7 @@
         <div
           v-katex
           v-highlight
-          v-html="announcement.content"
+          v-dompurify-html="announcement.content"
           key="content"
           class="content-container markdown-body"
         ></div>
@@ -161,8 +165,8 @@ export default {
     title() {
       if (this.listVisible) {
         return this.isContest
-          ? this.$i18n.t('m.Contest_Announcement')
-          : this.$i18n.t('m.Announcement');
+          ? this.$t('m.Contest_Announcement')
+          : this.$t('m.Announcement');
       } else {
         return this.announcement.title;
       }
@@ -175,6 +179,11 @@ export default {
 </script>
 
 <style scoped>
+:deep(.announcement-action-button.el-button--small) {
+  height: 32px;
+  padding: 9px 15px;
+}
+
 .announcements-container {
   margin-top: -10px;
   margin-bottom: 10px;

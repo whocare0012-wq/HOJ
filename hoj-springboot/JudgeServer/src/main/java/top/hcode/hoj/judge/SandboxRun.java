@@ -5,7 +5,7 @@ import cn.hutool.json.JSONObject;
 
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -66,7 +66,9 @@ public class SandboxRun {
     // 单例模式
     private static final SandboxRun instance = new SandboxRun();
 
-    private static final String SANDBOX_BASE_URL = "http://localhost:5050";
+    private static final String DEFAULT_SANDBOX_BASE_URL = "http://localhost:5050";
+
+    private static final String SANDBOX_BASE_URL = resolveSandboxBaseUrl();
 
     public static final HashMap<String, Integer> RESULT_MAP_STATUS = new HashMap<>();
 
@@ -82,6 +84,25 @@ public class SandboxRun {
 
     private SandboxRun() {
 
+    }
+
+    private static String resolveSandboxBaseUrl() {
+        String configuredUrl = System.getProperty("hoj.sandbox.base-url");
+        if (StringUtils.isEmpty(configuredUrl)) {
+            configuredUrl = System.getenv("SANDBOX_BASE_URL");
+        }
+        return normalizeSandboxBaseUrl(configuredUrl);
+    }
+
+    static String normalizeSandboxBaseUrl(String configuredUrl) {
+        if (StringUtils.isEmpty(configuredUrl)) {
+            return DEFAULT_SANDBOX_BASE_URL;
+        }
+        String normalizedUrl = configuredUrl.trim();
+        while (normalizedUrl.endsWith("/")) {
+            normalizedUrl = normalizedUrl.substring(0, normalizedUrl.length() - 1);
+        }
+        return StringUtils.isEmpty(normalizedUrl) ? DEFAULT_SANDBOX_BASE_URL : normalizedUrl;
     }
 
     static {

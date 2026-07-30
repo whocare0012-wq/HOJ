@@ -1,29 +1,27 @@
 <template>
   <el-card>
-    <div
-      shadow
-      slot="header"
-      :padding="10"
-    >
-      <span class="home-title panel-title"><i class="el-icon-data-line"></i> {{$t('m.Statistics_Submissions_In_The_Last_Week')}}</span>
-      <span v-if="isSuperAdmin">
+    <template #header>
+      <div class="statistics-header">
+        <span class="home-title panel-title">
+          <el-icon class="statistics-title-icon"><DataLine /></el-icon>
+          {{$t('m.Statistics_Submissions_In_The_Last_Week')}}
+        </span>
         <el-button
+          class="statistics-refresh-button"
           type="primary"
-          icon="el-icon-refresh"
-          style="float: right;"
+          :icon="legacyElementIcons['el-icon-refresh']"
           size="small"
           :loading="loading"
           @click="getLastWeekSubmissionStatistics(true)"
           >{{ $t('m.Refresh') }}</el-button>
-      </span>
-    </div>
+      </div>
+    </template>
     <div
       class="echarts"
       v-loading="loading"
     >
       <ECharts
-        :options="options"
-        ref="chart"
+        :option="options"
         :autoresize="true"
       ></ECharts>
     </div>
@@ -31,14 +29,12 @@
 </template>
 <script>
 import api from "@/common/api";
+import { DataLine } from "@element-plus/icons-vue";
 import { mapGetters } from 'vuex';
 export default {
   name: "SubmissionStatistics",
-  props: {
-    title: {
-      type: String,
-      required: true,
-    },
+  components: {
+    DataLine,
   },
   data() {
     return {
@@ -54,17 +50,22 @@ export default {
           },
         },
         legend: {
-          data: [this.$i18n.t("m.AC"), this.$i18n.t("m.Total")],
+          data: [this.$t("m.AC"), this.$t("m.Total")],
+          left: "center",
+          top: 0,
         },
         toolbox: {
+          right: -10,
+          top: -8,
           feature: {
-            saveAsImage: { show: true, title: this.$i18n.t("m.save_as_image") },
+            saveAsImage: { show: true, title: this.$t("m.save_as_image") },
           },
         },
         grid: {
           left: "3%",
           right: "4%",
-          bottom: "3%",
+          top: 52,
+          bottom: "4%",
           containLabel: true,
         },
         xAxis: [
@@ -81,7 +82,7 @@ export default {
         ],
         series: [
           {
-            name: this.$i18n.t("m.AC"),
+            name: this.$t("m.AC"),
             type: "line",
             stack: "Total",
             areaStyle: {},
@@ -92,10 +93,11 @@ export default {
             data: [0, 0, 0, 0, 0, 0, 0],
           },
           {
-            name: this.$i18n.t("m.Total"),
+            name: this.$t("m.Total"),
             type: "line",
             stack: "Total",
             label: {
+              color: "#73c0de",
               show: true,
               position: "top",
             },
@@ -130,25 +132,48 @@ export default {
     },
   },
   computed: {
-    ...mapGetters(['isSuperAdmin','webLanguage'])
+    ...mapGetters(['webLanguage'])
   },
   watch:{
     webLanguage(newVal, oldVal){
-        this.options.legend.data = [this.$i18n.t("m.AC"), this.$i18n.t("m.Total")];
+        this.options.legend.data = [this.$t("m.AC"), this.$t("m.Total")];
         if(this.options.series != null && this.options.series.length == 2){
-            this.options.series[0].name = this.$i18n.t("m.AC");
-            this.options.series[1].name = this.$i18n.t("m.Total");
+            this.options.series[0].name = this.$t("m.AC");
+            this.options.series[1].name = this.$t("m.Total");
         }
     }
   }
 };
 </script>
 <style scoped>
+.statistics-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.statistics-header .panel-title {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  line-height: 32px;
+  padding: 0;
+}
+.statistics-title-icon {
+  font-size: 18px;
+}
+:deep(.el-card__header) {
+  padding: 9px 20px;
+}
+:deep(.statistics-refresh-button.el-button--small) {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 9px 15px;
+}
 .echarts {
   height: 400px;
   width: 100%;
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 20px 10px !important;
 }
 </style>

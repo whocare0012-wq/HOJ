@@ -6,11 +6,13 @@ import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
 
 
+@Tag("integration")
 class HDUJudgeTest {
 
     public static final String HOST = "http://acm.hdu.edu.cn";

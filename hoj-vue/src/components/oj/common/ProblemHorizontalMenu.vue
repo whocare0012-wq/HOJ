@@ -20,19 +20,21 @@
             effect="dark"
             placement="top"
           >
-            <div slot="content">
-              <div style="text-align:center">
-                {{item.problemId+'. '+item.title}}
-              </div>
-              <template v-if="item.status != null">
+            <template #content>
+              <div>
                 <div style="text-align:center">
-                  {{JUDGE_STATUS[item.status].name}}
-                  <template v-if="item.score != null">
-                    ({{ item.score}} pts)
-                  </template>
+                  {{item.problemId+'. '+item.title}}
                 </div>
-              </template>
-            </div>
+                <template v-if="item.status != null">
+                  <div style="text-align:center">
+                    {{JUDGE_STATUS[item.status].name}}
+                    <template v-if="item.score != null">
+                      ({{ item.score}} pts)
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
             <li
               class="dataNavListItem"
               :class="pid == item.pid?'is-active':''"
@@ -227,7 +229,7 @@ ul {
     margin: 0 -1%;
   }
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 5px 0px !important;
 }
 .dataNav {

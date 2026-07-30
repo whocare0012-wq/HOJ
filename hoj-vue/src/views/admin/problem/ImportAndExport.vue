@@ -1,30 +1,33 @@
 <template>
-  <div>
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Export_Problem') }}</span>
-        <div class="filter-row">
-          <span>
-            <el-button
-              type="primary"
-              size="small"
-              @click="exportProblems"
-              icon="el-icon-arrow-down"
-              >{{ $t('m.Export') }}
-            </el-button>
-          </span>
-          <span>
-            <vxe-input
-              v-model="keyword"
-              :placeholder="$t('m.Enter_keyword')"
-              type="search"
-              size="medium"
-              @keyup.enter.native="filterByKeyword"
-              @search-click="filterByKeyword"
-            ></vxe-input>
-          </span>
+  <div class="import-export-problem-page">
+    <el-card class="import-export-card export-problem-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Export_Problem') }}</span>
+          <div class="filter-row">
+            <span>
+              <el-button
+                class="export-problem-button"
+                type="primary"
+                size="small"
+                @click="exportProblems"
+                :icon="legacyElementIcons['el-icon-arrow-down']"
+                >{{ $t('m.Export') }}
+              </el-button>
+            </span>
+            <span>
+              <vxe-input
+                v-model="keyword"
+                :placeholder="$t('m.Enter_keyword')"
+                type="search"
+                size="medium"
+                @keyup.enter="filterByKeyword"
+                @search-click="filterByKeyword"
+              ></vxe-input>
+            </span>
+          </div>
         </div>
-      </div>
+      </template>
       <vxe-table
         :data="problems"
         stripe
@@ -49,7 +52,7 @@
 
         <vxe-table-column field="gmtCreate" :title="$t('m.Created_Time')">
           <template v-slot="{ row }">
-            {{ row.gmtCreate | localtime }}
+            {{ $filters.localtime(row.gmtCreate) }}
           </template>
         </vxe-table-column>
       </vxe-table>
@@ -61,17 +64,20 @@
           @current-change="getProblems"
           :page-size="limit"
           :page-sizes="[10, 50, 100, 500]"
-           @size-change="handleSizeChange"
+          v-model:current-page="currentPage"
+          @size-change="handleSizeChange"
           :total="total"
         >
         </el-pagination>
       </div>
     </el-card>
 
-    <el-card style="margin-top:15px">
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Import_Problem') }}</span>
-      </div>
+    <el-card class="import-export-card import-problem-card" style="margin-top:15px">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Import_Problem') }}</span>
+        </div>
+      </template>
       <el-upload
         ref="hoj"
         action="/api/file/import-problem"
@@ -82,17 +88,21 @@
         :limit="3"
         :on-change="onFile1Change"
         :auto-upload="false"
-        :on-success="uploadSucceeded"
-        :on-error="uploadFailed"
+        :on-success="
+          (response, file, fileList) =>
+            uploadSucceeded('hoj', response, file, fileList)
+        "
+        :on-error="(error, file, fileList) => uploadFailed('hoj', error, file, fileList)"
       >
-        <el-button
-          size="small"
-          :loading="loading.hoj"
-          type="primary"
-          slot="trigger"
-          icon="el-icon-folder-opened"
-          >{{ $t('m.Choose_File') }}</el-button
-        >
+        <template #trigger>
+          <el-button
+            size="small"
+            :loading="loading.hoj"
+            type="primary"
+              :icon="legacyElementIcons['el-icon-folder-opened']"
+            >{{ $t('m.Choose_File') }}</el-button
+          >
+        </template>
         <el-button
           style="margin-left: 10px;"
           size="small"
@@ -100,18 +110,20 @@
           @click="submitUpload('hoj')"
           :loading="loading.hoj"
           :disabled="!fileList1.length"
-          icon="el-icon-upload"
+          :icon="legacyElementIcons['el-icon-upload']"
           >{{ $t('m.Upload') }}</el-button
         >
       </el-upload>
     </el-card>
 
-    <el-card style="margin-top:15px">
-      <div slot="header">
-        <span class="panel-title home-title">{{
-          $t('m.Import_QDUOJ_Problem')
-        }}</span>
-      </div>
+    <el-card class="import-export-card import-problem-card" style="margin-top:15px">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{
+            $t('m.Import_QDUOJ_Problem')
+          }}</span>
+        </div>
+      </template>
       <el-upload
         ref="qduoj"
         action="/api/file/import-qdoj-problem"
@@ -122,36 +134,45 @@
         :limit="3"
         :on-change="onFile2Change"
         :auto-upload="false"
-        :on-success="uploadSucceeded"
-        :on-error="uploadFailed"
+        :on-success="
+          (response, file, fileList) =>
+            uploadSucceeded('qduoj', response, file, fileList)
+        "
+        :on-error="
+          (error, file, fileList) =>
+            uploadFailed('qduoj', error, file, fileList)
+        "
       >
-        <el-button
-          size="small"
-          type="primary"
-          slot="trigger"
-          :loading="loading.qduoj"
-          icon="el-icon-folder-opened"
-          >{{ $t('m.Choose_File') }}</el-button
-        >
+        <template #trigger>
+          <el-button
+            size="small"
+            type="primary"
+              :loading="loading.qduoj"
+            :icon="legacyElementIcons['el-icon-folder-opened']"
+            >{{ $t('m.Choose_File') }}</el-button
+          >
+        </template>
         <el-button
           style="margin-left: 10px;"
           size="small"
           type="success"
           @click="submitUpload('qduoj')"
           :loading="loading.qduoj"
-          icon="el-icon-upload"
+          :icon="legacyElementIcons['el-icon-upload']"
           :disabled="!fileList2.length"
           >{{ $t('m.Upload') }}</el-button
         >
       </el-upload>
     </el-card>
 
-    <el-card style="margin-top:15px">
-      <div slot="header">
-        <span class="panel-title home-title">{{
-          $t('m.Import_FPS_Problem')
-        }}</span>
-      </div>
+    <el-card class="import-export-card import-problem-card" style="margin-top:15px">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{
+            $t('m.Import_FPS_Problem')
+          }}</span>
+        </div>
+      </template>
       <el-upload
         ref="fps"
         action="/api/file/import-fps-problem"
@@ -162,36 +183,42 @@
         :limit="3"
         :on-change="onFile3Change"
         :auto-upload="false"
-        :on-success="uploadSucceeded"
-        :on-error="uploadFailed"
+        :on-success="
+          (response, file, fileList) =>
+            uploadSucceeded('fps', response, file, fileList)
+        "
+        :on-error="(error, file, fileList) => uploadFailed('fps', error, file, fileList)"
       >
-        <el-button
-          size="small"
-          type="primary"
-          slot="trigger"
-          :loading="loading.fps"
-          icon="el-icon-folder-opened"
-          >{{ $t('m.Choose_File') }}</el-button
-        >
+        <template #trigger>
+          <el-button
+            size="small"
+            type="primary"
+              :loading="loading.fps"
+            :icon="legacyElementIcons['el-icon-folder-opened']"
+            >{{ $t('m.Choose_File') }}</el-button
+          >
+        </template>
         <el-button
           style="margin-left: 10px;"
           size="small"
           type="success"
           @click="submitUpload('fps')"
           :loading="loading.fps"
-          icon="el-icon-upload"
+          :icon="legacyElementIcons['el-icon-upload']"
           :disabled="!fileList3.length"
           >{{ $t('m.Upload') }}</el-button
         >
       </el-upload>
     </el-card>
 
-    <el-card style="margin-top:15px">
-      <div slot="header">
-        <span class="panel-title home-title">{{
-          $t('m.Import_Hydro_Problem')
-        }}</span>
-      </div>
+    <el-card class="import-export-card import-problem-card" style="margin-top:15px">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{
+            $t('m.Import_Hydro_Problem')
+          }}</span>
+        </div>
+      </template>
       <el-upload
         ref="hydro"
         action="/api/file/import-hydro-problem"
@@ -202,24 +229,31 @@
         :limit="3"
         :on-change="onFile4Change"
         :auto-upload="false"
-        :on-success="uploadSucceeded"
-        :on-error="uploadFailed"
+        :on-success="
+          (response, file, fileList) =>
+            uploadSucceeded('hydro', response, file, fileList)
+        "
+        :on-error="
+          (error, file, fileList) =>
+            uploadFailed('hydro', error, file, fileList)
+        "
       >
-        <el-button
-          size="small"
-          type="primary"
-          slot="trigger"
-          :loading="loading.hydro"
-          icon="el-icon-folder-opened"
-          >{{ $t('m.Choose_File') }}</el-button
-        >
+        <template #trigger>
+          <el-button
+            size="small"
+            type="primary"
+              :loading="loading.hydro"
+            :icon="legacyElementIcons['el-icon-folder-opened']"
+            >{{ $t('m.Choose_File') }}</el-button
+          >
+        </template>
         <el-button
           style="margin-left: 10px;"
           size="small"
           type="success"
           @click="submitUpload('hydro')"
           :loading="loading.hydro"
-          icon="el-icon-upload"
+          :icon="legacyElementIcons['el-icon-upload']"
           :disabled="!fileList4.length"
           >{{ $t('m.Upload') }}</el-button
         >
@@ -240,6 +274,7 @@ export default {
       fileList3: [],
       fileList4: [],
       page: 1,
+      currentPage: 1,
       limit: 10,
       total: 0,
       loadingProblems: false,
@@ -269,12 +304,14 @@ export default {
       this.selected_problems = this.$refs.xTable.getCheckboxRecords();
     },
 
-    handleSizeChange(pageSize){
+    handleSizeChange(pageSize) {
       this.limit = pageSize;
-      this.getProblems();
+      this.currentPage = 1;
+      this.getProblems(1);
     },
 
     getProblems(page = 1) {
+      this.currentPage = page;
       let params = {
         keyword: this.keyword,
         currentPage: page,
@@ -291,7 +328,7 @@ export default {
     exportProblems() {
       let params = [];
       if (this.selected_problems.length <= 0) {
-        myMessage.error(this.$i18n.t('m.Export_Problem_NULL_Tips'));
+        myMessage.error(this.$t('m.Export_Problem_NULL_Tips'));
         return;
       }
       for (let p of this.selected_problems) {
@@ -316,42 +353,95 @@ export default {
     onFile4Change(file, fileList) {
       this.fileList4 = fileList.slice(-1);
     },
-    uploadSucceeded(response, file, fileList) {
-      this.loading.hoj = false;
-      this.loading.qduoj = false;
-      this.loading.fps = false;
-      this.loading.hydro = false;
+    clearUploadFiles(ref) {
+      const fileListKey = {
+        hoj: 'fileList1',
+        qduoj: 'fileList2',
+        fps: 'fileList3',
+        hydro: 'fileList4',
+      }[ref];
+      this[fileListKey] = [];
+      this.$refs[ref]?.clearFiles();
+    },
+    uploadSucceeded(ref, response) {
+      this.loading[ref] = false;
       if (response.status != 200) {
         myMessage.error(response.msg);
         this.$notify.error({
-          title: this.$i18n.t('m.Error'),
+          title: this.$t('m.Error'),
           message: response.msg,
           dangerouslyUseHTMLString: true,
           duration: 8000
         });
       } else {
-        myMessage.success(this.$i18n.t('m.Upload_Problem_Succeeded'));
-        this.getProblems();
+        this.clearUploadFiles(ref);
+        myMessage.success(this.$t('m.Upload_Problem_Succeeded'));
+        this.getProblems(1);
       }
     },
-    uploadFailed() {
-      this.loading.hoj = false;
-      this.loading.qduoj = false;
-      this.loading.fps = false;
-      this.loading.hydro = false;
-      myMessage.error(this.$i18n.t('m.Upload_Problem_Failed'));
+    uploadFailed(ref) {
+      this.loading[ref] = false;
+      myMessage.error(this.$t('m.Upload_Problem_Failed'));
     },
     filterByKeyword() {
-      this.getProblems();
+      this.currentPage = 1;
+      this.getProblems(1);
     },
   },
 };
 </script>
 
 <style scoped>
+.import-export-card {
+  display: block;
+}
+
 .filter-row {
   margin-top: 10px;
 }
+
+.import-export-problem-page :deep(.el-button--small) {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 9px 15px;
+}
+
+.import-export-problem-page :deep(.el-upload) {
+  height: 32px;
+  vertical-align: top;
+}
+
+.import-problem-card :deep(.el-upload-list) {
+  margin-top: 0;
+}
+
+.import-export-problem-page :deep(.el-pagination.page) {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 2px 5px;
+  --el-pagination-button-width: 35.5px;
+  --el-pagination-button-height: 28px;
+}
+
+.import-export-problem-page :deep(.el-pagination.page .el-pagination__sizes) {
+  width: 110px;
+  height: 28px;
+  margin-right: 10px;
+  margin-left: 0;
+}
+
+.import-export-problem-page :deep(.el-pagination.page .el-pagination__sizes .el-select) {
+  width: 110px;
+  height: 28px;
+}
+
+.import-export-problem-page :deep(.el-pagination.page .el-pagination__sizes .el-select__wrapper) {
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 2px 15px;
+}
+
 @media screen and (max-width: 768px) {
   .filter-row span {
     margin-right: 5px;

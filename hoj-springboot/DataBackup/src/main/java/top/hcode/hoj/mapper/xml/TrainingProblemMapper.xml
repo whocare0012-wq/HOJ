@@ -81,7 +81,10 @@
         SELECT a.pid,a.tid
         FROM
             (
-                SELECT pid,tid FROM training_problem WHERE tid in
+                SELECT tp.pid,tp.tid
+                FROM training_problem tp
+                INNER JOIN problem p ON p.id = tp.pid AND p.auth = 1
+                WHERE tp.tid in
                 <foreach collection="tidList" item="tid" open="(" separator="," close=")">
                     #{tid}
                 </foreach>
@@ -98,7 +101,10 @@
         SELECT a.pid,a.tid
         FROM
         (
-        SELECT pid,tid FROM training_problem WHERE tid in
+        SELECT tp.pid,tp.tid
+        FROM training_problem tp
+        INNER JOIN problem p ON p.id = tp.pid AND p.auth = 1
+        WHERE tp.tid in
         <foreach collection="tidList" item="tid" open="(" separator="," close=")">
             #{tid}
         </foreach>

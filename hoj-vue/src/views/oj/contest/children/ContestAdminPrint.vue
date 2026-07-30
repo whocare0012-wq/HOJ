@@ -1,27 +1,29 @@
 <template>
   <el-card shadow="always">
-    <div slot="header">
-      <span class="panel-title">{{ $t('m.Admin_Print') }}</span>
-      <div class="filter-row">
-        <span>
-          {{ $t('m.Auto_Refresh') }}(10s)
-          <el-switch
-            @change="handleAutoRefresh"
-            v-model="autoRefresh"
-          ></el-switch>
-        </span>
-        <span>
-          <el-button
-            type="primary"
-            @click="getContestPrint(1)"
-            size="small"
-            icon="el-icon-refresh"
-            :loading="btnLoading"
-            >{{ $t('m.Refresh') }}</el-button
-          >
-        </span>
+    <template #header>
+      <div>
+        <span class="panel-title">{{ $t('m.Admin_Print') }}</span>
+        <div class="filter-row">
+          <span>
+            {{ $t('m.Auto_Refresh') }}(10s)
+            <el-switch
+              @change="handleAutoRefresh"
+              v-model="autoRefresh"
+            ></el-switch>
+          </span>
+          <span>
+            <el-button
+              type="primary"
+              @click="getContestPrint(1)"
+              size="small"
+              :icon="legacyElementIcons['el-icon-refresh']"
+              :loading="btnLoading"
+              >{{ $t('m.Refresh') }}</el-button
+            >
+          </span>
+        </div>
       </div>
-    </div>
+    </template>
 
     <vxe-table
       border="inner"
@@ -56,7 +58,7 @@
         :title="$t('m.Submit_Time')"
       >
         <template v-slot="{ row }">
-          <span>{{ row.gmtCreate | localtime }}</span>
+          <span>{{ $filters.localtime(row.gmtCreate) }}</span>
         </template>
       </vxe-table-column>
       <vxe-table-column field="status" :title="$t('m.Status')" min-width="150">
@@ -74,7 +76,7 @@
           <el-button
             type="primary"
             size="small"
-            icon="el-icon-download"
+            :icon="legacyElementIcons['el-icon-download']"
             @click="downloadSubmissions(row.id)"
             round
             >{{ $t('m.Download') }}</el-button
@@ -82,7 +84,7 @@
           <el-button
             type="success"
             size="small"
-            icon="el-icon-circle-check"
+            :icon="legacyElementIcons['el-icon-circle-check']"
             @click="updateStatus(row.id)"
             round
             >{{ $t('m.OK') }}</el-button
@@ -92,18 +94,19 @@
     </vxe-table>
     <Pagination
       :total="total"
-      :page-size.sync="limit"
-      :current.sync="page"
+      v-model:page-size="limit"
+      v-model:current="page"
       @on-change="getContestPrint"
     ></Pagination>
   </el-card>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import utils from '@/common/utils';
-const Pagination = () => import('@/components/oj/common/Pagination');
+const Pagination = defineAsyncComponent(() => import('@/components/oj/common/Pagination'));
 
 export default {
   name: 'Contest-Print-Admin',
@@ -132,7 +135,7 @@ export default {
         cid: this.contestID,
       };
       api.updateContestPrintStatus(params).then((res) => {
-        myMessage.success(this.$i18n.t('m.Update_Successfully'));
+        myMessage.success(this.$t('m.Update_Successfully'));
         this.getContestPrint(1);
       });
     },
@@ -169,7 +172,7 @@ export default {
       }
     },
   },
-  beforeDestroy() {
+  beforeUnmount() {
     clearInterval(this.refreshFunc);
   },
 };
@@ -189,7 +192,7 @@ export default {
     margin-right: 20px;
   }
 }
-/deep/ .el-tag--dark {
+:deep(.el-tag--dark) {
   border-color: #fff;
 }
 </style>

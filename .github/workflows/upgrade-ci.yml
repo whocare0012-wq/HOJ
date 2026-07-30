@@ -1,0 +1,185 @@
+name: Upgrade baseline CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upgrade-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend / Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - "8"
+          - "17"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Run safe tests and package services
+        working-directory: hoj-springboot
+        run: mvn -B -ntp clean verify -DskipTests=false
+
+      - name: Upload Java 8 service artifacts
+        if: matrix.java == '8'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoj-backend-java8
+          if-no-files-found: error
+          path: |
+            hoj-springboot/DataBackup/target/hoj-backend-4.6.jar
+            hoj-springboot/JudgeServer/target/hoj-judgeServer-4.6.jar
+
+  database-compatibility:
+    name: Existing database compatibility
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: hoj_phase2_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="MYSQL_PWD=hoj_phase2_only mysqladmin ping --user=root --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
+          cache: maven
+
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes default-mysql-client
+
+      - name: Restore checked-in HOJ schema
+        env:
+          MYSQL_PWD: hoj_phase2_only
+        run: mysql --host=127.0.0.1 --user=root --default-character-set=utf8mb4 < sqlAndsetting/hoj.sql
+
+      - name: Verify persisted entity mappings without writes
+        working-directory: hoj-springboot
+        env:
+          HOJ_DB_COMPAT_URL: jdbc:mysql://127.0.0.1:3306/hoj?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+          HOJ_DB_COMPAT_USERNAME: root
+          HOJ_DB_COMPAT_PASSWORD: hoj_phase2_only
+        run: >-
+          mvn -B -ntp -pl DataBackup -am test
+          -DskipTests=false
+          "-DexcludedTestGroups="
+          -Dgroups=database-compatibility
+
+  frontend:
+    name: Frontend / Node 20
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+          cache-dependency-path: hoj-vue/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: hoj-vue
+        run: npm ci
+
+      - name: Reject high-severity dependency vulnerabilities
+        working-directory: hoj-vue
+        run: npm audit --audit-level=high --registry=https://registry.npmjs.org/
+
+      - name: Build production frontend
+        working-directory: hoj-vue
+        run: npm run build
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoj-frontend
+          if-no-files-found: error
+          path: hoj-vue/dist
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Reject vulnerable dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  sql-guard:
+    name: Database migration safety
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject undocumented or destructive SQL changes
+        shell: bash
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          mapfile -t sql_files < <(git diff --name-only "$base" "$head" -- '*.sql')
+
+          if (( ${#sql_files[@]} == 0 )); then
+            exit 0
+          fi
+
+          printf 'SQL files changed:\n%s\n' "${sql_files[@]}"
+
+          if git diff --quiet "$base" "$head" -- sqlAndsetting/PRODUCTION_UPGRADE.md; then
+            echo "::error::Document every SQL change in sqlAndsetting/PRODUCTION_UPGRADE.md."
+            exit 1
+          fi
+
+          added_sql="$(
+            git diff --unified=0 "$base" "$head" -- '*.sql' \
+              | grep '^+' \
+              | grep -v '^+++' \
+              || true
+          )"
+
+          if grep -Eiq '^[+][[:space:]]*(DROP[[:space:]]+(TABLE|DATABASE)|TRUNCATE[[:space:]]+TABLE|DELETE[[:space:]]+FROM)' <<<"$added_sql"; then
+            echo "::error::Destructive SQL additions require a separately reviewed maintenance procedure."
+            grep -Ein '^[+][[:space:]]*(DROP[[:space:]]+(TABLE|DATABASE)|TRUNCATE[[:space:]]+TABLE|DELETE[[:space:]]+FROM)' <<<"$added_sql"
+            exit 1
+          fi

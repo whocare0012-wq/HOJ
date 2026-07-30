@@ -5,10 +5,11 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import { mapGetters } from 'vuex';
 import { RULE_TYPE } from '@/common/constants';
-const ACMContestRank = () => import('./ACMContestRank.vue');
-const OIContestRank = () => import('./OIContestRank.vue');
+const ACMContestRank = defineAsyncComponent(() => import('./ACMContestRank.vue'));
+const OIContestRank = defineAsyncComponent(() => import('./OIContestRank.vue'));
 const NullComponent = {
   name: 'null-component',
   template: '<div></div>',

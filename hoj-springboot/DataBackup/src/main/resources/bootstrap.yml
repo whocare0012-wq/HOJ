@@ -1,13 +1,20 @@
 # nacos配置
 nacos-url: ${NACOS_URL:127.0.0.1:8848}
-nacos-username: ${NACOS_USERNAME:root}
-nacos-password: ${NACOS_PASSWORD:hoj123456}
+nacos-username: ${NACOS_USERNAME}
+nacos-password: ${NACOS_PASSWORD}
 nacos-switch-config: hoj-switch.yml
 nacos-web-config: hoj-web.yml
 
 spring:
   profiles:
     active: prod
+  main:
+    # Compatibility bridge for legacy field-injected beans; disable after cycle refactoring.
+    allow-circular-references: ${SPRING_MAIN_ALLOW_CIRCULAR_REFERENCES:true}
+  mvc:
+    pathmatch:
+      # Springfox 2.x requires the legacy matcher on Spring Boot 2.6.
+      matching-strategy: ant_path_matcher
   application:
     name: hoj-data-backup
   cloud:

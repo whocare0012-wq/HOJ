@@ -15,10 +15,10 @@
         :class="getbackgroudColor(submission.status)"
         style="padding: 18px;"
       >
-        <template slot="title">
+        <template #title>
           <span class="title">{{ status.statusName }}</span>
         </template>
-        <template slot>
+        <template #default>
           <div
             v-if="isCE || isSE || isSF"
             class="content"
@@ -47,6 +47,7 @@
       :span="24"
     >
       <vxe-table
+        class="submission-summary-table"
         align="center"
         :data="tableData"
         stripe
@@ -64,7 +65,7 @@
           min-width="160"
         >
           <template v-slot="{ row }">
-            <span>{{ row.submitTime | localtime }}</span>
+            <span>{{ $filters.localtime(row.submitTime) }}</span>
           </template>
         </vxe-table-column>
         <vxe-table-column
@@ -116,16 +117,18 @@
           <template v-slot="{ row }">
             <template v-if="row.score != null">
               <el-tooltip placement="top">
-                <div slot="content">
-                  {{ $t('m.Problem_Score') }}：{{
-                    row.score != null ? row.score : $t('m.Nothing')
-                  }}<br />{{ $t('m.OI_Rank_Score') }}：{{
-                    row.oiRankScore != null ? row.oiRankScore : $t('m.Nothing')
-                  }}<br />
-                  {{
-                    $t('m.OI_Rank_Calculation_Rule')
-                  }}：(score*0.1+diffculty*2)
-                </div>
+                <template #content>
+                  <div>
+                    {{ $t('m.Problem_Score') }}：{{
+                      row.score != null ? row.score : $t('m.Nothing')
+                    }}<br />{{ $t('m.OI_Rank_Score') }}：{{
+                      row.oiRankScore != null ? row.oiRankScore : $t('m.Nothing')
+                    }}<br />
+                    {{
+                      $t('m.OI_Rank_Calculation_Rule')
+                    }}：(score*0.1+diffculty*2)
+                  </div>
+                </template>
                 <span>{{ row.score }}</span>
               </el-tooltip>
             </template>
@@ -170,7 +173,7 @@
               :style="'border-left: 3px solid '+ JUDGE_STATUS[item.status].rgb"
               :name="item.groupNum"
             >
-              <template slot="title">
+              <template #title>
                 <el-row
                   class="subtask-title"
                   :class="activeName == item.groupNum?'active':''"
@@ -202,17 +205,19 @@
                     :xs="4"
                   >
                     <el-tooltip placement="top" effect="light">
-                      <div slot="content">
-                        <template v-if="testCaseResult.judgeCaseMode == JUDGE_CASE_MODE.SUBTASK_AVERAGE">
-                          {{$t('m.Judge_Case_Subtask_Average_Mode')}}<br/>
-                        </template>
-                        <template v-else>
-                          {{$t('m.Judge_Case_Subtask_Lowest_Mode')}}<br/>
-                        </template>
-                        {{ $t('m.Score') }}：{{item.score}}<br />
-                        {{ $t('m.AC') }}：{{item.ac}}<br />
-                        {{ $t('m.Total') }}：{{item.total}}
-                      </div>
+                      <template #content>
+                        <div>
+                          <template v-if="testCaseResult.judgeCaseMode == JUDGE_CASE_MODE.SUBTASK_AVERAGE">
+                            {{$t('m.Judge_Case_Subtask_Average_Mode')}}<br/>
+                          </template>
+                          <template v-else>
+                            {{$t('m.Judge_Case_Subtask_Lowest_Mode')}}<br/>
+                          </template>
+                          {{ $t('m.Score') }}：{{item.score}}<br />
+                          {{ $t('m.AC') }}：{{item.ac}}<br />
+                          {{ $t('m.Total') }}：{{item.total}}
+                        </div>
+                      </template>
                       <span>
                         <template v-if="!isMobile">
                         <i
@@ -281,14 +286,14 @@
         <Highlight
           :code="submission.code"
           :language="submission.language"
-          :border-color.sync="status.color"
+          v-model:border-color="status.color"
         ></Highlight>
       </el-col>
       <el-col :span="24">
         <div id="share-btn">
           <el-button
             type="primary"
-            icon="el-icon-document-copy"
+            :icon="legacyElementIcons['el-icon-document-copy']"
             size="large"
             @click="doCopy"
             v-if="submission.code"
@@ -298,7 +303,7 @@
               v-if="submission.share"
               type="warning"
               size="large"
-              icon="el-icon-circle-close"
+              :icon="legacyElementIcons['el-icon-circle-close']"
               @click="shareSubmission(false)"
             >
               {{ $t('m.Unshared') }}
@@ -307,7 +312,7 @@
               v-else-if="!submission.share"
               type="primary"
               size="large"
-              icon="el-icon-share"
+              :icon="legacyElementIcons['el-icon-share']"
               @click="shareSubmission(true)"
             >
               {{ $t('m.Shared') }}
@@ -382,10 +387,10 @@ export default {
     doCopy() {
       this.$copyText(this.submission.code).then(
         () => {
-          myMessage.success(this.$i18n.t("m.Copied_successfully"));
+          myMessage.success(this.$t("m.Copied_successfully"));
         },
         () => {
-          myMessage.success(this.$i18n.t("m.Copied_failed"));
+          myMessage.success(this.$t("m.Copied_failed"));
         }
       );
     },
@@ -500,9 +505,9 @@ export default {
         (res) => {
           this.getSubmission();
           if (shared) {
-            myMessage.success(this.$i18n.t("m.Shared_successfully"));
+            myMessage.success(this.$t("m.Shared_successfully"));
           } else {
-            myMessage.success(this.$i18n.t("m.Cancel_Sharing_Successfully"));
+            myMessage.success(this.$t("m.Cancel_Sharing_Successfully"));
           }
         },
         () => {}
@@ -585,8 +590,12 @@ export default {
   padding-right: 5px !important;
 }
 
+.submission-summary-table :deep(.vxe-table--body-wrapper) {
+  min-height: 0 !important;
+}
+
 @media screen and (min-width: 1050px) {
-  /deep/ .vxe-table--body-wrapper {
+  :deep(.vxe-table--body-wrapper) {
     overflow-x: hidden !important;
   }
 }

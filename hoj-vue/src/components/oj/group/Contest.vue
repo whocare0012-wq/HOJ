@@ -2,11 +2,13 @@
   <el-row>
     <el-col :span="24">
       <el-card shadow="never">
-        <div slot="header">
-          <span class="panel-title home-title">
-            {{ title }}
-          </span>
-        </div>
+        <template #header>
+          <div>
+            <span class="panel-title home-title">
+              {{ title }}
+            </span>
+          </div>
+        </template>
         <el-form label-position="top">
           <el-row :gutter="20">
             <el-col :span="24">
@@ -25,7 +27,7 @@
                 :label="$t('m.Contest_Description')"
                 required
               >
-                <Editor :value.sync="contest.description"></Editor>
+                <Editor v-model:value="contest.description"></Editor>
               </el-form-item>
             </el-col>
             <el-col
@@ -91,14 +93,14 @@
                 <el-radio
                   class="radio"
                   v-model="contest.type"
-                  :label="0"
+                  :value="0"
                   @change="setSealRankTimeDefaultValue"
                   :disabled="disableRuleType"
                 >ACM</el-radio>
                 <el-radio
                   class="radio"
                   v-model="contest.type"
-                  :label="1"
+                  :value="1"
                   :disabled="disableRuleType"
                   @change="setSealRankTimeDefaultValue"
                 >OI</el-radio>
@@ -115,12 +117,12 @@
                 <el-radio
                   class="radio"
                   v-model="contest.oiRankScoreType"
-                  label="Recent"
+                  value="Recent"
                 >{{ $t('m.OI_Rank_Score_Type_Recent') }}</el-radio>
                 <el-radio
                   class="radio"
                   v-model="contest.oiRankScoreType"
-                  label="Highest"
+                  value="Highest"
                 >{{ $t('m.OI_Rank_Score_Type_Highest') }}</el-radio>
               </el-form-item>
             </el-col>
@@ -270,13 +272,13 @@
                 required
               >
                 <el-radio-group v-model="contest.rankShowName">
-                  <el-radio label="username">{{
+                  <el-radio value="username">{{
                     $t('m.Show_Username')
                   }}</el-radio>
-                  <el-radio label="nickname">{{
+                  <el-radio value="nickname">{{
                     $t('m.Show_Nickname')
                   }}</el-radio>
-                  <el-radio label="realname">{{
+                  <el-radio value="realname">{{
                     $t('m.Show_Realname')
                   }}</el-radio>
                 </el-radio-group>
@@ -294,17 +296,17 @@
                   :close-transition="false"
                   :key="username"
                   type="warning"
-                  size="medium"
+                  size="default"
                   @close="removeStarUser(username)"
                   style="margin-right: 7px;margin-top:4px"
                 >{{ username }}</el-tag>
                 <el-input
                   v-if="inputVisible"
-                  size="medium"
+                  size="default"
                   class="input-new-star-user"
                   v-model="starUserInput"
                   :trigger-on-focus="true"
-                  @keyup.enter.native="addStarUser"
+                  @keyup.enter="addStarUser"
                   @blur="addStarUser"
                 >
                 </el-input>
@@ -318,7 +320,7 @@
                     class="button-new-tag"
                     size="small"
                     @click="inputVisible = true"
-                    icon="el-icon-plus"
+                    :icon="legacyElementIcons['el-icon-plus']"
                   ></el-button>
                 </el-tooltip>
               </el-form-item>
@@ -507,14 +509,14 @@
               <div style="margin-bottom:10px">
                 <el-button
                   type="primary"
-                  icon="el-icon-plus"
+                  :icon="legacyElementIcons['el-icon-plus']"
                   circle
                   @click="insertEvent(-1)"
                   size="small"
                 ></el-button>
                 <el-button
                   type="danger"
-                  icon="el-icon-delete"
+                  :icon="legacyElementIcons['el-icon-delete']"
                   circle
                   @click="removeEvent()"
                   size="small"
@@ -603,7 +605,7 @@
                       v-if="contest.awardType == 1"
                       type="number"
                     >
-                      <template slot="append">%</template>
+                      <template #append>%</template>
                     </el-input>
                     <el-input
                       :placeholder="$t('m.Contest_Award_Number')"
@@ -620,7 +622,7 @@
         </el-form>
         <el-button
           type="primary"
-          @click.native="submit"
+          @click="submit"
         >{{
           $t('m.Save')
         }}</el-button>
@@ -630,13 +632,14 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from "@/common/api";
 import mMessage from "@/common/message";
 import time from "@/common/time";
 import moment from "moment";
 import { mapGetters } from "vuex";
 import Editor from "@/components/admin/Editor.vue";
-const RankBox = () => import("@/components/oj/common/RankBox");
+const RankBox = defineAsyncComponent(() => import("@/components/oj/common/RankBox"));
 export default {
   name: "GroupContest",
   components: {
@@ -792,43 +795,43 @@ export default {
     submit() {
       if (!this.contest.title) {
         mMessage.error(
-          this.$i18n.t("m.Contest_Title") + " " + this.$i18n.t("m.is_required")
+          this.$t("m.Contest_Title") + " " + this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.description) {
         mMessage.error(
-          this.$i18n.t("m.Contest_Description") +
+          this.$t("m.Contest_Description") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.startTime) {
         mMessage.error(
-          this.$i18n.t("m.Contest_Start_Time") +
+          this.$t("m.Contest_Start_Time") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.endTime) {
         mMessage.error(
-          this.$i18n.t("m.Contest_End_Time") +
+          this.$t("m.Contest_End_Time") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.duration || this.contest.duration <= 0) {
-        mMessage.error(this.$i18n.t("m.Contest_Duration_Check"));
+        mMessage.error(this.$t("m.Contest_Duration_Check"));
         return;
       }
       if (this.contest.auth != 0 && !this.contest.pwd) {
         mMessage.error(
-          this.$i18n.t("m.Contest_Password") +
+          this.$t("m.Contest_Password") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
@@ -877,7 +880,7 @@ export default {
       let end = this.contest.endTime;
       let durationMS = time.durationMs(start, end);
       if (durationMS < 0) {
-        this.durationText = this.$i18n.t("m.Contets_Time_Check");
+        this.durationText = this.$t("m.Contets_Time_Check");
         this.contest.duration = 0;
         return;
       }
@@ -919,7 +922,7 @@ export default {
       if (this.starUserInput) {
         for (var i = 0; i < this.contest.starAccount.length; i++) {
           if (this.contest.starAccount[i] == this.starUserInput) {
-            mMessage.warning(this.$i18n.t("m.Add_Star_User_Error"));
+            mMessage.warning(this.$t("m.Add_Star_User_Error"));
             this.starUserInput = "";
             return;
           }

@@ -1,12 +1,14 @@
 <template>
-  <div class="view">
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">
-          {{ title }}
-        </span>
-      </div>
-      <el-form label-position="top">
+  <div class="view contest-editor-page">
+    <el-card class="contest-editor-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">
+            {{ title }}
+          </span>
+        </div>
+      </template>
+      <el-form class="contest-form" label-position="top">
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item
@@ -24,7 +26,7 @@
               :label="$t('m.Contest_Description')"
               required
             >
-              <Editor :value.sync="contest.description"></Editor>
+              <Editor v-model:value="contest.description"></Editor>
             </el-form-item>
           </el-col>
           <el-col
@@ -90,14 +92,14 @@
               <el-radio
                 class="radio"
                 v-model="contest.type"
-                :label="0"
+                :value="0"
                 @change="setSealRankTimeDefaultValue"
                 :disabled="disableRuleType"
               >ACM</el-radio>
               <el-radio
                 class="radio"
                 v-model="contest.type"
-                :label="1"
+                :value="1"
                 :disabled="disableRuleType"
                 @change="setSealRankTimeDefaultValue"
               >OI</el-radio>
@@ -115,12 +117,12 @@
               <el-radio
                 class="radio"
                 v-model="contest.oiRankScoreType"
-                label="Recent"
+                value="Recent"
               >{{ $t('m.OI_Rank_Score_Type_Recent') }}</el-radio>
               <el-radio
                 class="radio"
                 v-model="contest.oiRankScoreType"
-                label="Highest"
+                value="Highest"
               >{{ $t('m.OI_Rank_Score_Type_Highest') }}</el-radio>
             </el-form-item>
           </el-col>
@@ -273,13 +275,13 @@
               required
             >
               <el-radio-group v-model="contest.rankShowName">
-                <el-radio label="username">{{
+                <el-radio value="username">{{
                   $t('m.Show_Username')
                 }}</el-radio>
-                <el-radio label="nickname">{{
+                <el-radio value="nickname">{{
                   $t('m.Show_Nickname')
                 }}</el-radio>
-                <el-radio label="realname">{{
+                <el-radio value="realname">{{
                   $t('m.Show_Realname')
                 }}</el-radio>
               </el-radio-group>
@@ -297,17 +299,17 @@
                 :close-transition="false"
                 :key="username"
                 type="warning"
-                size="medium"
+                size="default"
                 @close="removeStarUser(username)"
                 style="margin-right: 7px;margin-top:4px"
               >{{ username }}</el-tag>
               <el-input
                 v-if="inputVisible"
-                size="medium"
+                size="default"
                 class="input-new-star-user"
                 v-model="starUserInput"
                 :trigger-on-focus="true"
-                @keyup.enter.native="addStarUser"
+                @keyup.enter="addStarUser"
                 @blur="addStarUser"
               >
               </el-input>
@@ -321,7 +323,7 @@
                   class="button-new-tag"
                   size="small"
                   @click="inputVisible = true"
-                  icon="el-icon-plus"
+                  :icon="legacyElementIcons['el-icon-plus']"
                 ></el-button>
               </el-tooltip>
             </el-form-item>
@@ -335,7 +337,10 @@
               :label="$t('m.Contest_Auth')"
               required
             >
-              <el-select v-model="contest.auth">
+              <el-select
+                class="contest-compact-select"
+                v-model="contest.auth"
+              >
                 <el-option
                   :label="$t('m.Public')"
                   :value="0"
@@ -361,6 +366,7 @@
               :required="contest.auth != 0"
             >
               <el-input
+                class="contest-password-input"
                 v-model="contest.pwd"
                 :placeholder="$t('m.Contest_Password')"
               ></el-input>
@@ -380,63 +386,71 @@
           </el-col>
 
           <template v-if="contest.openAccountLimit">
-            <el-form :model="formRule">
-              <el-col
-                :md="6"
-                :xs="24"
+            <el-col
+              :span="24"
+              class="account-limit-rule-section"
+            >
+              <el-row
+                :gutter="20"
+                class="account-limit-rule-grid"
               >
-                <el-form-item
-                  :label="$t('m.Prefix')"
-                  prop="prefix"
+                <el-col
+                  :md="6"
+                  :xs="24"
                 >
-                  <el-input
-                    v-model="formRule.prefix"
-                    placeholder="Prefix"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col
-                :md="6"
-                :xs="24"
-              >
-                <el-form-item
-                  :label="$t('m.Suffix')"
-                  prop="suffix"
+                  <el-form-item
+                    :label="$t('m.Prefix')"
+                    prop="prefix"
+                  >
+                    <el-input
+                      v-model="formRule.prefix"
+                      placeholder="Prefix"
+                    ></el-input>
+                  </el-form-item>
+                </el-col>
+                <el-col
+                  :md="6"
+                  :xs="24"
                 >
-                  <el-input
-                    v-model="formRule.suffix"
-                    placeholder="Suffix"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col
-                :md="6"
-                :xs="24"
-              >
-                <el-form-item
-                  :label="$t('m.Start_Number')"
-                  prop="number_from"
+                  <el-form-item
+                    :label="$t('m.Suffix')"
+                    prop="suffix"
+                  >
+                    <el-input
+                      v-model="formRule.suffix"
+                      placeholder="Suffix"
+                    ></el-input>
+                  </el-form-item>
+                </el-col>
+                <el-col
+                  :md="6"
+                  :xs="24"
                 >
-                  <el-input-number
-                    v-model="formRule.number_from"
-                    style="width: 100%"
-                  ></el-input-number>
-                </el-form-item>
-              </el-col>
-              <el-col
-                :md="6"
-                :xs="24"
-              >
-                <el-form-item
-                  :label="$t('m.End_Number')"
-                  prop="number_to"
+                  <el-form-item
+                    :label="$t('m.Start_Number')"
+                    prop="number_from"
+                  >
+                    <el-input-number
+                      v-model="formRule.number_from"
+                      style="width: 100%"
+                    ></el-input-number>
+                  </el-form-item>
+                </el-col>
+                <el-col
+                  :md="6"
+                  :xs="24"
                 >
-                  <el-input-number
-                    v-model="formRule.number_to"
-                    style="width: 100%"
-                  ></el-input-number>
-                </el-form-item>
-              </el-col>
+                  <el-form-item
+                    :label="$t('m.End_Number')"
+                    prop="number_to"
+                  >
+                    <el-input-number
+                      v-model="formRule.number_to"
+                      style="width: 100%"
+                    ></el-input-number>
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
               <div
                 class="userPreview"
@@ -474,7 +488,7 @@
                   </el-input>
                 </el-form-item>
               </el-col>
-            </el-form>
+            </el-col>
           </template>
 
           <el-col
@@ -486,6 +500,7 @@
               required
             >
               <el-select
+                class="contest-compact-select"
                 v-model="contest.awardType"
                 @change="contestAwardTypeChange"
               >
@@ -508,32 +523,31 @@
             :span="24"
             v-if="contest.awardType != 0"
           >
-            <div style="margin-bottom:10px">
+            <div class="contest-award-actions">
               <el-button
                 type="primary"
-                icon="el-icon-plus"
+                :icon="legacyElementIcons['el-icon-plus']"
                 circle
                 @click="insertEvent(-1)"
-                size="small"
               ></el-button>
               <el-button
                 type="danger"
-                icon="el-icon-delete"
+                :icon="legacyElementIcons['el-icon-delete']"
                 circle
                 @click="removeEvent()"
-                size="small"
               ></el-button>
             </div>
-            <vxe-table
-              border
-              ref="xAwardTable"
-              :data="contest.awardConfigList"
-              :edit-config="{trigger: 'click', mode: 'cell'}"
-              :sort-config="{trigger: 'cell', defaultSort: {field: 'priority', order: 'asc'}, orders: ['desc', 'asc', null]}"
-              align="center"
-              @edit-closed="editClosedEvent"
-              style="margin-bottom:15px"
-            >
+            <div class="contest-award-table">
+              <vxe-table
+                border
+                ref="xAwardTable"
+                :data="contest.awardConfigList"
+                :edit-config="{trigger: 'click', mode: 'cell'}"
+                :sort-config="{trigger: 'cell', defaultSort: {field: 'priority', order: 'asc'}, orders: ['desc', 'asc', null]}"
+                align="center"
+                @edit-closed="editClosedEvent"
+                style="margin-bottom:15px"
+              >
               <vxe-table-column
                 type="checkbox"
                 width="60"
@@ -561,7 +575,6 @@
                 <template v-slot="{ row }">
                   <el-color-picker
                     v-model="row.background"
-                    size="small"
                   ></el-color-picker>
                 </template>
               </vxe-table-column>
@@ -573,7 +586,6 @@
                 <template v-slot="{ row }">
                   <el-color-picker
                     v-model="row.color"
-                    size="small"
                   ></el-color-picker>
                 </template>
               </vxe-table-column>
@@ -601,30 +613,32 @@
                 <template v-slot="{ row }">
 
                   <el-input
+                    class="contest-award-input"
                     :placeholder="$t('m.Contest_Award_Proportion')"
                     v-model="row.num"
-                    size="small"
                     v-if="contest.awardType == 1"
                     type="number"
                   >
-                    <template slot="append">%</template>
+                    <template #append>%</template>
                   </el-input>
                   <el-input
+                    class="contest-award-input"
                     :placeholder="$t('m.Contest_Award_Number')"
                     v-model="row.num"
-                    size="small"
                     v-else
                   >
                   </el-input>
                 </template>
               </vxe-table-column>
-            </vxe-table>
+              </vxe-table>
+            </div>
           </el-col>
         </el-row>
       </el-form>
       <el-button
+        class="contest-save-button"
         type="primary"
-        @click.native="saveContest"
+        @click="saveContest"
       >{{
         $t('m.Save')
       }}</el-button>
@@ -633,13 +647,77 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from "@/common/api";
 import time from "@/common/time";
 import moment from "moment";
 import { mapGetters } from "vuex";
 import myMessage from "@/common/message";
-const Editor = () => import("@/components/admin/Editor.vue");
-const RankBox = () => import("@/components/oj/common/RankBox");
+const Editor = defineAsyncComponent(() => import("@/components/admin/Editor.vue"));
+const RankBox = defineAsyncComponent(() => import("@/components/oj/common/RankBox"));
+
+function createDefaultAwardConfig() {
+  return [
+    {
+      priority: 1,
+      name: "金牌",
+      background: "#e6bf25",
+      color: "#fff",
+      num: 10,
+    },
+    {
+      priority: 2,
+      name: "银牌",
+      background: "#b4c0c7",
+      color: "#fff",
+      num: 20,
+    },
+    {
+      priority: 3,
+      name: "铜牌",
+      background: "#CD7F32",
+      color: "#fff",
+      num: 30,
+    },
+  ];
+}
+
+function createDefaultContest() {
+  return {
+    title: "",
+    description: "",
+    startTime: "",
+    endTime: "",
+    duration: 0,
+    type: 0,
+    pwd: "",
+    sealRank: false,
+    sealRankTime: "",
+    autoRealRank: true,
+    auth: 0,
+    openPrint: false,
+    openRank: false,
+    rankShowName: "username",
+    openAccountLimit: false,
+    allowEndSubmit: false,
+    accountLimitRule: "",
+    starAccount: [],
+    oiRankScoreType: "Recent",
+    awardType: 0,
+    awardConfigList: createDefaultAwardConfig(),
+  };
+}
+
+function createDefaultFormRule() {
+  return {
+    prefix: "",
+    suffix: "",
+    number_from: 0,
+    number_to: 10,
+    extra_account: "",
+  };
+}
+
 export default {
   name: "CreateContest",
   components: {
@@ -652,81 +730,32 @@ export default {
       disableRuleType: false,
       durationText: "", // 比赛时长文本表示
       seal_rank_time: 2, // 当开启封榜模式，即实时榜单关闭时，可选择前半小时，前一小时，全程封榜,默认全程封榜
-      contest: {
-        title: "",
-        description: "",
-        startTime: "",
-        endTime: "",
-        duration: 0,
-        type: 0,
-        pwd: "",
-        sealRank: false,
-        sealRankTime: "", //封榜时间
-        autoRealRank: true,
-        auth: 0,
-        openPrint: false,
-        rankShowName: "username",
-        openAccountLimit: false,
-        allowEndSubmit: false,
-        accountLimitRule: "",
-        starAccount: [],
-        oiRankScoreType: "Recent",
-        awardType: 0,
-        awardConfigList: [
-          {
-            priority: 1,
-            name: "金牌",
-            background: "#e6bf25",
-            color: "#fff",
-            num: 10,
-          },
-          {
-            priority: 2,
-            name: "银牌",
-            background: "#b4c0c7",
-            color: "#fff",
-            num: 20,
-          },
-          {
-            priority: 3,
-            name: "铜牌",
-            background: "#CD7F32",
-            color: "#fff",
-            num: 30,
-          },
-        ],
-      },
-      formRule: {
-        prefix: "",
-        suffix: "",
-        number_from: 0,
-        number_to: 10,
-        extra_account: "",
-      },
+      contest: createDefaultContest(),
+      formRule: createDefaultFormRule(),
       starUserInput: "",
       inputVisible: false,
     };
   },
   mounted() {
     if (this.$route.name === "admin-edit-contest") {
-      this.title = this.$i18n.t("m.Edit_Contest");
+      this.title = this.$t("m.Edit_Contest");
       this.disableRuleType = true;
       this.getContestByCid();
     } else {
-      this.title = this.$i18n.t("m.Create_Contest");
+      this.title = this.$t("m.Create_Contest");
       this.disableRuleType = false;
     }
   },
   watch: {
     $route() {
       if (this.$route.name === "admin-edit-contest") {
-        this.title = this.$i18n.t("m.Edit_Contest");
+        this.title = this.$t("m.Edit_Contest");
         this.disableRuleType = true;
         this.getContestByCid();
       } else {
-        this.title = this.$i18n.t("m.Create_Contest");
+        this.title = this.$t("m.Create_Contest");
         this.disableRuleType = false;
-        this.contest = {};
+        this.resetContestForm();
       }
     },
   },
@@ -734,12 +763,28 @@ export default {
     ...mapGetters(["userInfo"]),
   },
   methods: {
+    resetContestForm() {
+      this.contest = createDefaultContest();
+      this.formRule = createDefaultFormRule();
+      this.durationText = "";
+      this.seal_rank_time = 2;
+      this.starUserInput = "";
+      this.inputVisible = false;
+    },
     getContestByCid() {
       api
         .admin_getContest(this.$route.params.contestId)
         .then((res) => {
           let data = res.data.data;
-          this.contest = data;
+          this.contest = Object.assign(createDefaultContest(), data, {
+            starAccount: Array.isArray(data.starAccount)
+              ? data.starAccount
+              : [],
+            awardConfigList: Array.isArray(data.awardConfigList)
+              ? data.awardConfigList
+              : createDefaultAwardConfig(),
+          });
+          this.formRule = createDefaultFormRule();
           this.changeDuration();
           // 封榜时间转换
           let halfHour = moment(this.contest.endTime)
@@ -773,43 +818,43 @@ export default {
     saveContest() {
       if (!this.contest.title) {
         myMessage.error(
-          this.$i18n.t("m.Contest_Title") + " " + this.$i18n.t("m.is_required")
+          this.$t("m.Contest_Title") + " " + this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.description) {
         myMessage.error(
-          this.$i18n.t("m.Contest_Description") +
+          this.$t("m.Contest_Description") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.startTime) {
         myMessage.error(
-          this.$i18n.t("m.Contest_Start_Time") +
+          this.$t("m.Contest_Start_Time") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.endTime) {
         myMessage.error(
-          this.$i18n.t("m.Contest_End_Time") +
+          this.$t("m.Contest_End_Time") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
       if (!this.contest.duration || this.contest.duration <= 0) {
-        myMessage.error(this.$i18n.t("m.Contest_Duration_Check"));
+        myMessage.error(this.$t("m.Contest_Duration_Check"));
         return;
       }
       if (this.contest.auth != 0 && !this.contest.pwd) {
         myMessage.error(
-          this.$i18n.t("m.Contest_Password") +
+          this.$t("m.Contest_Password") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
@@ -818,6 +863,8 @@ export default {
         this.contest.accountLimitRule = this.changeAccountRuleToStr(
           this.formRule
         );
+      } else {
+        this.contest.accountLimitRule = "";
       }
 
       let funcName =
@@ -862,7 +909,7 @@ export default {
       let end = this.contest.endTime;
       let durationMS = time.durationMs(start, end);
       if (durationMS < 0) {
-        this.durationText = this.$i18n.t("m.Contets_Time_Check");
+        this.durationText = this.$t("m.Contets_Time_Check");
         this.contest.duration = 0;
         return;
       }
@@ -891,6 +938,9 @@ export default {
         "<prefix>([\\s\\S]*?)</prefix><suffix>([\\s\\S]*?)</suffix><start>([\\s\\S]*?)</start><end>([\\s\\S]*?)</end><extra>([\\s\\S]*?)</extra>";
       let re = RegExp(reg, "g");
       let tmp = re.exec(value);
+      if (!tmp) {
+        return createDefaultFormRule();
+      }
       return {
         prefix: tmp[1],
         suffix: tmp[2],
@@ -905,7 +955,7 @@ export default {
       if (this.starUserInput) {
         for (var i = 0; i < this.contest.starAccount.length; i++) {
           if (this.contest.starAccount[i] == this.starUserInput) {
-            myMessage.warning(this.$i18n.t("m.Add_Star_User_Error"));
+            myMessage.warning(this.$t("m.Add_Star_User_Error"));
             this.starUserInput = "";
             return;
           }
@@ -918,10 +968,10 @@ export default {
 
     // 根据UserName 从打星用户列表中移除
     removeStarUser(username) {
-      this.contest.starAccount.splice(
-        this.contest.starAccount.map((item) => item.name).indexOf(username),
-        1
-      );
+      const index = this.contest.starAccount.indexOf(username);
+      if (index !== -1) {
+        this.contest.starAccount.splice(index, 1);
+      }
     },
 
     setSealRankTimeDefaultValue() {
@@ -1033,5 +1083,64 @@ export default {
 }
 .input-new-star-user {
   width: 200px;
+}
+.button-new-tag {
+  width: 44px;
+  height: 32px;
+  padding: 8px 15px;
+}
+.contest-compact-select {
+  width: 217px;
+}
+@media (min-width: 992px) {
+  .contest-password-input {
+    width: calc(100% - 20px);
+  }
+}
+.contest-award-actions {
+  margin-bottom: 10px;
+}
+.contest-editor-page :deep(.contest-form .el-form-item) {
+  margin-bottom: 22px;
+}
+.contest-editor-page :deep(.contest-form .el-form-item__label) {
+  box-sizing: border-box;
+  height: 50px;
+  line-height: 40px;
+  padding: 0 0 10px;
+  margin-bottom: 0 !important;
+}
+.contest-editor-page :deep(.contest-form .el-form-item__content) {
+  min-height: 40px;
+  line-height: 40px;
+}
+.contest-editor-page
+  :deep(.contest-form .el-input:not(.el-input--small) .el-input__wrapper),
+.contest-editor-page
+  :deep(.contest-form .el-select:not(.el-select--small) .el-select__wrapper),
+.contest-editor-page :deep(.contest-form .el-date-editor.el-input__wrapper),
+.contest-editor-page
+  :deep(.contest-form .el-input-number:not(.el-input-number--small)) {
+  min-height: 40px;
+  height: 40px;
+  box-sizing: border-box;
+}
+.contest-save-button {
+  height: 40px;
+  min-height: 40px;
+  padding: 12px 20px;
+}
+.contest-editor-page
+  .contest-form
+  .contest-award-table
+  :deep(.el-input:not(.el-input--small) .el-input__wrapper) {
+  min-height: 32px;
+  height: 32px;
+}
+.contest-editor-page
+  .contest-form
+  .contest-award-table
+  :deep(.vxe-body--row) {
+  height: 57px;
 }
 </style>

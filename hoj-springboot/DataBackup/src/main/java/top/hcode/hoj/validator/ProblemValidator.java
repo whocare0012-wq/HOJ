@@ -1,6 +1,7 @@
 package top.hcode.hoj.validator;
 
 import cn.hutool.core.util.StrUtil;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import top.hcode.hoj.common.exception.StatusFailException;
 import top.hcode.hoj.pojo.entity.problem.Problem;
@@ -17,6 +18,9 @@ public class ProblemValidator {
 
     @Resource
     private CommonValidator commonValidator;
+
+    @Resource
+    private JdbcTemplate jdbcTemplate;
 
     public void validateProblem(Problem problem) throws StatusFailException {
         if (problem == null) {
@@ -41,6 +45,18 @@ public class ProblemValidator {
     }
 
     private void defaultValidate(Problem problem) throws StatusFailException {
+        if (problem.getDifficulty() == null) {
+            throw new StatusFailException("题目难度不能为空！");
+        }
+        Long difficultyCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM problem_difficulty_config " +
+                        "WHERE difficulty_value = ?",
+                Long.class,
+                problem.getDifficulty());
+        if (difficultyCount == null || difficultyCount == 0) {
+            throw new StatusFailException("所选题目难度不存在，请重新选择！");
+        }
+
         Constants.ProblemType type = Constants.ProblemType.getProblemType(problem.getType());
         if (type == null) {
             throw new StatusFailException("题目的类型必须为ACM(0), OI(1)！");

@@ -2,7 +2,7 @@ package top.hcode.hoj.crawler.problem;
 
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.http.HttpUtil;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.jsoup.Jsoup;
 import top.hcode.hoj.pojo.entity.problem.Problem;
 import top.hcode.hoj.utils.Constants;

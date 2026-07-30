@@ -10,13 +10,15 @@
   <div
     v-else
     key="avoidXssOff"
-    v-html="html"
+    v-dompurify-html="html"
     v-highlight
     v-katex
     class="markdown-body"
   ></div>
 </template>
 <script>
+import pdfLogoImage from '@/assets/pdf-logo.svg'
+
 export default {
   name: "Markdown",
   props: {
@@ -31,7 +33,7 @@ export default {
   },
   data(){
     return{
-        pdfLogo: require('@/assets/pdf-logo.svg'),
+        pdfLogo: pdfLogoImage,
     }
   },
   computed: {

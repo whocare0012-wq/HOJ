@@ -28,7 +28,7 @@
         :title="$t('m.Created_Time')"
       >
         <template v-slot="{ row }">
-          {{ row.gmtCreate | localtime }}
+          {{ $filters.localtime(row.gmtCreate) }}
         </template>
       </vxe-table-column>
       <vxe-table-column
@@ -37,7 +37,7 @@
         :title="$t('m.Modified_Time')"
       >
         <template v-slot="{ row }">
-          {{ row.gmtModify | localtime }}
+          {{ $filters.localtime(row.gmtModify) }}
         </template>
       </vxe-table-column>
       <vxe-table-column
@@ -89,9 +89,9 @@
             placement="top"
           >
             <el-button
-              icon="el-icon-search"
-              @click.native="viewReason(row.reason)"
-              size="mini"
+              :icon="legacyElementIcons['el-icon-search']"
+              @click="viewReason(row.reason)"
+              size="small"
               type="primary"
             ></el-button>
           </el-tooltip>
@@ -107,9 +107,9 @@
             "
           >
             <el-button
-              icon="el-icon-delete-solid"
-              @click.native="deleteMember(row.uid, row.gid)"
-              size="mini"
+              :icon="legacyElementIcons['el-icon-delete-solid']"
+              @click="deleteMember(row.uid, row.gid)"
+              size="small"
               type="danger"
             ></el-button>
           </el-tooltip>
@@ -120,7 +120,7 @@
       :total="adminTotal"
       :page-size="limit"
       @on-change="currentChange"
-      :current.sync="currentPage"
+      v-model:current="currentPage"
       @on-page-size-change="onPageSizeChange"
       :layout="'prev, pager, next, sizes'"
     ></Pagination>
@@ -197,7 +197,7 @@ export default {
       api
         .updateGroupMember(data)
         .then((res) => {
-          mMessage.success(this.$i18n.t('m.Update_Successfully'));
+          mMessage.success(this.$t('m.Update_Successfully'));
           this.$emit('currentChange', 1);
           this.$store.dispatch('getGroup');
           this.currentChange(1);
@@ -211,11 +211,11 @@ export default {
     },
     deleteMember(uid, gid) {
       this.$confirm(
-        this.$i18n.t('m.Delete_Member_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Delete_Member_Tips'),
+        this.$t('m.Warning'),
         {
-          confirmButtonText: this.$i18n.t('m.OK'),
-          cancelButtonText: this.$i18n.t('m.Cancel'),
+          confirmButtonText: this.$t('m.OK'),
+          cancelButtonText: this.$t('m.Cancel'),
           type: 'warning',
         }
       )
@@ -225,7 +225,7 @@ export default {
             .deleteGroupMember(uid, gid)
             .then((res) => {
               this.loading = false;
-              mMessage.success(this.$i18n.t('m.Delete_successfully'));
+              mMessage.success(this.$t('m.Delete_successfully'));
               this.$emit('currentChange', 1);
               this.$store.dispatch('getGroup');
               this.currentChange(1);
@@ -282,7 +282,7 @@ export default {
 .el-form-item {
   margin-bottom: 2px !important;
 }
-/deep/.el-dialog__body {
+:deep(.el-dialog__body) {
   padding-top: 0 !important;
 }
 </style>

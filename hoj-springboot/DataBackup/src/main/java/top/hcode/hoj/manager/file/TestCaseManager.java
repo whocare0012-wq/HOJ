@@ -24,6 +24,7 @@ import top.hcode.hoj.pojo.entity.problem.Problem;
 import top.hcode.hoj.pojo.entity.problem.ProblemCase;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
+import top.hcode.hoj.utils.SafeZipService;
 import top.hcode.hoj.validator.GroupValidator;
 
 import javax.servlet.http.HttpServletResponse;
@@ -50,6 +51,9 @@ public class TestCaseManager {
     @Autowired
     private GroupValidator groupValidator;
 
+    @Autowired
+    private SafeZipService safeZipService;
+
     public Map<Object, Object> uploadTestcaseZip(MultipartFile file, Long gid, String mode) throws StatusFailException, StatusSystemErrorException, StatusForbiddenException {
         AccountProfile userRolesVo = (AccountProfile) SecurityUtils.getSubject().getPrincipal();
 
@@ -62,27 +66,9 @@ public class TestCaseManager {
             throw new StatusForbiddenException("对不起，您无权限操作！");
         }
 
-        //获取文件后缀
-        String suffix = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".") + 1);
-        if (!"zip".toUpperCase().contains(suffix.toUpperCase())) {
-            throw new StatusFailException("请上传zip格式的测试数据压缩包！");
-        }
         String fileDirId = IdUtil.simpleUUID();
         String fileDir = Constants.File.TESTCASE_TMP_FOLDER.getPath() + File.separator + fileDirId;
-        String filePath = fileDir + File.separator + file.getOriginalFilename();
-        // 文件夹不存在就新建
-        FileUtil.mkdir(fileDir);
-        try {
-            file.transferTo(new File(filePath));
-        } catch (IOException e) {
-            log.error("评测数据文件上传异常-------------->{}", e.getMessage());
-            throw new StatusSystemErrorException("服务器异常：评测数据上传失败！");
-        }
-
-        // 将压缩包压缩到指定文件夹
-        ZipUtil.unzip(filePath, fileDir);
-        // 删除zip文件
-        FileUtil.del(filePath);
+        safeZipService.transferAndUnzip(file, fileDir);
         // 检查文件是否存在
         File testCaseFileList = new File(fileDir);
         File[] files = testCaseFileList.listFiles();

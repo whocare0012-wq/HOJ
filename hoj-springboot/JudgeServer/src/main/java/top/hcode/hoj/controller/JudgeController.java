@@ -16,6 +16,7 @@ import top.hcode.hoj.pojo.dto.TestJudgeRes;
 import top.hcode.hoj.pojo.entity.judge.Judge;
 import top.hcode.hoj.pojo.dto.ToJudgeDTO;
 import top.hcode.hoj.service.JudgeService;
+import top.hcode.hoj.security.JudgeAccessVerifier;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -42,8 +43,14 @@ public class JudgeController {
     @Autowired
     private JudgeServerEntityService judgeServerEntityService;
 
+    @Autowired
+    private JudgeAccessVerifier judgeAccessVerifier;
+
     @RequestMapping("/version")
-    public CommonResult<HashMap<String, Object>> getVersion() {
+    public CommonResult<HashMap<String, Object>> getVersion(
+            @RequestHeader(value = "X-Judge-Token", required = false)
+            String accessToken) {
+        judgeAccessVerifier.requireValidToken(accessToken);
         return CommonResult.successResponse(judgeServerEntityService.getJudgeServerInfo(), "运行正常");
     }
 

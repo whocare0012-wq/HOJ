@@ -1,36 +1,39 @@
 <template>
-<div>
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Admin_Group_Apply_Problem')}}</span>
-        <el-row :gutter="30">
-          <el-col :xs="24" :md="6" style="margin-top:15px">
-              <el-input v-model="query.keyword" 
-              :placeholder="$t('m.Enter_keyword')" 
-              size="small"
-              @keyup.enter.native="pushRouter">
-              </el-input>
-          </el-col>
-          <el-col :xs="24" :md="6" style="margin-top:15px">
-              <el-input v-model="query.gid" 
-              :placeholder="$t('m.Enter_Group_ID')" 
-              type="number"
-              size="small"
-              @keyup.enter.native="pushRouter">
-              </el-input>
-           </el-col>
-          <el-col :xs="24" :md="6" style="margin-top:15px">
-            <el-button
-              type="primary"
-              size="small"
-              @click="pushRouter"
-              icon="el-icon-search"
-              >{{ $t('m.Search') }}
-            </el-button>
-           </el-col>
-        </el-row>
-      </div>
+<div class="group-problem-approval-page">
+    <el-card class="group-problem-approval-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Admin_Group_Apply_Problem')}}</span>
+          <el-row :gutter="30" class="group-problem-approval-filters">
+            <el-col :xs="24" :md="6" style="margin-top:15px">
+                <el-input v-model="query.keyword"
+                :placeholder="$t('m.Enter_keyword')"
+                size="small"
+                @keyup.enter="pushRouter">
+                </el-input>
+            </el-col>
+            <el-col :xs="24" :md="6" style="margin-top:15px">
+                <el-input v-model="query.gid"
+                :placeholder="$t('m.Enter_Group_ID')"
+                type="number"
+                size="small"
+                @keyup.enter="pushRouter">
+                </el-input>
+             </el-col>
+            <el-col :xs="24" :md="6" style="margin-top:15px">
+              <el-button
+                type="primary"
+                size="small"
+                @click="pushRouter"
+                :icon="legacyElementIcons['el-icon-search']"
+                >{{ $t('m.Search') }}
+              </el-button>
+             </el-col>
+          </el-row>
+        </div>
+      </template>
       <vxe-table
+        class="group-problem-approval-table"
         stripe
         auto-resize
         :data="problemList"
@@ -83,7 +86,7 @@
           show-overflow
         >
         <template v-slot="{ row }">
-            <el-tag type="gray">{{ row.type | parseContestType }}</el-tag>
+            <el-tag type="gray">{{ $filters.parseContestType(row.type) }}</el-tag>
         </template>
         </vxe-table-column>
         <vxe-table-column
@@ -116,6 +119,7 @@
          <vxe-table-column min-width="120" :title="$t('m.Examine')">
           <template v-slot="{ row }">
             <el-select
+              class="group-problem-approval-select"
               v-model="row.applyPublicProgress"
               @change="changeProblemProgress(row.id,row.applyPublicProgress)"
               size="small"
@@ -145,7 +149,7 @@
           @current-change="currentChange"
           :page-size="query.limit"
           :total="total"
-          :current-page.sync="query.currentPage"
+          v-model:current-page="query.currentPage"
           @size-change="onPageSizeChange"
           :page-sizes="[10, 30, 50, 100]"
         >
@@ -227,7 +231,7 @@ export default {
             progress
         }
         api.admin_changeGroupProblemApplyProgress(data).then((res) => {
-            myMessage.success(this.$i18n.t('m.Update_Successfully'));
+            myMessage.success(this.$t('m.Update_Successfully'));
         });
       },
       goUserHome(username) {
@@ -255,3 +259,68 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.group-problem-approval-card {
+  display: block;
+}
+
+.group-problem-approval-filters :deep(.el-input--small) {
+  height: 32px;
+  font-size: 13px;
+}
+
+.group-problem-approval-filters :deep(.el-input--small .el-input__wrapper) {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 1px 15px;
+}
+
+.group-problem-approval-filters :deep(.el-input--small .el-input__inner) {
+  height: 30px;
+  line-height: 30px;
+}
+
+.group-problem-approval-filters :deep(.el-button--small) {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 9px 15px;
+}
+
+.group-problem-approval-select {
+  height: 32px;
+}
+
+.group-problem-approval-select :deep(.el-select__wrapper) {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 4px 15px;
+}
+
+.group-problem-approval-page :deep(.el-pagination.page) {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 2px 5px;
+  --el-pagination-button-width: 35.5px;
+  --el-pagination-button-height: 28px;
+}
+
+.group-problem-approval-page :deep(.el-pagination.page .el-pagination__sizes) {
+  width: 110px;
+  height: 28px;
+  margin-right: 10px;
+  margin-left: 0;
+}
+
+.group-problem-approval-page :deep(.el-pagination.page .el-pagination__sizes .el-select) {
+  width: 110px;
+  height: 28px;
+}
+
+.group-problem-approval-page :deep(.el-pagination.page .el-pagination__sizes .el-select__wrapper) {
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 2px 15px;
+}
+</style>

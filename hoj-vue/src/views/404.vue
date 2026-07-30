@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow>
+  <el-card shadow="always">
     <div class="error">
       <div class="container-floud">
         <div style="text-align: center">

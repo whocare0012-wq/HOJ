@@ -13,4 +13,5 @@ import top.hcode.hoj.pojo.entity.user.UserAcproblem;
  */
 public interface UserAcproblemEntityService extends IService<UserAcproblem> {
 
+    boolean saveIfAbsent(String uid, Long pid, Long submitId);
 }

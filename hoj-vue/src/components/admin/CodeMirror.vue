@@ -6,7 +6,8 @@
   ></codemirror>
 </template>
 <script>
-import { codemirror, CodeMirror } from 'vue-codemirror-lite';
+import codemirror from '@/components/common/CodeMirrorAdapter.vue';
+import CodeMirror from 'codemirror/lib/codemirror.js';
 import 'codemirror/mode/javascript/javascript';
 import 'codemirror/mode/clike/clike.js';
 import 'codemirror/mode/python/python.js';

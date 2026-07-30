@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import top.hcode.hoj.pojo.entity.problem.ProblemCount;
 import top.hcode.hoj.mapper.ProblemCountMapper;
 import top.hcode.hoj.dao.problem.ProblemCountEntityService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Service;
  * @since 2020-10-23
  */
 @Service
-public class ProblemCountServiceImpl extends ServiceImpl<ProblemCountMapper, ProblemCount> implements ProblemCountEntityService {
+public class ProblemCountServiceImpl implements ProblemCountEntityService {
 
     @Autowired
     private ProblemCountMapper problemCountMapper;

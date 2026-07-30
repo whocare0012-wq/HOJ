@@ -1,18 +1,21 @@
 <template>
   <div>
     <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.SysNotice') }}</span>
-        <div style="font-size:13px;margin-top: 5px;color: red;">
-          {{ $t('m.Push_System_Notification_Every_Hour') }}
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.SysNotice') }}</span>
+          <div style="font-size:13px;margin-top: 5px;color: red;">
+            {{ $t('m.Push_System_Notification_Every_Hour') }}
+          </div>
         </div>
-      </div>
+      </template>
       <div class="create">
         <el-button
+          class="notice-create-button"
           type="primary"
           size="small"
           @click="openNoticeDialog(null)"
-          icon="el-icon-plus"
+          :icon="legacyElementIcons['el-icon-plus']"
           >{{ $t('m.Create') }}</el-button
         >
       </div>
@@ -39,7 +42,7 @@
             :title="$t('m.Created_Time')"
           >
             <template v-slot="{ row }">
-              {{ row.gmtCreate | localtime }}
+              {{ $filters.localtime(row.gmtCreate) }}
             </template>
           </vxe-table-column>
           <vxe-table-column
@@ -48,7 +51,7 @@
             :title="$t('m.Modified_Time')"
           >
             <template v-slot="{ row }">
-              {{ row.gmtModified | localtime }}
+              {{ $filters.localtime(row.gmtModified) }}
             </template>
           </vxe-table-column>
           <vxe-table-column
@@ -64,7 +67,11 @@
             :title="$t('m.Notice_Push')"
           >
           </vxe-table-column>
-          <vxe-table-column :title="$t('m.Option')" min-width="150">
+          <vxe-table-column
+            :title="$t('m.Option')"
+            min-width="150"
+            fixed="right"
+          >
             <template v-slot="row">
               <el-tooltip
                 class="item"
@@ -73,9 +80,9 @@
                 placement="top"
               >
                 <el-button
-                  icon="el-icon-edit-outline"
-                  @click.native="openNoticeDialog(row.row)"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-edit-outline']"
+                  @click="openNoticeDialog(row.row)"
+                  size="small"
                   type="primary"
                 ></el-button>
               </el-tooltip>
@@ -86,9 +93,9 @@
                 placement="top"
               >
                 <el-button
-                  icon="el-icon-delete-solid"
-                  @click.native="deleteNotice(row.row.id)"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-delete-solid']"
+                  @click="deleteNotice(row.row.id)"
+                  size="small"
                   type="danger"
                 ></el-button>
               </el-tooltip>
@@ -111,9 +118,13 @@
 
     <!--编辑通知对话框-->
     <el-dialog
+      class="notice-dialog"
       :title="noticeDialogTitle"
-      :visible.sync="showEditNoticeDialog"
-      :fullscreen="true"
+      v-model="showEditNoticeDialog"
+      width="min(1120px, calc(100vw - 48px))"
+      top="4vh"
+      :close-on-click-modal="false"
+      destroy-on-close
       @open="onOpenEditDialog"
     >
       <el-form label-position="top" :model="notice">
@@ -126,40 +137,43 @@
           </el-input>
         </el-form-item>
         <el-form-item :label="$t('m.Notice_Content')" required>
-          <Editor :value.sync="notice.content"></Editor>
+          <Editor v-model:value="notice.content"></Editor>
         </el-form-item>
         <div class="visible-box">
           <span>{{ $t('m.Notice_Recipient') }}</span>
           <span>
-            <el-radio v-model="notice.type" label="All">{{
+            <el-radio v-model="notice.type" value="All">{{
               $t('m.All_User')
             }}</el-radio>
-            <el-radio v-model="notice.type" label="Single" disabled>{{
+            <el-radio v-model="notice.type" value="Single" disabled>{{
               $t('m.Designated_User')
             }}</el-radio>
-            <el-radio v-model="notice.type" label="Admin" disabled>{{
+            <el-radio v-model="notice.type" value="Admin" disabled>{{
               $t('m.All_Admin')
             }}</el-radio>
           </span>
         </div>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="danger" @click.native="showEditNoticeDialog = false">{{
-          $t('m.Cancel')
-        }}</el-button>
-        <el-button type="primary" @click.native="submitNotice">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="danger" @click="showEditNoticeDialog = false">{{
+            $t('m.Cancel')
+          }}</el-button>
+          <el-button type="primary" @click="submitNotice">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import { mapGetters } from 'vuex';
-const Editor = () => import('@/components/admin/Editor.vue');
+const Editor = defineAsyncComponent(() => import('@/components/admin/Editor.vue'));
 export default {
   name: 'notice',
   components: {
@@ -251,7 +265,7 @@ export default {
       api[funcName](requestData)
         .then((res) => {
           this.showEditNoticeDialog = false;
-          myMessage.success(this.$i18n.t('m.Post_successfully'));
+          myMessage.success(this.$t('m.Post_successfully'));
           this.init();
         })
         .catch();
@@ -259,9 +273,9 @@ export default {
 
     // 删除通知
     deleteNotice(noticeId) {
-      this.$confirm(this.$i18n.t('m.Delete_Notice_Tips'), 'Warning', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Notice_Tips'), 'Warning', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       })
         .then(() => {
@@ -270,7 +284,7 @@ export default {
           let funcName = 'admin_deleteNotice';
           api[funcName](noticeId).then((res) => {
             this.loading = true;
-            myMessage.success(this.$i18n.t('m.Delete_successfully'));
+            myMessage.success(this.$t('m.Delete_successfully'));
             this.init();
           });
         })
@@ -283,11 +297,11 @@ export default {
     openNoticeDialog(row) {
       this.showEditNoticeDialog = true;
       if (row !== null) {
-        this.noticeDialogTitle = this.$i18n.t('m.Edit_Notice');
+        this.noticeDialogTitle = this.$t('m.Edit_Notice');
         this.notice = Object.assign({}, row);
         this.mode = 'edit';
       } else {
-        this.noticeDialogTitle = this.$i18n.t('m.Create_Notice');
+        this.noticeDialogTitle = this.$t('m.Create_Notice');
         this.notice.title = '';
         this.notice.content = '';
         this.notice.type = 'All';
@@ -322,10 +336,36 @@ export default {
 .el-form-item {
   margin-bottom: 2px !important;
 }
-/deep/.el-dialog__body {
-  padding-top: 0 !important;
+:deep(.notice-dialog) {
+  margin-bottom: 4vh;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+:deep(.notice-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+:deep(.notice-dialog .el-dialog__body) {
+  max-height: calc(92vh - 150px);
+  overflow-y: auto;
+  padding: 18px 24px 20px;
+}
+
+:deep(.notice-dialog .el-dialog__footer) {
+  padding: 14px 24px;
+  border-top: 1px solid #ebeef5;
+  background: #fafafa;
 }
 .create {
   margin-bottom: 5px;
+}
+
+.notice-create-button {
+  width: 73px;
+  height: 32px;
+  padding: 0;
 }
 </style>

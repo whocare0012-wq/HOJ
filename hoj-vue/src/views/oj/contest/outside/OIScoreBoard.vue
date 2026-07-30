@@ -1,11 +1,12 @@
 <template>
   <div class="scoreboard-body">
     <el-card
-      shadow
+      class="contest-summary-card"
+      shadow="always"
       v-loading="loading.info"
     >
       <div class="contest-title">
-        <div slot="header">
+        <div>
           <span class="panel-title">{{ contest.title }}</span>
         </div>
       </div>
@@ -20,7 +21,7 @@
             placement="top"
           >
             <el-tag
-              :type.sync="CONTEST_TYPE_REVERSE[contest.auth]['color']"
+              v-model:type="CONTEST_TYPE_REVERSE[contest.auth]['color']"
               effect="plain"
               style="font-size:13px"
             >
@@ -65,7 +66,7 @@
               :type="'primary'"
             >
               <i class="fa fa-trophy"></i>
-              {{ contest.type | parseContestType }}
+              {{ $filters.parseContestType(contest.type) }}
             </el-button>
           </template>
           <template v-else>
@@ -88,7 +89,7 @@
                 :type="'warning'"
               >
                 <i class="fa fa-trophy"></i>
-                {{ contest.type | parseContestType }}
+                {{ $filters.parseContestType(contest.type) }}
               </el-button>
             </el-tooltip>
           </template>
@@ -107,7 +108,7 @@
                 class="fa fa-hourglass-start"
                 aria-hidden="true"
               ></i>
-              {{ $t('m.StartAt') }}：{{ contest.startTime | localtime }}
+              {{ $t('m.StartAt') }}：{{ $filters.localtime(contest.startTime) }}
             </p>
           </el-col>
           <el-col
@@ -120,7 +121,7 @@
                 class="fa fa-hourglass-end"
                 aria-hidden="true"
               ></i>
-              {{ $t('m.EndAt') }}：{{ contest.endTime | localtime }}
+              {{ $t('m.EndAt') }}：{{ $filters.localtime(contest.endTime) }}
             </p>
           </el-col>
         </el-row>
@@ -139,7 +140,7 @@
         >
           <el-tag
             effect="dark"
-            size="medium"
+            size="default"
             :style="countdownColor"
           >
             <i
@@ -152,7 +153,7 @@
       </el-row>
     </el-card>
     <el-card
-      shadow
+      shadow="always"
       style="margin-top:15px;"
       v-loading="loading.rank"
     >
@@ -165,14 +166,15 @@
             <el-input
               :placeholder="$t('m.Contest_Rank_Search_Placeholder')"
               v-model="keyword"
-              @keyup.enter.native="getContestOutsideScoreboard"
+              @keyup.enter="getContestOutsideScoreboard"
             >
-              <el-button
-                slot="append"
-                icon="el-icon-search"
-                class="search-btn"
-                @click="getContestOutsideScoreboard"
-              ></el-button>
+              <template #append>
+                <el-button
+                    :icon="legacyElementIcons['el-icon-search']"
+                  class="search-btn"
+                  @click="getContestOutsideScoreboard"
+                ></el-button>
+              </template>
             </el-input>
           </div>
         </el-col>
@@ -271,11 +273,13 @@
                 ></avatar>
               </span>
               <el-tooltip placement="top">
-                <div slot="content">
-                  {{
-                    row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
-                  }}
-                </div>
+                <template #content>
+                  <div>
+                    {{
+                      row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
+                    }}
+                  </div>
+                </template>
                 <span
                   class="contest-rank-concerned"
                   @click="updateConcernedList(row.uid, !row.isConcerned)"
@@ -338,11 +342,13 @@
                 ></avatar>
               </span>
               <el-tooltip placement="top">
-                <div slot="content">
-                  {{
-                    row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
-                  }}
-                </div>
+                <template #content>
+                  <div>
+                    {{
+                      row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
+                    }}
+                  </div>
+                </template>
                 <span
                   class="contest-rank-concerned"
                   @click="updateConcernedList(row.uid, !row.isConcerned)"
@@ -437,13 +443,15 @@
                 effect="dark"
                 placement="top"
               >
-              <div slot="content">
-                  {{ problem.displayId + '. ' + problem.displayTitle }}
-                  <br />
-                  {{ 'Accepted: ' + problem.ac }}
-                  <br />
-                  {{ 'Rejected: ' + (problem.total - problem.ac) }}
-                </div>
+              <template #content>
+                <div>
+                    {{ problem.displayId + '. ' + problem.displayTitle }}
+                    <br />
+                    {{ 'Accepted: ' + problem.ac }}
+                    <br />
+                    {{ 'Rejected: ' + (problem.total - problem.ac) }}
+                  </div>
+              </template>
               <span>({{ problem.ac }}/{{ problem.total }}) </span>
               </el-tooltip>
             </span>
@@ -462,9 +470,9 @@
       </vxe-table>
       <Pagination
         :total="total"
-        :page-size.sync="limit"
+        v-model:page-size="limit"
         :page-sizes="[10, 30, 50, 100, 300]"
-        :current.sync="page"
+        v-model:current="page"
         @on-change="getContestOutsideScoreboard"
         @on-page-size-change="getContestOutsideScoreboard"
         :layout="'prev, pager, next, sizes'"
@@ -473,10 +481,11 @@
   </div>
 </template>
 <script>
-import Avatar from "vue-avatar";
+import { defineAsyncComponent } from 'vue';
+import Avatar from "@/components/common/Avatar.vue";
 import ScoreBoardMixin from "./scoreBoardMixin";
-const RankBox = () => import("@/components/oj/common/RankBox");
-const Pagination = () => import("@/components/oj/common/Pagination");
+const RankBox = defineAsyncComponent(() => import("@/components/oj/common/RankBox"));
+const Pagination = defineAsyncComponent(() => import("@/components/oj/common/Pagination"));
 export default {
   name: "OIContestRank",
   components: {
@@ -593,6 +602,21 @@ export default {
   width: 100%;
   font-size: 16px;
 }
+.contest-summary-card :deep(.el-button > span),
+.contest-summary-card :deep(.el-tag__content) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.contest-summary-card :deep(.el-button i),
+.contest-summary-card :deep(.el-button .el-icon),
+.contest-summary-card :deep(.el-tag i),
+.contest-summary-card :deep(.el-tag .el-icon) {
+  margin-right: 0;
+}
+.contest-summary-card .contest-time i {
+  margin-right: 5px;
+}
 @media screen and (min-width: 768px) {
   .contest-time .left {
     text-align: left;
@@ -608,15 +632,15 @@ export default {
   }
 }
 
-/deep/.el-slider__button {
+:deep(.el-slider__button) {
   width: 20px !important;
   height: 20px !important;
   background-color: #409eff !important;
 }
-/deep/.el-slider__button-wrapper {
+:deep(.el-slider__button-wrapper) {
   z-index: 500;
 }
-/deep/.el-slider__bar {
+:deep(.el-slider__bar) {
   height: 10px !important;
   background-color: #09be24 !important;
 }
@@ -631,7 +655,7 @@ export default {
   font-size: 18px;
 }
 
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 15px !important;
   padding-top: 20px !important;
 }
@@ -642,21 +666,21 @@ export default {
   padding: 0;
 }
 
-/deep/.vxe-table .vxe-header--column:not(.col--ellipsis) {
+:deep(.vxe-table .vxe-header--column:not(.col--ellipsis)) {
   padding: 4px 0 !important;
 }
 
-/deep/.vxe-table .vxe-body--column {
+:deep(.vxe-table .vxe-body--column) {
   padding: 4px 0 !important;
   line-height: 20px !important;
 }
 
-/deep/.vxe-table .vxe-body--column:not(.col--ellipsis) {
+:deep(.vxe-table .vxe-body--column:not(.col--ellipsis)) {
   line-height: 20px !important;
   padding: 0 !important;
 }
 
-/deep/.vxe-body--column {
+:deep(.vxe-body--column) {
   min-width: 0;
   height: 48px;
   box-sizing: border-box;
@@ -669,7 +693,7 @@ export default {
   font-size: 12px;
 }
 
-/deep/.vxe-table .vxe-cell {
+:deep(.vxe-table .vxe-cell) {
   padding-left: 5px !important;
   padding-right: 5px !important;
 }

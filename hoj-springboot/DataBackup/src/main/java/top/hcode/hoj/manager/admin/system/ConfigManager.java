@@ -15,6 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -98,6 +102,9 @@ public class ConfigManager {
     @Value("${spring.cloud.nacos.config.password}")
     private String nacosPassword;
 
+    @Value("${judge-token}")
+    private String judgeToken;
+
     /**
      * @MethodName getServiceInfo
      * @Params * @param null
@@ -139,7 +146,14 @@ public class ConfigManager {
         List<ServiceInstance> serviceInstances = discoveryClient.getInstances(judgeServiceName);
         for (ServiceInstance serviceInstance : serviceInstances) {
             try {
-                String result = restTemplate.getForObject(serviceInstance.getUri() + "/get-sys-config", String.class);
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-Judge-Token", judgeToken);
+                ResponseEntity<String> response = restTemplate.exchange(
+                        serviceInstance.getUri() + "/get-sys-config",
+                        HttpMethod.GET,
+                        new HttpEntity<>(headers),
+                        String.class);
+                String result = response.getBody();
                 JSONObject jsonObject = JSONUtil.parseObj(result, false);
                 jsonObject.put("service", serviceInstance);
                 serviceInfoList.add(jsonObject);
@@ -465,9 +479,11 @@ public class ConfigManager {
                                           String oj) {
 
         if (CollectionUtils.isEmpty(usernameList) || CollectionUtils.isEmpty(passwordList) || usernameList.size() != passwordList.size()) {
-            log.error("[Change by Switch] [{}]: There is no account or password configured for remote judge, " +
-                            "username list:{}, password list:{}", oj, Arrays.toString(usernameList.toArray()),
-                    Arrays.toString(passwordList.toArray()));
+            int usernameCount = usernameList == null ? 0 : usernameList.size();
+            int passwordCount = passwordList == null ? 0 : passwordList.size();
+            log.warn("[Change by Switch] [{}]: Remote judge account configuration is invalid, username count:[{}], password count:[{}]",
+                    oj, usernameCount, passwordCount);
+            return;
         }
 
         QueryWrapper<RemoteJudgeAccount> remoteJudgeAccountQueryWrapper = new QueryWrapper<>();

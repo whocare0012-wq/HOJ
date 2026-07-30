@@ -34,7 +34,7 @@
             v-model="ruleForm2.username"
             auto-complete="off"
             :placeholder="$t('m.Please_enter_username')"
-            @keyup.enter.native="handleLogin"
+            @keyup.enter="handleLogin"
           ></el-input>
         </el-form-item>
         <el-form-item prop="password">
@@ -43,14 +43,14 @@
             v-model="ruleForm2.password"
             auto-complete="off"
             :placeholder="$t('m.Please_enter_password')"
-            @keyup.enter.native="handleLogin"
+            @keyup.enter="handleLogin"
           ></el-input>
         </el-form-item>
         <el-form-item style="width: 100%">
           <el-button
             type="primary"
             style="width: 100%"
-            @click.native.prevent="handleLogin"
+            @click.prevent="handleLogin"
             :loading="logining"
             >{{ $t('m.Login') }}
           </el-button>
@@ -76,14 +76,14 @@ export default {
           {
             required: true,
             trigger: 'blur',
-            message: this.$i18n.t('m.Username_Check_Required'),
+            message: this.$t('m.Username_Check_Required'),
           },
         ],
         password: [
           {
             required: true,
             trigger: 'blur',
-            message: this.$i18n.t('m.Password_Check_Required'),
+            message: this.$t('m.Password_Check_Required'),
           },
         ],
       },
@@ -103,7 +103,7 @@ export default {
                 const jwt = res.headers['authorization'];
                 this.$store.commit('changeUserToken', jwt);
                 this.$store.dispatch('setUserInfo', res.data.data);
-                mMessage.success(this.$i18n.t('m.Admin_Login_Success'));
+                mMessage.success(this.$t('m.Admin_Login_Success'));
                 this.$router.push({ name: 'admin-dashboard' });
               },
               () => {
@@ -112,7 +112,7 @@ export default {
             );
         } else {
           mMessage.error(
-            this.$i18n.t('m.Please_check_your_username_or_password')
+            this.$t('m.Please_check_your_username_or_password')
           );
         }
       });

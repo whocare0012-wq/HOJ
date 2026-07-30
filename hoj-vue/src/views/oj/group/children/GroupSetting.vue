@@ -7,9 +7,8 @@
         :size="130"
         color="#FFF"
         :src="group.avatar ? group.avatar : defaultAvatar"
-        shape="square"
       ></avatar>
-      <template v-if="!avatarOption.imgSrc">
+      <div v-if="!avatarOption.imgSrc" class="avatar-upload-wrap">
         <el-upload
           class="upload-container"
           action=""
@@ -21,24 +20,24 @@
             <p>{{ $t('m.Upload_avatar_hint') }}</p>
           </div>
         </el-upload>
-      </template>
+      </div>
       <template v-else>
         <el-row :gutter="20">
           <el-col :xs="24" :md="12">
             <div class="cropper-main inline">
-              <vueCropper
+              <VueCropper
                 ref="cropper"
-                autoCrop
+                auto-crop
                 fixed
-                :autoCropWidth="200"
-                :autoCropHeight="200"
+                :auto-crop-width="200"
+                :auto-crop-height="200"
                 :img="avatarOption.imgSrc"
-                :outputSize="avatarOption.size"
-                :outputType="avatarOption.outputType"
+                :output-size="avatarOption.size"
+                :output-type="avatarOption.outputType"
                 :info="true"
-                @realTime="realTime"
+                @real-time="realTime"
               >
-              </vueCropper>
+              </VueCropper>
             </div>
             <div class="cropper-btn">
               <el-tooltip
@@ -50,8 +49,8 @@
               >
                 <el-button
                   @click="rotate('left')"
-                  icon="el-icon-refresh-left"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-refresh-left']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
               <el-tooltip
@@ -63,8 +62,8 @@
               >
                 <el-button
                   @click="rotate('right')"
-                  icon="el-icon-refresh-right"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-refresh-right']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
               <el-tooltip
@@ -76,8 +75,8 @@
               >
                 <el-button
                   @click="reselect"
-                  icon="el-icon-refresh"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-refresh']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
               <el-tooltip
@@ -89,8 +88,8 @@
               >
                 <el-button
                   @click="finishCrop"
-                  icon="el-icon-check"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-check']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
             </div>
@@ -105,7 +104,7 @@
         </el-row>
       </template>
       <el-dialog
-        :visible.sync="uploadModalVisible"
+        v-model="uploadModalVisible"
         :title="$t('m.Upload')"
         width="350px"
       >
@@ -113,18 +112,28 @@
           <p class="notice">{{ $t('m.Your_new_avatar') + ':' }}</p>
           <img :src="uploadImgSrc" />
         </div>
-        <div slot="footer">
-          <el-button
-            @click="uploadAvatar"
-            :loading="loadingUploadBtn"
-            type="primary"
-            >{{ $t('m.Upload') }}</el-button
-          >
-        </div>
+        <template #footer>
+          <div>
+            <el-button
+              @click="uploadAvatar"
+              :loading="loadingUploadBtn"
+              type="primary"
+              >{{ $t('m.Upload') }}</el-button
+            >
+          </div>
+        </template>
       </el-dialog>
     </div>
-    <div class="section-title">{{ $t('m.UserInfo_Setting') }}</div>
-    <el-form label-position="top" :model="group" :rules="rules" ref="formGroup">
+    <div class="section-title profile-section-title">
+      {{ $t('m.UserInfo_Setting') }}
+    </div>
+    <el-form
+      class="group-profile-form"
+      label-position="top"
+      :model="group"
+      :rules="rules"
+      ref="formGroup"
+    >
       <el-row :gutter="20">
         <el-col :md="12" :xs="24">
           <el-form-item :label="$t('m.Group_Name')" required prop="name">
@@ -171,7 +180,7 @@
         </el-col>
         <el-col :md="8" :xs="24">
           <el-form-item :label="$t('m.Group_Auth')" required prop="auth">
-            <el-select v-model="group.auth">
+            <el-select v-model="group.auth" class="group-auth-select">
               <el-tooltip
                 :content="$t('m.Group_Public_Tips')"
                 placement="right"
@@ -224,17 +233,22 @@
         </el-col>
         <el-col :span="24">
           <el-form-item
+            class="group-description-item"
             :label="$t('m.Group_Description')"
             required
             prop="description"
           >
-            <Editor :value.sync="group.description"></Editor>
+            <Editor
+              v-model:value="group.description"
+              class="group-description-editor"
+            ></Editor>
           </el-form-item>
         </el-col>
       </el-row>
     </el-form>
-    <div style="text-align:center;margin-top:10px">
+    <div class="group-save-actions">
       <el-button
+        class="group-save-button"
         type="primary"
         @click="updateGroup"
         :loading="loadingSaveBtn"
@@ -245,14 +259,16 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import mMessage from '@/common/message';
 import { mapState, mapActions } from 'vuex';
 import utils from '@/common/utils';
-import { VueCropper } from 'vue-cropper';
-import Avatar from 'vue-avatar';
-import 'element-ui/lib/theme-chalk/display.css';
-const Editor = () => import('@/components/admin/Editor.vue');
+import VueCropper from '@/components/common/VueCropperAdapter.mjs';
+import Avatar from '@/components/common/Avatar.vue';
+import 'element-plus/theme-chalk/display.css';
+import defaultAvatarImage from '@/assets/default.jpg'
+const Editor = defineAsyncComponent(() => import('@/components/admin/Editor.vue'));
 export default {
   components: {
     Avatar,
@@ -271,77 +287,77 @@ export default {
         size: 0.8,
         outputType: 'png',
       },
-      defaultAvatar: require('@/assets/default.jpg'),
+      defaultAvatar: defaultAvatarImage,
       rules: {
         name: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Name_Check_Required'),
+            message: this.$t('m.Group_Name_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 25,
-            message: this.$i18n.t('m.Group_Name_Check_Min_Max'),
+            message: this.$t('m.Group_Name_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         shortName: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Short_Name_Check_Required'),
+            message: this.$t('m.Group_Short_Name_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 10,
-            message: this.$i18n.t('m.Group_Short_Name_Check_Min_Max'),
+            message: this.$t('m.Group_Short_Name_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         brief: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Brief_Check_Required'),
+            message: this.$t('m.Group_Brief_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 50,
-            message: this.$i18n.t('m.Group_Brief_Check_Min_Max'),
+            message: this.$t('m.Group_Brief_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         code: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Code_Check_Required'),
+            message: this.$t('m.Group_Code_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 6,
             max: 6,
-            message: this.$i18n.t('m.Group_Code_Check_Min_Max'),
+            message: this.$t('m.Group_Code_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         auth: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Auth_Check_Required'),
+            message: this.$t('m.Group_Auth_Check_Required'),
             trigger: 'blur',
           },
         ],
         description: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Description_Check_Required'),
+            message: this.$t('m.Group_Description_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 1000,
-            message: this.$i18n.t('m.Group_Description_Check_Min_Max'),
+            message: this.$t('m.Group_Description_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
@@ -353,8 +369,8 @@ export default {
     checkFileType(file) {
       if (!/\.(gif|jpg|jpeg|png|bmp|webp|GIF|JPG|PNG|WEBP)$/.test(file.name)) {
         this.$notify.warning({
-          title: this.$i18n.t('m.File_type_not_support'),
-          message: file.name + this.$i18n.t('m.is_incorrect_format_file'),
+          title: this.$t('m.File_type_not_support'),
+          message: file.name + this.$t('m.is_incorrect_format_file'),
         });
         return false;
       }
@@ -364,8 +380,8 @@ export default {
       // max size is 2MB
       if (file.size > 2 * 1024 * 1024) {
         this.$notify.warning({
-          title: this.$i18n.t('m.Exceed_max_size_limit'),
-          message: file.name + this.$i18n.t('m.File_Exceed_Tips'),
+          title: this.$t('m.Exceed_max_size_limit'),
+          message: file.name + this.$t('m.File_Exceed_Tips'),
         });
         return false;
       }
@@ -394,9 +410,9 @@ export default {
       }
     },
     reselect() {
-      this.$confirm(this.$i18n.t('m.Cancel_Avater_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Cancel_Avater_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       }).then(() => {
         this.avatarOption.imgSrc = '';
@@ -418,15 +434,10 @@ export default {
         form.append('image', file);
         form.append('gid', this.$route.params.groupID);
         this.loadingUploadBtn = true;
-        this.$http({
-          method: 'post',
-          url: '/api/file/upload-group-avatar',
-          data: form,
-          headers: { 'content-type': 'multipart/form-data' },
-        }).then(
+        api.uploadGroupAvatar(form).then(
           (res) => {
             this.loadingUploadBtn = false;
-            mMessage.success(this.$i18n.t('m.Upload_Avatar_Successfully'));
+            mMessage.success(this.$t('m.Upload_Avatar_Successfully'));
             this.uploadModalVisible = false;
             this.avatarOption.imgSrc = '';
             this.$store.dispatch('setGroup', res.data.data);
@@ -446,7 +457,7 @@ export default {
           );
           api.updateGroup(updateData).then(
             (res) => {
-              mMessage.success(this.$i18n.t('m.Update_Successfully'));
+              mMessage.success(this.$t('m.Update_Successfully'));
               this.$store.dispatch('getGroup').then((res) => {
                 this.changeDomTitle({ title: res.data.data.name });
               });
@@ -492,15 +503,74 @@ export default {
   margin-bottom: 20px;
 }
 
-/deep/.upload-container .el-upload {
+.profile-section-title {
+  padding-bottom: 32px;
+}
+
+.group-profile-form :deep(.el-form-item) {
+  margin-bottom: 37px;
+}
+
+.group-profile-form :deep(.el-form-item__label) {
+  margin-bottom: 13px;
+  padding: 0;
+  line-height: 22px;
+}
+
+.group-profile-form :deep(.el-input__wrapper),
+.group-profile-form :deep(.el-select__wrapper) {
+  min-height: 40px;
+}
+
+.group-profile-form :deep(.el-input__inner) {
+  height: 38px;
+  line-height: 38px;
+}
+
+.group-profile-form :deep(.group-auth-select) {
+  width: 217px;
+}
+
+.group-profile-form :deep(.group-description-item) {
+  margin-bottom: 18px;
+}
+
+.group-description-editor :deep(.md-editor) {
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(31, 45, 61, 0.08);
+}
+
+.group-save-actions {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.group-save-button {
+  min-width: 70px;
+  min-height: 40px;
+}
+
+.avatar-upload-wrap {
+  display: flex;
+  width: 100%;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+:deep(.upload-container) {
+  width: min(320px, 100%);
+}
+
+:deep(.upload-container .el-upload) {
   border: 1px dashed #d9d9d9;
   border-radius: 6px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  width: 320px;
+  width: 100%;
 }
-/deep/.upload-container .el-upload:hover {
+:deep(.upload-container .el-upload:hover) {
   border-color: #409eff;
 }
 .inline {
@@ -516,7 +586,7 @@ export default {
 
 .cropper-main {
   flex: none;
-  width: 400px;
+  width: min(400px, 100%);
   height: 300px;
 }
 .section-main .cropper-preview {
@@ -529,16 +599,21 @@ export default {
     margin: 0 auto;
   }
 }
+@media screen and (max-width: 768px) {
+  .group-profile-form :deep(.group-auth-select) {
+    width: 100%;
+  }
+}
 .upload-modal .notice {
   font-size: 16px;
   display: inline-block;
   vertical-align: top;
   padding: 10px;
 }
-/deep/ .el-dialog__body {
+:deep(.el-dialog__body) {
   padding: 0;
 }
-/deep/ .el-upload-dragger {
+:deep(.el-upload-dragger) {
   width: 100%;
   height: 100%;
 }

@@ -4,9 +4,11 @@
     <select id="getTrainingRecord" resultType="top.hcode.hoj.pojo.vo.TrainingRecordVO">
         SELECT tr.tid,tr.uid,tr.pid,tr.tpid,tr.submit_id,j.status,j.score,j.time as use_time,
         u.gender,u.realname as realname,u.username,u.avatar,u.school,u.nickname
-        FROM training_record tr,user_info u,judge j
+        FROM training_record tr,user_info u,judge j,problem p
         WHERE tr.uid = u.uuid
         AND tr.submit_id = j.submit_id
+        AND tr.pid = p.id
+        AND p.auth = 1
         AND tr.tid = #{tid}
         AND j.status IN (-3,-2,-1,0,1,2,3,8)
         ORDER BY j.gmt_create ASC

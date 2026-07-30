@@ -1,17 +1,17 @@
 <template>
   <div>
-    <el-form :model="problemId" @submit.native.prevent>
+    <el-form :model="problemId" @submit.prevent>
       <el-form-item :label="$t('m.Problem_ID')" required>
         <el-input
           v-model="problemId"
           size="small"
-          @keyup.enter.native="addGroupProblem"
+          @keyup.enter="addGroupProblem"
         ></el-input>
       </el-form-item>
       <el-form-item style="text-align:center">
         <el-button
           type="primary"
-          icon="el-icon-plus"
+          :icon="legacyElementIcons['el-icon-plus']"
           @click="addGroupProblem"
           :loading="loading"
           size="small"
@@ -46,7 +46,7 @@ export default {
     addGroupProblem() {
       if (this.contestId) {
         this.$prompt(
-          this.$i18n.t('m.Enter_The_Problem_Display_ID_in_the_Contest'),
+          this.$t('m.Enter_The_Problem_Display_ID_in_the_Contest'),
           'Tips'
         ).then(
           ({ value }) => {
@@ -58,7 +58,7 @@ export default {
               )
               .then(
                 (res) => {
-                  mMessage.success(this.$i18n.t('m.Add_Successfully'));
+                  mMessage.success(this.$t('m.Add_Successfully'));
                   this.loading = false;
                   this.$emit('currentChangeProblem');
                   this.$emit('handleGroupPage');
@@ -73,7 +73,7 @@ export default {
           .addGroupTrainingProblemFromGroup(this.problemId, this.trainingId)
           .then(
             (res) => {
-              mMessage.success(this.$i18n.t('m.Add_Successfully'));
+              mMessage.success(this.$t('m.Add_Successfully'));
               this.loading = false;
               this.$emit('currentChangeProblem');
               this.$emit('handleGroupPage');

@@ -1,15 +1,19 @@
 <template>
   <div>
     <el-card class="card-top">
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.System_Switch') }}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.System_Switch') }}</span>
+        </div>
+      </template>
       <el-row :gutter="20">
         <el-col :xs="24" :md="12">
             <el-card>
-                <div slot="header">
-                    <span class="switch-item-title">{{ $t('m.Judge_Config') }}</span>
-                </div>
+                <template #header>
+                  <div>
+                      <span class="switch-item-title">{{ $t('m.Judge_Config') }}</span>
+                  </div>
+                </template>
                 <el-form
                     :label-position="labelPosition"
                     label-width="320px"
@@ -59,17 +63,25 @@
                   type="primary"
                   :loading="loading"
                   style="margin-top:15px"
-                  @click.native="saveSwitchConfig"
+                  @click="saveSwitchConfig"
                   size="small"
-                  ><i class="fa fa-save"> {{ $t('m.Save') }}</i></el-button
+                  class="switch-action-button"
+                  >
+                  <span class="switch-action-button__content">
+                    <i class="fa fa-save"></i>
+                    <span>{{ $t('m.Save') }}</span>
+                  </span>
+                </el-button
                 >
             </el-card>
         </el-col>
         <el-col :xs="24" :md="12">
             <el-card class="card-top">
-                <div slot="header">
-                    <span class="switch-item-title">{{ $t('m.Discussion_Config') }}</span>
-                </div>
+                <template #header>
+                  <div>
+                      <span class="switch-item-title">{{ $t('m.Discussion_Config') }}</span>
+                  </div>
+                </template>
                 <el-form
                     :label-position="labelPosition"
                     label-width="320px"
@@ -123,17 +135,25 @@
                   type="primary"
                   :loading="loading"
                   style="margin-top:15px"
-                  @click.native="saveSwitchConfig"
+                  @click="saveSwitchConfig"
                   size="small"
-                  ><i class="fa fa-save"> {{ $t('m.Save') }}</i></el-button
+                  class="switch-action-button"
+                  >
+                  <span class="switch-action-button__content">
+                    <i class="fa fa-save"></i>
+                    <span>{{ $t('m.Save') }}</span>
+                  </span>
+                </el-button
                 >
             </el-card>
         </el-col>
         <el-col :xs="24" :md="12">
             <el-card class="card-top">
-                <div slot="header">
-                    <span class="switch-item-title">{{ $t('m.Group_Config') }}</span>
-                </div>
+                <template #header>
+                  <div>
+                      <span class="switch-item-title">{{ $t('m.Group_Config') }}</span>
+                  </div>
+                </template>
                 <el-form
                     :label-position="labelPosition"
                     label-width="320px"
@@ -163,9 +183,15 @@
                   type="primary"
                   :loading="loading"
                   style="margin-top:15px"
-                  @click.native="saveSwitchConfig"
+                  @click="saveSwitchConfig"
                   size="small"
-                  ><i class="fa fa-save"> {{ $t('m.Save') }}</i></el-button
+                  class="switch-action-button"
+                  >
+                  <span class="switch-action-button__content">
+                    <i class="fa fa-save"></i>
+                    <span>{{ $t('m.Save') }}</span>
+                  </span>
+                </el-button
                 >
             </el-card>
         </el-col>
@@ -173,54 +199,54 @@
       <el-row :gutter="15">
         <el-col :xs="24" :md="12" style="margin-top: 15px;">
           <RemoteJudgeAccount 
-            :usernameList.sync="switchConfig.hduUsernameList"
-            :passwordList.sync="switchConfig.hduPasswordList"
-            :loading.sync="loading"
+            v-model:usernameList="switchConfig.hduUsernameList"
+            v-model:passwordList="switchConfig.hduPasswordList"
+            v-model:loading="loading"
             @saveSwitchConfig="saveSwitchConfig"
             OJ="HDU">
           </RemoteJudgeAccount>
         </el-col>
         <el-col :xs="24" :md="12" style="margin-top: 15px;">
           <RemoteJudgeAccount 
-            :usernameList.sync="switchConfig.cfUsernameList"
-            :passwordList.sync="switchConfig.cfPasswordList"
-            :loading.sync="loading"
+            v-model:usernameList="switchConfig.cfUsernameList"
+            v-model:passwordList="switchConfig.cfPasswordList"
+            v-model:loading="loading"
             @saveSwitchConfig="saveSwitchConfig"
             OJ="Codeforces">
           </RemoteJudgeAccount>
         </el-col>
         <el-col :xs="24" :md="12" style="margin-top: 15px;">
           <RemoteJudgeAccount 
-            :usernameList.sync="switchConfig.pojUsernameList"
-            :passwordList.sync="switchConfig.pojPasswordList"
-            :loading.sync="loading"
+            v-model:usernameList="switchConfig.pojUsernameList"
+            v-model:passwordList="switchConfig.pojPasswordList"
+            v-model:loading="loading"
             @saveSwitchConfig="saveSwitchConfig"
             OJ="POJ">
           </RemoteJudgeAccount>
         </el-col>
         <el-col :xs="24" :md="12" style="margin-top: 15px;">
           <RemoteJudgeAccount 
-            :usernameList.sync="switchConfig.atcoderUsernameList"
-            :passwordList.sync="switchConfig.atcoderPasswordList"
-            :loading.sync="loading"
+            v-model:usernameList="switchConfig.atcoderUsernameList"
+            v-model:passwordList="switchConfig.atcoderPasswordList"
+            v-model:loading="loading"
             @saveSwitchConfig="saveSwitchConfig"
             OJ="Atcoder">
           </RemoteJudgeAccount>
         </el-col>
         <el-col :xs="24" :md="12" style="margin-top: 15px;">
           <RemoteJudgeAccount 
-            :usernameList.sync="switchConfig.spojUsernameList"
-            :passwordList.sync="switchConfig.spojPasswordList"
-            :loading.sync="loading"
+            v-model:usernameList="switchConfig.spojUsernameList"
+            v-model:passwordList="switchConfig.spojPasswordList"
+            v-model:loading="loading"
             @saveSwitchConfig="saveSwitchConfig"
             OJ="SPOJ">
           </RemoteJudgeAccount>
         </el-col>
         <el-col :xs="24" :md="12" style="margin-top: 15px;">
           <RemoteJudgeAccount
-              :usernameList.sync="switchConfig.libreojUsernameList"
-              :passwordList.sync="switchConfig.libreojPasswordList"
-              :loading.sync="loading"
+              v-model:usernameList="switchConfig.libreojUsernameList"
+              v-model:passwordList="switchConfig.libreojPasswordList"
+              v-model:loading="loading"
               @saveSwitchConfig="saveSwitchConfig"
               OJ="LibreOJ">
           </RemoteJudgeAccount>
@@ -230,9 +256,10 @@
 </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
-const RemoteJudgeAccount = () => import('@/components/admin/RemoteJudgeAccount.vue');
+const RemoteJudgeAccount = defineAsyncComponent(() => import('@/components/admin/RemoteJudgeAccount.vue'));
 export default {
   name: 'SystemConfig',
   components:{
@@ -261,7 +288,7 @@ export default {
       this.loading = true;
       api.admin_saveSwitchConfig(this.switchConfig).then(
         (res) => {
-          myMessage.success(this.$i18n.t('m.Update_Successfully'));
+          myMessage.success(this.$t('m.Update_Successfully'));
           this.loading = false;
         },
         () => {
@@ -276,6 +303,15 @@ export default {
 .switch-item-title{
   font-size: 18px;
   font-weight: bolder;
+}
+.switch-action-button {
+  min-height: 32px;
+  padding: 7px 14px;
+}
+.switch-action-button__content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 @media screen and (max-width: 992px) {
   .card-top{

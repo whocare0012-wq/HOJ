@@ -5,7 +5,6 @@ import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.apache.shiro.SecurityUtils;
@@ -37,6 +36,7 @@ import top.hcode.hoj.utils.Constants;
 import top.hcode.hoj.utils.IpUtils;
 import top.hcode.hoj.utils.JwtUtils;
 import top.hcode.hoj.utils.RedisUtils;
+import top.hcode.hoj.utils.UserPasswordService;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -82,6 +82,9 @@ public class PassportManager {
     @Resource
     private NoticeManager noticeManager;
 
+    @Resource
+    private UserPasswordService userPasswordService;
+
     public UserInfoVO login(LoginDTO loginDto, HttpServletResponse response, HttpServletRequest request) throws StatusFailException {
         // 去掉账号密码首尾的空格
         loginDto.setPassword(loginDto.getPassword().trim());
@@ -112,7 +115,7 @@ public class PassportManager {
             throw new StatusFailException("用户名或密码错误！请注意大小写！");
         }
 
-        if (!userRolesVo.getPassword().equals(SecureUtil.md5(loginDto.getPassword()))) {
+        if (!userPasswordService.matches(loginDto.getPassword(), userRolesVo.getPassword())) {
             if (tryLoginCount == null) {
                 redisUtils.set(key, 1, 60 * 30); // 三十分钟不尝试，该限制会自动清空消失
             } else {
@@ -124,6 +127,9 @@ public class PassportManager {
         if (userRolesVo.getStatus() != 0) {
             throw new StatusFailException("该账户已被封禁，请联系管理员进行处理！");
         }
+
+        userPasswordService.upgradeAfterSuccessfulLogin(
+                userRolesVo.getUid(), loginDto.getPassword(), userRolesVo.getPassword());
 
         String jwt = jwtUtils.generateToken(userRolesVo.getUid());
         response.setHeader("Authorization", jwt); //放到信息头部
@@ -235,7 +241,7 @@ public class PassportManager {
         String uuid = IdUtil.simpleUUID();
         //为新用户设置uuid
         registerDto.setUuid(uuid);
-        registerDto.setPassword(SecureUtil.md5(registerDto.getPassword().trim())); // 将密码MD5加密写入数据库
+        registerDto.setPassword(userPasswordService.encode(registerDto.getPassword().trim()));
         registerDto.setUsername(registerDto.getUsername().trim());
         registerDto.setEmail(registerDto.getEmail().trim());
 
@@ -320,7 +326,7 @@ public class PassportManager {
         }
 
         UpdateWrapper<UserInfo> userInfoUpdateWrapper = new UpdateWrapper<>();
-        userInfoUpdateWrapper.eq("username", username).set("password", SecureUtil.md5(password));
+        userInfoUpdateWrapper.eq("username", username).set("password", userPasswordService.encode(password));
         boolean isOk = userInfoEntityService.update(userInfoUpdateWrapper);
         if (!isOk) {
             throw new StatusFailException("重置密码失败");

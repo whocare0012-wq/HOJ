@@ -12,17 +12,24 @@ server:
 spring:
   profiles:
     active: prod
+  main:
+    # Compatibility bridge for legacy field-injected beans; disable after cycle refactoring.
+    allow-circular-references: ${SPRING_MAIN_ALLOW_CIRCULAR_REFERENCES:true}
+  mvc:
+    pathmatch:
+      # Springfox 2.x requires the legacy matcher on Spring Boot 2.6.
+      matching-strategy: ant_path_matcher
   application:
     name: hoj-judgeserver
   cloud:
     nacos:
       discovery:
-        username: ${NACOS_USERNAME:nacos}
-        password: ${NACOS_PASSWORD:nacos}
+        username: ${NACOS_USERNAME}
+        password: ${NACOS_PASSWORD}
         server-addr: ${hoj-judge-server.nacos-url} #配置Nacos地址
       config:
-        username: ${NACOS_USERNAME:nacos}
-        password: ${NACOS_PASSWORD:nacos}
+        username: ${NACOS_USERNAME}
+        password: ${NACOS_PASSWORD}
         server-addr: ${hoj-judge-server.nacos-url} #Nacos 作为配置中心地址
         file-extension: yml #指定yaml格式的配置
         group: DEFAULT_GROUP  # 指定分组

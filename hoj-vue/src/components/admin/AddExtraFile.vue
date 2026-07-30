@@ -21,7 +21,7 @@
 
     <el-dialog
       :width="dialogWith"
-      :visible.sync="upsertFileDialogVisible"
+      v-model="upsertFileDialogVisible"
       :close-on-click-modal="false"
     >
       <el-form>
@@ -84,7 +84,7 @@ export default {
   },
   methods: {
     deleteFile(fileName) {
-      this.$confirm(this.$i18n.t('m.Delete_Extra_File_Tips'), 'Tips', {
+      this.$confirm(this.$t('m.Delete_Extra_File_Tips'), 'Tips', {
         type: 'warning',
       }).then(
         () => {
@@ -102,13 +102,13 @@ export default {
     upsertFile() {
       if (!this.fileName) {
         myMessage.error(
-          this.$i18n.t('m.File_Name') + ' ' + this.$i18n.t('m.is_required')
+          this.$t('m.File_Name') + ' ' + this.$t('m.is_required')
         );
         return;
       }
       if (!this.fileContent) {
         myMessage.error(
-          this.$i18n.t('m.File_Content') + ' ' + this.$i18n.t('m.is_required')
+          this.$t('m.File_Content') + ' ' + this.$t('m.is_required')
         );
         return;
       }
@@ -140,7 +140,7 @@ export default {
   padding-bottom: 0;
   margin: 10px;
 }
-/deep/.CodeMirror-scroll {
+:deep(.CodeMirror-scroll) {
   max-height: 300px;
 }
 </style>

@@ -10,7 +10,7 @@ export default {
     },
     getContestRankData (page = 1, refresh = false) {
       if (this.showChart && !refresh) {
-        this.$refs.chart.showLoading({maskColor: 'rgba(250, 250, 250, 0.8)'})
+        this.chartLoading = true
       }
       let data = {
         currentPage:page,
@@ -23,14 +23,15 @@ export default {
         containsEnd: this.isContainsAfterContestJudge,
       }
       api.getContestRank(data).then(res => {
-        if (this.showChart && !refresh) {
-          this.$refs.chart.hideLoading()
-        }
         this.total = res.data.data.total
         if (page === 1) {
           this.applyToChart(res.data.data.records)
         }
         this.applyToTable(res.data.data.records)
+      }).finally(() => {
+        if (this.showChart && !refresh) {
+          this.chartLoading = false
+        }
       })
     },
     handleAutoRefresh (status) {
@@ -114,7 +115,7 @@ export default {
       return this.contest.status == CONTEST_STATUS.ENDED
     }
   },
-  beforeDestroy () {
+  beforeUnmount () {
     clearInterval(this.refreshFunc)
   }
 }

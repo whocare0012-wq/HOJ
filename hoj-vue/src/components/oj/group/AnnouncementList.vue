@@ -22,7 +22,7 @@
         :title="$t('m.Created_Time')"
       >
         <template v-slot="{ row }">
-          {{ row.gmtCreate | localtime }}
+          {{ $filters.localtime(row.gmtCreate) }}
         </template>
       </vxe-table-column>
       <vxe-table-column
@@ -31,7 +31,7 @@
         :title="$t('m.Modified_Time')"
       >
         <template v-slot="{ row }">
-          {{ row.gmtModified | localtime }}
+          {{ $filters.localtime(row.gmtModified) }}
         </template>
       </vxe-table-column>
       <vxe-table-column
@@ -69,9 +69,9 @@
             v-if="isGroupRoot || row.uid == userInfo.uid"
           >
             <el-button
-              icon="el-icon-edit-outline"
-              @click.native="openAnnouncementDialog(row)"
-              size="mini"
+              :icon="legacyElementIcons['el-icon-edit-outline']"
+              @click="openAnnouncementDialog(row)"
+              size="small"
               type="primary"
             ></el-button>
           </el-tooltip>
@@ -83,9 +83,9 @@
             v-if="isGroupRoot || row.uid == userInfo.uid"
           >
             <el-button
-              icon="el-icon-delete-solid"
-              @click.native="deleteAnnouncement(row.id)"
-              size="mini"
+              :icon="legacyElementIcons['el-icon-delete-solid']"
+              @click="deleteAnnouncement(row.id)"
+              size="small"
               type="danger"
             ></el-button>
           </el-tooltip>
@@ -96,18 +96,21 @@
       :total="adminTotal"
       :page-size="limit"
       @on-change="currentChange"
-      :current.sync="currentPage"
+      v-model:current="currentPage"
       @on-page-size-change="onPageSizeChange"
       :layout="'prev, pager, next, sizes'"
     ></Pagination>
     <el-dialog
+      class="group-announcement-dialog"
       :title="announcementDialogTitle"
-      :visible.sync="showEditAnnouncementDialog"
-      :fullscreen="true"
+      v-model="showEditAnnouncementDialog"
+      width="min(1120px, calc(100vw - 48px))"
+      top="4vh"
+      :close-on-click-modal="false"
+      destroy-on-close
       @open="onOpenEditDialog"
-      style="text-align: left"
     >
-      <el-form label-position="top" :model="announcement" >
+      <el-form label-position="top" :model="announcement">
         <el-form-item :label="$t('m.Announcement_Title')" required>
           <el-input
             v-model="announcement.title"
@@ -117,7 +120,7 @@
           </el-input>
         </el-form-item>
         <el-form-item :label="$t('m.Announcement_Content')" required>
-          <Editor :value.sync="announcement.content"></Editor>
+          <Editor v-model:value="announcement.content"></Editor>
         </el-form-item>
         <div class="visible-box">
           <span>{{ $t('m.Announcement_visible') }}</span>
@@ -131,16 +134,18 @@
           </el-switch>
         </div>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button
-          type="danger"
-          @click.native="showEditAnnouncementDialog = false"
-          >{{ $t('m.Cancel') }}</el-button
-        >
-        <el-button type="primary" @click.native="submitAnnouncement">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button
+            type="danger"
+            @click="showEditAnnouncementDialog = false"
+            >{{ $t('m.Cancel') }}</el-button
+          >
+          <el-button type="primary" @click="submitAnnouncement">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -151,13 +156,11 @@ import Pagination from '@/components/oj/common/Pagination';
 import api from '@/common/api';
 import mMessage from '@/common/message';
 import Editor from '@/components/admin/Editor.vue';
-import AnnouncementList from '@/components/oj/group/AnnouncementList.vue';
 export default {
   name: 'GroupAnnouncementList',
   components: {
     Pagination,
-    Editor,
-    AnnouncementList
+    Editor
   },
   props: {
     contestId: {
@@ -268,15 +271,15 @@ export default {
       api[funcName](requestData)
         .then((res) => {
           this.showEditAnnouncementDialog = false;
-          mMessage.success(this.$i18n.t('m.Post_successfully'));
+          mMessage.success(this.$t('m.Post_successfully'));
           this.currentChange(1);
         })
         .catch();
     },
     deleteAnnouncement(announcementId) {
-      this.$confirm(this.$i18n.t('m.Delete_Announcement_Tips'), this.$i18n.t('m.Warning'), {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Announcement_Tips'), this.$t('m.Warning'), {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       })
         .then(() => {
@@ -284,13 +287,13 @@ export default {
           if (this.contestId) {
             api.deleteGroupContestAnnouncement(announcementId, this.contestId).then((res) => {
               this.loading = true;
-              mMessage.success(this.$i18n.t('m.Delete_successfully'));
+              mMessage.success(this.$t('m.Delete_successfully'));
               this.init();
             });
           } else {
             api.deleteGroupAnnouncement(announcementId).then((res) => {
               this.loading = true;
-              mMessage.success(this.$i18n.t('m.Delete_successfully'));
+              mMessage.success(this.$t('m.Delete_successfully'));
               this.init();
             });
           }
@@ -302,11 +305,11 @@ export default {
     openAnnouncementDialog(row) {
       this.showEditAnnouncementDialog = true;
       if (row !== null) {
-        this.announcementDialogTitle = this.$i18n.t('m.Edit_Announcement');
+        this.announcementDialogTitle = this.$t('m.Edit_Announcement');
         this.announcement = Object.assign({}, row);
         this.mode = 'edit';
       } else {
-        this.announcementDialogTitle = this.$i18n.t('m.Create_Announcement');
+        this.announcementDialogTitle = this.$t('m.Create_Announcement');
         this.announcement.title = '';
         this.announcement.status = 0;
         this.announcement.content = '';
@@ -339,8 +342,9 @@ export default {
 
 .visible-box {
   margin-top: 10px;
-  width: 205px;
-  float: left;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
 }
 .visible-box span {
   margin-right: 10px;
@@ -348,7 +352,28 @@ export default {
 .el-form-item {
   margin-bottom: 2px !important;
 }
-/deep/.el-dialog__body {
-  padding-top: 0 !important;
+
+:deep(.group-announcement-dialog) {
+  margin-bottom: 4vh;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+:deep(.group-announcement-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+:deep(.group-announcement-dialog .el-dialog__body) {
+  max-height: calc(92vh - 150px);
+  overflow-y: auto;
+  padding: 18px 24px 20px;
+}
+
+:deep(.group-announcement-dialog .el-dialog__footer) {
+  padding: 14px 24px;
+  border-top: 1px solid #ebeef5;
+  background: #fafafa;
 }
 </style>

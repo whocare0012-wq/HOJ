@@ -3,84 +3,92 @@
       <!-- <ContestListAttention></ContestListAttention> -->
       <el-row type="flex" justify="space-around">
         <el-col :span="24">
-          <el-card shadow>
-            <div slot="header">
-              <span class="panel-title"
-                >{{
-                  query.type === '' ? $t('m.All') : parseContestType(query.type)
-                }}
-                {{ $t('m.Contests') }}</span
-              >
-              <div class="filter-row">
-                <span>
-                  <el-dropdown
-                    @command="onRuleChange"
-                    placement="bottom"
-                    trigger="hover"
-                    class="drop-menu"
-                  >
-                    <span class="el-dropdown-link">
-                      {{
-                        query.type === ''
-                          ? $t('m.Contest_Rule')
-                          : parseContestType(query.type)
-                      }}
-                      <i class="el-icon-caret-bottom"></i>
-                    </span>
-                    <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item command="">{{
-                        $t('m.All')
-                      }}</el-dropdown-item>
-                      <el-dropdown-item command="0">ACM</el-dropdown-item>
-                      <el-dropdown-item command="1">OI</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </el-dropdown>
-                </span>
+          <el-card shadow="always">
+            <template #header>
+              <div>
+                <span class="panel-title"
+                  >{{
+                    query.type === '' ? $t('m.All') : parseContestType(query.type)
+                  }}
+                  {{ $t('m.Contests') }}</span
+                >
+                <div class="filter-row">
+                  <span>
+                    <el-dropdown
+                      @command="onRuleChange"
+                      placement="bottom"
+                      trigger="hover"
+                      class="drop-menu"
+                      popper-class="contest-filter-popper"
+                    >
+                      <span class="el-dropdown-link">
+                        {{
+                          query.type === ''
+                            ? $t('m.Contest_Rule')
+                            : parseContestType(query.type)
+                        }}
+                        <i class="el-icon-caret-bottom"></i>
+                      </span>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                        <el-dropdown-item command="">{{
+                          $t('m.All')
+                        }}</el-dropdown-item>
+                        <el-dropdown-item command="0">ACM</el-dropdown-item>
+                        <el-dropdown-item command="1">OI</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </span>
 
-                <span>
-                  <el-dropdown
-                    @command="onStatusChange"
-                    placement="bottom"
-                    trigger="hover"
-                    class="drop-menu"
-                  >
-                    <span class="el-dropdown-link">
-                      {{
-                        query.status === ''
-                          ? $t('m.Status')
-                          : $t('m.' + CONTEST_STATUS_REVERSE[query.status]['name'])
-                      }}
-                      <i class="el-icon-caret-bottom"></i>
-                    </span>
-                    <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item command="">{{
-                        $t('m.All')
-                      }}</el-dropdown-item>
-                      <el-dropdown-item command="-1">{{
-                        $t('m.Scheduled')
-                      }}</el-dropdown-item>
-                      <el-dropdown-item command="0">{{
-                        $t('m.Running')
-                      }}</el-dropdown-item>
-                      <el-dropdown-item command="1">{{
-                        $t('m.Ended')
-                      }}</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </el-dropdown>
-                </span>
+                  <span>
+                    <el-dropdown
+                      @command="onStatusChange"
+                      placement="bottom"
+                      trigger="hover"
+                      class="drop-menu"
+                      popper-class="contest-filter-popper"
+                    >
+                      <span class="el-dropdown-link">
+                        {{
+                          query.status === ''
+                            ? $t('m.Status')
+                            : $t('m.' + CONTEST_STATUS_REVERSE[query.status]['name'])
+                        }}
+                        <i class="el-icon-caret-bottom"></i>
+                      </span>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                        <el-dropdown-item command="">{{
+                          $t('m.All')
+                        }}</el-dropdown-item>
+                        <el-dropdown-item command="-1">{{
+                          $t('m.Scheduled')
+                        }}</el-dropdown-item>
+                        <el-dropdown-item command="0">{{
+                          $t('m.Running')
+                        }}</el-dropdown-item>
+                        <el-dropdown-item command="1">{{
+                          $t('m.Ended')
+                        }}</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </span>
 
-                <span>
-                  <vxe-input
-                    v-model="query.keyword"
-                    :placeholder="$t('m.Enter_keyword')"
-                    type="search"
-                    size="medium"
-                    @keyup.enter.native="onKeywordChange"
-                    @search-click="onKeywordChange"
-                  ></vxe-input>
-                </span>
+                  <span>
+                    <vxe-input
+                      v-model="query.keyword"
+                      :placeholder="$t('m.Enter_keyword')"
+                      type="search"
+                      size="medium"
+                      @keyup.enter="onKeywordChange"
+                      @search-click="onKeywordChange"
+                    ></vxe-input>
+                  </span>
+                </div>
               </div>
-            </div>
+            </template>
             <div v-loading="loading">
               <p id="no-contest" v-show="contests.length == 0">
                 <el-empty :description="$t('m.No_contest')"></el-empty>
@@ -94,16 +102,16 @@
                   <el-row type="flex" justify="space-between" align="middle">
                     <el-col :xs="10" :sm="4" :md="3" :lg="2">
                       <template v-if="contest.type == 0">
-                        <el-image 
-                        :src="acmSrc" 
+                        <el-image
+                        :src="acmSrc"
                         class="trophy"
                         style="width: 100px;"
                         :preview-src-list="[acmSrc]">
                         </el-image>
                       </template>
                       <template v-else>
-                        <el-image 
-                        :src="oiSrc" 
+                        <el-image
+                        :src="oiSrc"
                         class="trophy"
                         style="width: 100px;"
                         :preview-src-list="[oiSrc]">
@@ -122,18 +130,26 @@
                           {{ contest.title }}
                         </a>
                         <template v-if="contest.auth == 1">
-                          <i
-                            class="el-icon-lock"
-                            size="20"
-                            style="color:#d9534f"
-                          ></i>
+                          <el-icon
+                            class="contest-lock-icon"
+                            :size="16"
+                            color="#d9534f"
+                          >
+                            <component
+                              :is="legacyElementIcons['el-icon-lock']"
+                            ></component>
+                          </el-icon>
                         </template>
                         <template v-if="contest.auth == 2">
-                          <i
-                            class="el-icon-lock"
-                            size="20"
-                            style="color:#f0ad4e"
-                          ></i>
+                          <el-icon
+                            class="contest-lock-icon"
+                            :size="16"
+                            color="#f0ad4e"
+                          >
+                            <component
+                              :is="legacyElementIcons['el-icon-lock']"
+                            ></component>
+                          </el-icon>
                         </template>
                       </p>
                       <ul class="detail">
@@ -143,7 +159,7 @@
                             aria-hidden="true"
                             style="color: #3091f2"
                           ></i>
-                          {{ contest.startTime | localtime }}
+                          {{ $filters.localtime(contest.startTime) }}
                         </li>
                         <li>
                           <i
@@ -156,12 +172,13 @@
                         <li>
                           <template v-if="contest.type == 0">
                             <el-button
-                              size="mini"
+                              class="contest-rule-button"
+                              size="small"
                               round
                               :type="'primary'"
                               @click="onRuleChange(contest.type)"
                               ><i class="fa fa-trophy"></i>
-                              {{ contest.type | parseContestType }}
+                              {{ $filters.parseContestType(contest.type) }}
                             </el-button>
                           </template>
                           <template v-else>
@@ -180,12 +197,13 @@
                               placement="top"
                             >
                               <el-button
-                                size="mini"
+                                class="contest-rule-button"
+                                size="small"
                                 round
                                 :type="'warning'"
                                 @click="onRuleChange(contest.type)"
                                 ><i class="fa fa-trophy"></i>
-                                {{ contest.type | parseContestType }}
+                                {{ $filters.parseContestType(contest.type) }}
                               </el-button>
                             </el-tooltip>
                           </template>
@@ -228,7 +246,7 @@
                               size="small"
                               type="primary"
                               :disabled="contest.status == CONTEST_STATUS.SCHEDULED"
-                              icon="el-icon-data-analysis"
+                              :icon="legacyElementIcons['el-icon-data-analysis']"
                               @click="
                                 toContestOutsideScoreBoard(contest.id, contest.type)
                               "
@@ -247,7 +265,7 @@
                       <el-tag
                         effect="dark"
                         :color="CONTEST_STATUS_REVERSE[contest.status]['color']"
-                        size="medium"
+                        size="default"
                       >
                         <i class="fa fa-circle" aria-hidden="true"></i>
                         {{
@@ -264,7 +282,7 @@
             :total="total"
             :pageSize="limit"
             @on-change="onCurrentPageChange"
-            :current.sync="currentPage"
+            v-model:current="currentPage"
           ></Pagination>
         </el-col>
       </el-row>
@@ -272,6 +290,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import { mapGetters } from 'vuex';
 import utils from '@/common/utils';
@@ -282,8 +301,10 @@ import {
   CONTEST_STATUS,
 } from '@/common/constants';
 import myMessage from '@/common/message';
-const Pagination = () => import('@/components/oj/common/Pagination');
-// const ContestListAttention = () => import('@/components/oj/contest/ContestListAttention');
+import acmImage from '@/assets/acm.jpg'
+import oiImage from '@/assets/oi.jpg'
+const Pagination = defineAsyncComponent(() => import('@/components/oj/common/Pagination'));
+// const ContestListAttention = defineAsyncComponent(() => import('@/components/oj/contest/ContestListAttention'));
 const limit = 10;
 
 export default {
@@ -307,8 +328,8 @@ export default {
       CONTEST_STATUS_REVERSE: {},
       CONTEST_STATUS: {},
       CONTEST_TYPE_REVERSE: {},
-      acmSrc: require('@/assets/acm.jpg'),
-      oiSrc: require('@/assets/oi.jpg'),
+      acmSrc: acmImage,
+      oiSrc: oiImage,
       loading: true,
     };
   },
@@ -388,7 +409,7 @@ export default {
     },
     toContest(contest) {
       if (!this.isAuthenticated) {
-        myMessage.warning(this.$i18n.t('m.Please_login_first'));
+        myMessage.warning(this.$t('m.Please_login_first'));
         this.$store.dispatch('changeModalStatus', { visible: true });
       } else {
         this.$router.push({
@@ -441,6 +462,16 @@ export default {
 .filter-row {
   float: right;
 }
+.filter-row .drop-menu {
+  line-height: 21px;
+  vertical-align: middle;
+}
+.filter-row .el-dropdown-link {
+  line-height: 21px;
+}
+.filter-row .el-icon-caret-bottom {
+  margin-left: 6px;
+}
 @media screen and (max-width: 768px) {
   .filter-row span {
     margin-right: 2px;
@@ -448,7 +479,7 @@ export default {
   ol {
     padding-inline-start: 5px;
   }
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     margin-bottom: 5px;
   }
 }
@@ -457,7 +488,7 @@ export default {
     margin-right: 20px;
   }
 }
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   border-bottom: 0px;
 }
 
@@ -487,8 +518,16 @@ export default {
 }
 #contest-list .contest-main .title {
   font-size: 1.25rem;
+  line-height: 30px;
   padding-left: 8px;
   margin-bottom: 0;
+}
+#contest-list .contest-main .title i {
+  margin-left: 5px;
+}
+#contest-list .contest-main .title .contest-lock-icon {
+  margin-left: 5px;
+  vertical-align: -2px;
 }
 #contest-list .contest-main .title a.entry {
   color: #495060;
@@ -499,11 +538,41 @@ export default {
 }
 #contest-list .contest-main .detail {
   font-size: 0.875rem;
+  line-height: 21px;
   padding-left: 0;
   padding-bottom: 10px;
 }
 #contest-list .contest-main li {
   display: inline-block;
   padding: 10px 0 0 10px;
+}
+#contest-list .contest-main :deep(.el-button--small) {
+  min-height: 28px;
+  padding: 7px 15px;
+}
+#contest-list :deep(.contest-rule-button i) {
+  margin-right: 4px;
+}
+#contest-list .contest-main :deep(.el-tag--default) {
+  height: 32px;
+  line-height: 30px;
+  padding: 0 10px;
+}
+#contest-list :deep(.el-tag) {
+  height: 32px;
+  line-height: 30px;
+  padding: 0 10px;
+}
+#contest-list .detail > li > i,
+#contest-list .detail > li > .el-icon {
+  margin-right: 4px;
+}
+:global(.contest-filter-popper .el-dropdown-menu) {
+  padding: 10px 0;
+}
+:global(.contest-filter-popper .el-dropdown-menu__item) {
+  height: 36px;
+  line-height: 36px;
+  padding: 0 20px;
 }
 </style>

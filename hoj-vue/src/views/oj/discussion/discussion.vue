@@ -6,7 +6,7 @@
           <span>{{ discussion.title }}</span>
           <el-button
             type="primary"
-            size="mini"
+            size="small"
             style="margin-left:5px;vertical-align:middle;"
             v-if="discussion.pid"
             @click="toProblem(discussion.pid)"
@@ -93,10 +93,10 @@
             <i class="fa fa-clock-o"> {{ $t('m.Release_Time') }}：</i>
             <span>
               <el-tooltip
-                :content="discussion.gmtCreate | localtime"
+                :content="$filters.localtime(discussion.gmtCreate)"
                 placement="top"
               >
-                <span>{{ discussion.gmtCreate | fromNow }}</span>
+                <span>{{ $filters.fromNow(discussion.gmtCreate) }}</span>
               </el-tooltip>
             </span>
           </span>
@@ -117,18 +117,18 @@
     </div>
     <el-dialog
       :title="$t('m.Report')"
-      :visible.sync="showReportDialog"
+      v-model="showReportDialog"
       width="350px"
     >
       <el-form label-position="top" :model="report">
         <el-form-item :label="$t('m.Tags')" required>
           <el-checkbox-group v-model="report.tagList">
-            <el-checkbox label="垃圾广告"></el-checkbox>
-            <el-checkbox label="违法违规"></el-checkbox>
-            <el-checkbox label="色情低俗"></el-checkbox>
-            <el-checkbox label="赌博诈骗"></el-checkbox>
-            <el-checkbox label="恶意骂战"></el-checkbox>
-            <el-checkbox label="恶意抄袭"></el-checkbox>
+            <el-checkbox value="垃圾广告">垃圾广告</el-checkbox>
+            <el-checkbox value="违法违规">违法违规</el-checkbox>
+            <el-checkbox value="色情低俗">色情低俗</el-checkbox>
+            <el-checkbox value="赌博诈骗">赌博诈骗</el-checkbox>
+            <el-checkbox value="恶意骂战">恶意骂战</el-checkbox>
+            <el-checkbox value="恶意抄袭">恶意抄袭</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
         <el-form-item :label="$t('m.Report_Reason')" required>
@@ -143,21 +143,24 @@
           </el-input>
         </el-form-item>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="danger" @click.native="showReportDialog = false">{{
-          $t('m.Cancel')
-        }}</el-button>
-        <el-button type="primary" @click.native="submitReport">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="danger" @click="showReportDialog = false">{{
+            $t('m.Cancel')
+          }}</el-button>
+          <el-button type="primary" @click="submitReport">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
 
     <!--编辑讨论对话框-->
     <el-dialog
       :title="discussionDialogTitle"
-      :visible.sync="showEditDiscussionDialog"
+      v-model="showEditDiscussionDialog"
       :fullscreen="true"
+      modal-class="discussion-editor-dialog"
       @open="onOpenEditDialog"
     >
       <el-form label-position="top" :model="discussion">
@@ -178,7 +181,12 @@
           </el-input>
         </el-form-item>
         <el-form-item :label="$t('m.Discussion_Category')" required>
-          <el-select v-model="discussion.categoryId" placeholder="---" disabled>
+          <el-select
+            v-model="discussion.categoryId"
+            placeholder="---"
+            class="discussion-category-select"
+            disabled
+          >
             <el-option
               :label="discussion.categoryName"
               :value="discussion.categoryId"
@@ -194,32 +202,35 @@
           <el-switch v-model="discussion.topPriority"> </el-switch>
         </el-form-item>
         <el-form-item :label="$t('m.Discussion_content')" required>
-          <Editor :value.sync="discussion.content"></Editor>
+          <Editor v-model:value="discussion.content"></Editor>
         </el-form-item>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button
-          type="danger"
-          @click.native="showEditDiscussionDialog = false"
-          >{{ $t('m.Cancel') }}</el-button
-        >
-        <el-button type="primary" @click.native="submitDiscussion">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button
+            type="danger"
+            @click="showEditDiscussionDialog = false"
+            >{{ $t('m.Cancel') }}</el-button
+          >
+          <el-button type="primary" @click="submitDiscussion">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
     <comment :did="$route.params.discussionID"></comment>
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import { addCodeBtn } from '@/common/codeblock';
-import Avatar from 'vue-avatar';
+import Avatar from '@/components/common/Avatar.vue';
 import { mapGetters, mapActions } from 'vuex';
-const Editor = () => import('@/components/admin/Editor.vue');
-const comment = () => import('@/components/oj/comment/comment');
+const Editor = defineAsyncComponent(() => import('@/components/admin/Editor.vue'));
+const comment = defineAsyncComponent(() => import('@/components/oj/comment/comment'));
 import Markdown from '@/components/oj/common/Markdown';
 export default {
   components: {
@@ -304,16 +315,16 @@ export default {
 
     toLikeDiscussion(did, toLike) {
       if (!this.isAuthenticated) {
-        myMessage.warning(this.$i18n.t('m.Please_login_first'));
+        myMessage.warning(this.$t('m.Please_login_first'));
         return;
       }
       api.toLikeDiscussion(did, toLike).then((res) => {
         if (toLike) {
           this.discussion.likeNum++;
           this.discussion.hasLike = true;
-          myMessage.success(this.$i18n.t('m.Like_Successfully'));
+          myMessage.success(this.$t('m.Like_Successfully'));
         } else {
-          myMessage.success(this.$i18n.t('m.Cancel_Like_Successfully'));
+          myMessage.success(this.$t('m.Cancel_Like_Successfully'));
           this.discussion.likeNum--;
           this.discussion.hasLike = false;
         }
@@ -326,19 +337,19 @@ export default {
       delete discussion.viewNum;
       delete discussion.likeNum;
       api.updateDiscussion(discussion).then((res) => {
-        myMessage.success(this.$i18n.t('m.Update_Successfully'));
+        myMessage.success(this.$t('m.Update_Successfully'));
         this.showEditDiscussionDialog = false;
         this.init();
       });
     },
     submitReport() {
       if (!this.isAuthenticated) {
-        myMessage.warning(this.$i18n.t('m.Please_login_first'));
+        myMessage.warning(this.$t('m.Please_login_first'));
         return;
       }
       if (this.report.tagList.length == 0 && !this.report.content) {
         myMessage.warning(
-          this.$i18n.t('m.The_report_label_and_reason_cannot_be_empty')
+          this.$t('m.The_report_label_and_reason_cannot_be_empty')
         );
         return;
       }
@@ -353,7 +364,7 @@ export default {
         did: this.discussionID,
       };
       api.toReportDiscussion(discussionReport).then((res) => {
-        myMessage.success(this.$i18n.t('m.Send_successfully'));
+        myMessage.success(this.$t('m.Send_successfully'));
         this.showReportDialog = false;
       });
     },
@@ -372,7 +383,7 @@ export default {
 </script>
 
 <style scoped>
-/deep/ .el-dialog__body {
+:deep(.el-dialog__body) {
   padding: 0px 20px;
 }
 .container {

@@ -1,42 +1,45 @@
 <template>
-  <div>
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{
-          $t('m.Training_Problem_List')
-        }}</span>
-        <div class="filter-row">
-          <span>
-            <el-button
-              type="primary"
-              size="small"
-              icon="el-icon-plus"
-              @click="addProblemDialogVisible = true"
-              >{{ $t('m.Add_From_Public_Problem') }}
-            </el-button>
-          </span>
-          <span>
-            <el-button
-              type="success"
-              size="small"
-              @click="AddRemoteOJProblemDialogVisible = true"
-              icon="el-icon-plus"
-              >{{ $t('m.Add_Rmote_OJ_Problem') }}
-            </el-button>
-          </span>
-          <span>
-            <vxe-input
-              v-model="keyword"
-              :placeholder="$t('m.Enter_keyword')"
-              type="search"
-              size="medium"
-              @search-click="filterByKeyword"
-              @keyup.enter.native="filterByKeyword"
-            ></vxe-input>
-          </span>
+  <div class="training-problem-list-page">
+    <el-card class="training-problem-list-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{
+            $t('m.Training_Problem_List')
+          }}</span>
+          <div class="filter-row">
+            <span>
+              <el-button
+                type="primary"
+                size="small"
+                :icon="legacyElementIcons['el-icon-plus']"
+                @click="addProblemDialogVisible = true"
+                >{{ $t('m.Add_From_Public_Problem') }}
+              </el-button>
+            </span>
+            <span>
+              <el-button
+                type="success"
+                size="small"
+                @click="AddRemoteOJProblemDialogVisible = true"
+                :icon="legacyElementIcons['el-icon-plus']"
+                >{{ $t('m.Add_Rmote_OJ_Problem') }}
+              </el-button>
+            </span>
+            <span>
+              <vxe-input
+                v-model="keyword"
+                :placeholder="$t('m.Enter_keyword')"
+                type="search"
+                size="medium"
+                @search-click="filterByKeyword"
+                @keyup.enter="filterByKeyword"
+              ></vxe-input>
+            </span>
+          </div>
         </div>
-      </div>
+      </template>
       <vxe-table
+        class="training-problem-list-table"
         stripe
         auto-resize
         :data="problemList"
@@ -74,7 +77,10 @@
           <template v-slot="{ row }">
             <el-input-number
               v-model="trainingProblemMap[row.id].rank"
-              @change="handleChangeRank(trainingProblemMap[row.id])"
+              @change="
+                (value, oldValue) =>
+                  handleChangeRank(trainingProblemMap[row.id], oldValue)
+              "
               :min="0"
               :max="2147483647"
             ></el-input-number>
@@ -118,9 +124,9 @@
               "
             >
               <el-button
-                icon="el-icon-edit-outline"
-                size="mini"
-                @click.native="goEdit(row.id)"
+                :icon="legacyElementIcons['el-icon-edit-outline']"
+                size="small"
+                @click="goEdit(row.id)"
                 type="primary"
               >
               </el-button>
@@ -133,9 +139,9 @@
               v-if="isSuperAdmin || isProblemAdmin"
             >
               <el-button
-                icon="el-icon-download"
-                size="mini"
-                @click.native="downloadTestCase(row.id)"
+                :icon="legacyElementIcons['el-icon-download']"
+                size="small"
+                @click="downloadTestCase(row.id)"
                 type="success"
               >
               </el-button>
@@ -143,9 +149,9 @@
 
             <el-tooltip effect="dark" :content="$t('m.Remove')" placement="top">
               <el-button
-                icon="el-icon-close"
-                size="mini"
-                @click.native="removeProblem(row.id)"
+                :icon="legacyElementIcons['el-icon-close']"
+                size="small"
+                @click="removeProblem(row.id)"
                 type="warning"
               >
               </el-button>
@@ -158,9 +164,9 @@
               v-if="isSuperAdmin || isProblemAdmin"
             >
               <el-button
-                icon="el-icon-delete-solid"
-                size="mini"
-                @click.native="deleteProblem(row.id)"
+                :icon="legacyElementIcons['el-icon-delete-solid']"
+                size="small"
+                @click="deleteProblem(row.id)"
                 type="danger"
               >
               </el-button>
@@ -175,6 +181,7 @@
           layout="prev, pager, next, sizes"
           @current-change="currentChange"
           :page-size="pageSize"
+          v-model:current-page="currentPage"
           :total="total"
           @size-change="onPageSizeChange"
           :page-sizes="[10, 30, 50, 100]"
@@ -186,7 +193,7 @@
     <el-dialog
       :title="$t('m.Add_Training_Problem')"
       width="90%"
-      :visible.sync="addProblemDialogVisible"
+      v-model="addProblemDialogVisible"
       :close-on-click-modal="false"
     >
       <AddPublicProblem
@@ -198,7 +205,7 @@
     <el-dialog
       :title="$t('m.Add_Rmote_OJ_Problem')"
       width="350px"
-      :visible.sync="AddRemoteOJProblemDialogVisible"
+      v-model="AddRemoteOJProblemDialogVisible"
       :close-on-click-modal="false"
     >
       <el-form>
@@ -219,7 +226,7 @@
         <el-form-item style="text-align:center">
           <el-button
             type="primary"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             @click="addRemoteOJProblem"
             :loading="addRemoteOJproblemLoading"
             >{{ $t('m.Add') }}
@@ -250,6 +257,7 @@ export default {
       total: 0,
       problemList: [],
       trainingProblemMap: {},
+      problemAuthMap: {},
       keyword: '',
       loading: false,
       currentPage: 1,
@@ -294,9 +302,11 @@ export default {
     },
     onPageSizeChange(pageSize) {
       this.pageSize = pageSize;
-      this.getProblemList(this.currentPage);
+      this.currentPage = 1;
+      this.getProblemList(1);
     },
     getProblemList(page = 1) {
+      this.currentPage = page;
       this.loading = true;
       let params = {
         limit: this.pageSize,
@@ -314,34 +324,50 @@ export default {
           this.total = res.data.data.problemList.total;
           this.problemList = res.data.data.problemList.records;
           this.trainingProblemMap = res.data.data.trainingProblemMap;
+          this.problemAuthMap = Object.fromEntries(
+            this.problemList.map((problem) => [problem.id, problem.auth])
+          );
         },
         (err) => {
           this.loading = false;
         }
       );
     },
-    handleChangeRank(data) {
-      api.admin_updateTrainingProblem(data).then((res) => {
-        myMessage.success(this.$i18n.t('m.Update_Successfully'));
-        this.getProblemList(1);
-      });
+    handleChangeRank(data, oldValue) {
+      api.admin_updateTrainingProblem(data).then(
+        () => {
+          myMessage.success(this.$t('m.Update_Successfully'));
+          this.currentPage = 1;
+          this.getProblemList(1);
+        },
+        () => {
+          data.rank = oldValue;
+        }
+      );
     },
     changeProblemAuth(row) {
-      api.admin_changeProblemAuth(row).then((res) => {
-        myMessage.success(this.$i18n.t('m.Update_Successfully'));
-      });
+      const previousAuth = this.problemAuthMap[row.id];
+      api.admin_changeProblemAuth(row).then(
+        () => {
+          this.problemAuthMap[row.id] = row.auth;
+          myMessage.success(this.$t('m.Update_Successfully'));
+        },
+        () => {
+          row.auth = previousAuth;
+        }
+      );
     },
 
     deleteProblem(id) {
-      this.$confirm(this.$i18n.t('m.Delete_Problem_Tips'), 'Tips', {
+      this.$confirm(this.$t('m.Delete_Problem_Tips'), 'Tips', {
         type: 'warning',
       }).then(
         () => {
           api
             .admin_deleteTrainingProblem(id, null)
-            .then((res) => {
-              myMessage.success(this.$i18n.t('m.Delete_successfully'));
-              this.getProblemList(this.currentPage);
+            .then(() => {
+              myMessage.success(this.$t('m.Delete_successfully'));
+              this.refreshAfterRemoval();
             })
             .catch(() => {});
         },
@@ -349,15 +375,15 @@ export default {
       );
     },
     removeProblem(pid) {
-      this.$confirm(this.$i18n.t('m.Remove_Training_Problem_Tips'), 'Tips', {
+      this.$confirm(this.$t('m.Remove_Training_Problem_Tips'), 'Tips', {
         type: 'warning',
       }).then(
         () => {
           api
             .admin_deleteTrainingProblem(pid, this.trainingId)
-            .then((res) => {
+            .then(() => {
               myMessage.success('success');
-              this.getProblemList(this.currentPage);
+              this.refreshAfterRemoval();
             })
             .catch(() => {});
         },
@@ -367,15 +393,22 @@ export default {
     downloadTestCase(problemID) {
       let url = '/api/file/download-testcase?pid=' + problemID;
       utils.downloadFile(url).then(() => {
-        this.$alert(this.$i18n.t('m.Download_Testcase_Success'), 'Tips');
+        this.$alert(this.$t('m.Download_Testcase_Success'), 'Tips');
       });
     },
     filterByKeyword() {
       this.currentChange(1);
     },
+    refreshAfterRemoval() {
+      const targetPage =
+        this.currentPage > 1 && this.problemList.length === 1
+          ? this.currentPage - 1
+          : this.currentPage;
+      this.currentChange(targetPage);
+    },
     addRemoteOJProblem() {
       if (!this.otherOJProblemId) {
-        myMessage.error(this.$i18n.t('m.Problem_ID_is_required'));
+        myMessage.error(this.$t('m.Problem_ID_is_required'));
         return;
       }
       this.addRemoteOJproblemLoading = true;
@@ -389,7 +422,8 @@ export default {
           (res) => {
             this.addRemoteOJproblemLoading = false;
             this.AddRemoteOJProblemDialogVisible = false;
-            myMessage.success(this.$i18n.t('m.Add_Successfully'));
+            this.otherOJProblemId = '';
+            myMessage.success(this.$t('m.Add_Successfully'));
             this.currentChange(1);
           },
           (err) => {
@@ -412,6 +446,108 @@ export default {
 </script>
 
 <style scoped>
+.training-problem-list-card {
+  display: block;
+}
+
+.training-problem-list-card :deep(.el-card__body) {
+  overflow: visible;
+}
+
+.training-problem-list-page :deep(.filter-row .el-button--small) {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 9px 15px;
+}
+
+.training-problem-list-page
+  :deep(.training-problem-list-table .el-button--small) {
+  box-sizing: border-box;
+  height: 29px;
+  min-height: 29px;
+  min-width: 44px;
+  padding: 7px 15px;
+}
+
+.training-problem-list-page
+  :deep(.training-problem-list-table .el-button + .el-button) {
+  margin-left: 10px;
+}
+
+.training-problem-list-page
+  :deep(.training-problem-list-table .el-input-number) {
+  width: 180px;
+  height: 40px;
+}
+
+.training-problem-list-page
+  :deep(.training-problem-list-table .el-input-number .el-input__wrapper) {
+  box-sizing: border-box;
+  min-height: 40px;
+}
+
+.training-problem-list-page
+  :deep(.training-problem-list-table .el-select--small),
+.training-problem-list-page
+  :deep(.training-problem-list-table .el-select__wrapper) {
+  height: 32px;
+  min-height: 32px;
+}
+
+.panel-options {
+  display: block;
+}
+
+.training-problem-list-page :deep(.el-pagination.page) {
+  box-sizing: border-box;
+  display: block;
+  height: 32px;
+  width: 100%;
+  padding: 2px 5px;
+  text-align: center;
+  --el-pagination-button-width: 35.5px;
+  --el-pagination-button-height: 28px;
+}
+
+.training-problem-list-page :deep(.el-pagination.page .btn-prev),
+.training-problem-list-page :deep(.el-pagination.page .btn-next),
+.training-problem-list-page :deep(.el-pagination.page .el-pager),
+.training-problem-list-page
+  :deep(.el-pagination.page .el-pagination__sizes) {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.training-problem-list-page :deep(.el-pagination.page .el-pager) {
+  width: auto;
+}
+
+.training-problem-list-page :deep(.el-pagination.page .el-pager li) {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.training-problem-list-page
+  :deep(.el-pagination.page .el-pagination__sizes) {
+  width: 110px;
+  height: 28px;
+  margin-right: 10px;
+  margin-left: 0;
+}
+
+.training-problem-list-page
+  :deep(.el-pagination.page .el-pagination__sizes .el-select) {
+  width: 110px;
+  height: 28px;
+}
+
+.training-problem-list-page
+  :deep(.el-pagination.page .el-pagination__sizes .el-select__wrapper) {
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 2px 15px;
+}
+
 .filter-row span button {
   margin-top: 5px;
   margin-bottom: 5px;

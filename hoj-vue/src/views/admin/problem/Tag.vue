@@ -1,74 +1,80 @@
 <template>
-  <div>
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Admin_Tag') }}</span>
-        <div class="filter">
-          <span>
-            <el-button
-              type="primary"
-              size="small"
-              @click="openTagDialog('add', null)"
-              icon="el-icon-plus"
-              >{{ $t('m.Add_Tag') }}
-            </el-button>
-          </span>
-          <span>
-            <el-button
-              type="warning"
-              size="small"
-              @click="openTagClassificationDialog('add', null)"
-              icon="el-icon-plus"
-              >{{ $t('m.Add_Tag_Classification') }}
-            </el-button>
-          </span>
-          <span>
-            <el-select
-              v-model="tagOj"
-              @change="init"
-              size="small"
-              style="width: 150px;margin-top: 10px;"
-            >
-              <el-option :label="$t('m.My_OJ')" :value="'ME'"></el-option>
-              <el-option
-                :label="remoteOj.name"
-                :key="index"
-                :value="remoteOj.key"
-                v-for="(remoteOj, index) in REMOTE_OJ"
-              ></el-option>
-            </el-select>
-          </span>
+  <div class="tag-management-page">
+    <el-card class="tag-overview-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Admin_Tag') }}</span>
+          <div class="tag-filter">
+            <span>
+              <el-button
+                type="primary"
+                size="small"
+                class="tag-filter-button"
+                @click="openTagDialog('add', null)"
+                :icon="legacyElementIcons['el-icon-plus']"
+                >{{ $t('m.Add_Tag') }}
+              </el-button>
+            </span>
+            <span>
+              <el-button
+                type="warning"
+                size="small"
+                class="tag-filter-button"
+                @click="openTagClassificationDialog('add', null)"
+                :icon="legacyElementIcons['el-icon-plus']"
+                >{{ $t('m.Add_Tag_Classification') }}
+              </el-button>
+            </span>
+            <span>
+              <el-select
+                v-model="tagOj"
+                @change="init"
+                size="small"
+                class="tag-oj-select"
+              >
+                <el-option :label="$t('m.My_OJ')" :value="'ME'"></el-option>
+                <el-option
+                  :label="remoteOj.name"
+                  :key="index"
+                  :value="remoteOj.key"
+                  v-for="(remoteOj, index) in REMOTE_OJ"
+                ></el-option>
+              </el-select>
+            </span>
+          </div>
         </div>
-      </div>
-      <h3 style="margin: -5px;">{{ $t('m.Tag_Tips') }}</h3>
+      </template>
+      <h3 class="tag-tips">{{ $t('m.Tag_Tips') }}</h3>
     </el-card>
-    <div v-loading = "getTagListLoading">
+    <div class="tag-classification-list" v-loading="getTagListLoading">
       <el-row :gutter="20">
           <el-col v-for="(tagsAndClassification,index)  in tagsAndClassificationList"  
             :key="index" :md="8" :xs="24">
-            <el-card style="margin-top:15px">
+            <el-card class="tag-classification-card">
               <el-collapse v-model="activeTagClassificationIdList">
                   <el-collapse-item :name="tagsAndClassification.classification == null?-1:tagsAndClassification.classification.id">
-                      <template slot="title">
-                        <span>{{ tagsAndClassification.classification!=null? 
+                      <template #title>
+                        <span class="tag-classification-name">{{ tagsAndClassification.classification!=null?
                           tagsAndClassification.classification.name:$t('m.Unclassified')
                         }}
                         </span>
-                        <span style="margin-left:10px;"
+                        <span class="tag-classification-action"
                           v-if="tagsAndClassification.classification!=null">
                           <el-button type="primary" 
-                            icon="el-icon-edit" 
+                            :icon="legacyElementIcons['el-icon-edit']"
+                            class="tag-classification-action-button"
                             circle
-                            size="mini"
+                            size="small"
                             @click.stop="openTagClassificationDialog('update',tagsAndClassification.classification)"
                           ></el-button>
                         </span>
-                        <span style="margin-left:10px;"
+                        <span class="tag-classification-action"
                           v-if="tagsAndClassification.classification!=null">
                           <el-button type="danger" 
-                            icon="el-icon-delete" 
+                            :icon="legacyElementIcons['el-icon-delete']"
+                            class="tag-classification-action-button"
                             circle
-                            size="mini"
+                            size="small"
                             @click.stop="deleteTagClassification(tagsAndClassification.classification)"
                           ></el-button>
                         </span>
@@ -102,15 +108,19 @@
     <el-dialog
       :title="$t('m.' + upsertTagTitle)"
       width="350px"
-      :visible.sync="addTagDialogVisible"
+      class="tag-upsert-dialog"
+      v-model="addTagDialogVisible"
       :close-on-click-modal="false"
     >
-      <el-form>
+      <el-form class="tag-upsert-form">
         <el-form-item :label="$t('m.Tag_Name')" required>
           <el-input v-model="tag.name" size="small"></el-input>
         </el-form-item>
         <el-form-item :label="$t('m.Tag_Color')" required>
-          <el-color-picker v-model="tag.color"></el-color-picker>
+          <el-color-picker
+            v-model="tag.color"
+            :class="{ 'tag-color-picker-empty': !tag.color }"
+          ></el-color-picker>
         </el-form-item>
 
         <el-form-item :label="$t('m.Tag_Attribution')" required="">
@@ -126,7 +136,12 @@
         </el-form-item>
 
         <el-form-item :label="$t('m.Tag_Classification')" required="">
-          <el-select v-model="tag.tcid" size="small" style="width: 150px;">
+          <el-select
+            v-model="tag.tcid"
+            size="small"
+            style="width: 150px;"
+            :placeholder="$t('m.Unclassified')"
+          >
             <el-option
               :label="classification.name"
               :key="index"
@@ -151,10 +166,11 @@
      <el-dialog
       :title="$t('m.' + upsertTagClassificationTitle)"
       width="350px"
-      :visible.sync="addTagClassificationDialogVisible"
+      class="tag-classification-upsert-dialog"
+      v-model="addTagClassificationDialogVisible"
       :close-on-click-modal="false"
     >
-      <el-form>
+      <el-form class="tag-classification-upsert-form">
         <el-form-item :label="$t('m.Tag_Classification_Name')" required>
           <el-input v-model="tagClassification.name" size="small"></el-input>
         </el-form-item>
@@ -249,14 +265,14 @@ export default {
     },
 
     deleteTag(tag) {
-      this.$confirm(this.$i18n.t('m.Delete_Tag_Tips'), 'Tips', {
+      this.$confirm(this.$t('m.Delete_Tag_Tips'), 'Tips', {
         type: 'warning',
       }).then(
         () => {
           api
             .admin_deleteTag(tag.id)
             .then((res) => {
-              myMessage.success(this.$i18n.t('m.Delete_successfully'));
+              myMessage.success(this.$t('m.Delete_successfully'));
               this.getProblemTagsAndClassification();
             })
             .catch(() => {});
@@ -289,7 +305,7 @@ export default {
         api.admin_updateTag(this.tag).then(
           (res) => {
             this.upsertTagLoading = false;
-            myMessage.success(this.$i18n.t('m.Update_Successfully'));
+            myMessage.success(this.$t('m.Update_Successfully'));
             this.addTagDialogVisible = false;
             this.getProblemTagsAndClassification();
           },
@@ -302,7 +318,7 @@ export default {
         api.admin_addTag(this.tag).then(
           (res) => {
             this.upsertTagLoading = false;
-            myMessage.success(this.$i18n.t('m.Add_Successfully'));
+            myMessage.success(this.$t('m.Add_Successfully'));
             this.addTagDialogVisible = false;
             this.getProblemTagsAndClassification();
           },
@@ -326,7 +342,7 @@ export default {
         api.admin_updateTagClassification(this.tagClassification).then(
           (res) => {
             this.upsertTagClassificationLoading = false;
-            myMessage.success(this.$i18n.t('m.Update_Successfully'));
+            myMessage.success(this.$t('m.Update_Successfully'));
             this.addTagClassificationDialogVisible = false;
             this.getProblemTagsAndClassification();
           },
@@ -339,7 +355,7 @@ export default {
         api.admin_addTagClassification(this.tagClassification).then(
           (res) => {
             this.upsertTagClassificationLoading = false;
-            myMessage.success(this.$i18n.t('m.Add_Successfully'));
+            myMessage.success(this.$t('m.Add_Successfully'));
             this.tagsAndClassificationList.unshift(
               {
                 classification :res.data.data,
@@ -356,14 +372,14 @@ export default {
     },
 
     deleteTagClassification(tagClassification) {
-      this.$confirm(this.$i18n.t('m.Delete_Tag_Classification_Tips'), 'Tips', {
+      this.$confirm(this.$t('m.Delete_Tag_Classification_Tips'), 'Tips', {
         type: 'warning',
       }).then(
         () => {
           api
             .admin_deleteTagClassification(tagClassification.id)
             .then((res) => {
-              myMessage.success(this.$i18n.t('m.Delete_successfully'));
+              myMessage.success(this.$t('m.Delete_successfully'));
               this.getProblemTagsAndClassification();
             })
             .catch(() => {});
@@ -400,11 +416,59 @@ export default {
 };
 </script>
 <style scoped>
-.filter {
+.tag-filter {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  height: 42px;
   margin-top: 10px;
+  padding-top: 10px;
 }
-.filter span {
-  margin-right: 10px;
+.tag-filter > span {
+  display: inline-flex;
+  align-items: center;
+}
+.tag-filter-button {
+  height: 32px;
+  min-height: 32px;
+  padding: 9px 15px;
+}
+.tag-filter > span:first-child .tag-filter-button {
+  width: 97px;
+}
+.tag-filter > span:nth-child(2) .tag-filter-button {
+  width: 121px;
+}
+.tag-oj-select {
+  width: 150px;
+}
+.tag-oj-select :deep(.el-select__wrapper) {
+  box-sizing: border-box;
+  font-size: 13px;
+  height: 32px;
+  min-height: 32px;
+  padding-left: 15px;
+}
+.tag-tips {
+  line-height: 1.5;
+  margin: -5px;
+}
+.tag-classification-card {
+  margin-top: 15px;
+}
+.tag-classification-action {
+  display: inline-flex;
+  margin-left: 10px;
+  transform: translateY(2px);
+}
+.tag-classification-action-button {
+  box-sizing: border-box;
+  height: 28px;
+  min-height: 28px;
+  min-width: 28px;
+  padding: 7px;
+  width: 28px;
 }
 .el-tag {
   margin-left: 10px;
@@ -422,13 +486,313 @@ export default {
   margin-top: 10px;
 }
 
-/deep/.el-collapse-item__header{
+:deep(.el-collapse-item__header){
+  --el-collapse-header-height: 40px;
   font-weight: bolder !important;
   height:40px !important;
+  min-height: 40px !important;
   line-height: 40px !important;
+  padding-right: 0;
   font-size: 15px !important;
 }
-/deep/.el-collapse-item__content {
+:deep(.el-collapse-item__content) {
   padding-bottom: 10px !important;
+}
+:deep(.el-collapse-item__arrow) {
+  margin-right: 8px;
+}
+
+:global(.tag-upsert-dialog.el-dialog) {
+  --el-dialog-padding-primary: 0px;
+  padding: 0;
+}
+
+:global(.tag-upsert-dialog .el-dialog__header) {
+  box-sizing: border-box;
+  height: 54px;
+  margin: 0;
+  padding: 20px 20px 10px;
+}
+
+:global(.tag-upsert-dialog .el-dialog__title) {
+  color: #303133;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+:global(.tag-upsert-dialog .el-dialog__headerbtn) {
+  height: 24px;
+  right: 20px;
+  top: 20px;
+  width: 16px;
+}
+
+:global(.tag-upsert-dialog .el-dialog__body) {
+  box-sizing: border-box;
+  color: #606266;
+  font-size: 14px;
+  padding: 30px 20px;
+  word-break: break-all;
+}
+
+:global(.tag-upsert-form) {
+  width: 310px;
+}
+
+:global(.tag-upsert-form .el-form-item) {
+  display: block;
+  margin-bottom: 22px;
+}
+
+:global(.tag-upsert-form .el-form-item::after),
+:global(.tag-upsert-form .el-form-item::before) {
+  content: "";
+  display: table;
+}
+
+:global(.tag-upsert-form .el-form-item::after) {
+  clear: both;
+}
+
+:global(.tag-upsert-form .el-form-item__label) {
+  display: block;
+  float: left;
+  font-size: 14px;
+  height: 40px;
+  line-height: 40px;
+  padding: 0 12px 0 0;
+}
+
+:global(.tag-upsert-form .el-form-item__content) {
+  display: block;
+  font-size: 14px;
+  line-height: 40px;
+  min-height: 40px;
+  position: relative;
+}
+
+:global(.tag-upsert-form .el-form-item:nth-child(1) .el-form-item__content) {
+  min-height: 81px;
+}
+
+:global(.tag-upsert-form .el-form-item:nth-child(2) .el-form-item__content) {
+  min-height: 55px;
+}
+
+:global(.tag-upsert-form .el-form-item:nth-child(3) .el-form-item__content),
+:global(.tag-upsert-form .el-form-item:nth-child(4) .el-form-item__content) {
+  min-height: 41px;
+}
+
+:global(.tag-upsert-form .el-form-item:last-child .el-form-item__content) {
+  height: 40px;
+  min-height: 40px;
+}
+
+:global(.tag-upsert-form .el-input) {
+  line-height: 40px;
+}
+
+:global(.tag-upsert-form .el-input--small .el-input__wrapper),
+:global(.tag-upsert-form .el-select--small .el-select__wrapper) {
+  box-sizing: border-box;
+  font-size: 13px;
+  height: 32px;
+  min-height: 32px;
+}
+
+:global(.tag-upsert-form .el-input--small .el-input__wrapper) {
+  padding: 1px 15px;
+}
+
+:global(.tag-upsert-form .el-select--small .el-select__wrapper) {
+  padding-left: 15px;
+}
+
+:global(.tag-upsert-form .el-color-picker),
+:global(.tag-upsert-form .el-color-picker__trigger) {
+  height: 40px;
+  width: 40px;
+}
+
+:global(.tag-upsert-form .el-color-picker__trigger) {
+  padding: 4px;
+}
+
+:global(.tag-upsert-form .tag-color-picker-empty .is-icon-arrow-down) {
+  display: none;
+}
+
+:global(.tag-upsert-form .tag-color-picker-empty .is-icon-close) {
+  color: #909399;
+  display: inline-flex !important;
+}
+
+:global(.tag-upsert-form .el-button--primary) {
+  box-sizing: border-box;
+  height: 40px;
+  padding: 12px 20px;
+}
+
+:global(.tag-upsert-form .el-form-item:last-child .el-button--primary) {
+  vertical-align: top;
+}
+
+:global(.tag-classification-upsert-dialog.el-dialog) {
+  --el-dialog-padding-primary: 0px;
+  padding: 0;
+}
+
+:global(.tag-classification-upsert-dialog .el-dialog__header) {
+  box-sizing: border-box;
+  height: 54px;
+  margin: 0;
+  padding: 20px 20px 10px;
+}
+
+:global(.tag-classification-upsert-dialog .el-dialog__title) {
+  color: #303133;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+:global(.tag-classification-upsert-dialog .el-dialog__headerbtn) {
+  height: 24px;
+  right: 20px;
+  top: 20px;
+  width: 16px;
+}
+
+:global(.tag-classification-upsert-dialog .el-dialog__body) {
+  box-sizing: border-box;
+  color: #606266;
+  font-size: 14px;
+  padding: 30px 20px;
+  word-break: break-all;
+}
+
+:global(.tag-classification-upsert-form) {
+  width: 310px;
+}
+
+:global(.tag-classification-upsert-form .el-form-item) {
+  display: block;
+  margin-bottom: 22px;
+}
+
+:global(.tag-classification-upsert-form .el-form-item::after),
+:global(.tag-classification-upsert-form .el-form-item::before) {
+  content: "";
+  display: table;
+}
+
+:global(.tag-classification-upsert-form .el-form-item::after) {
+  clear: both;
+}
+
+:global(.tag-classification-upsert-form .el-form-item__label) {
+  display: block;
+  float: left;
+  font-size: 14px;
+  height: 40px;
+  line-height: 40px;
+  padding: 0 12px 0 0;
+}
+
+:global(.tag-classification-upsert-form .el-form-item__content) {
+  display: block;
+  font-size: 14px;
+  line-height: 40px;
+  min-height: 40px;
+  position: relative;
+}
+
+:global(.tag-classification-upsert-form .el-form-item:nth-child(1) .el-form-item__content) {
+  height: 81px;
+  min-height: 81px;
+}
+
+:global(.tag-classification-upsert-form .el-form-item:nth-child(2) .el-form-item__content) {
+  min-height: 41px;
+}
+
+:global(.tag-classification-upsert-form .el-form-item:nth-child(3) .el-form-item__content) {
+  height: 40px;
+  min-height: 40px;
+}
+
+:global(.tag-classification-upsert-form .el-form-item:last-child .el-form-item__content) {
+  height: 40px;
+  min-height: 40px;
+}
+
+:global(.tag-classification-upsert-form .el-input) {
+  line-height: 40px;
+}
+
+:global(.tag-classification-upsert-form .el-input--small),
+:global(.tag-classification-upsert-form .el-select) {
+  height: 40px;
+}
+
+:global(.tag-classification-upsert-form .el-input--small .el-input__wrapper),
+:global(.tag-classification-upsert-form .el-select--small .el-select__wrapper) {
+  box-sizing: border-box;
+  font-size: 13px;
+  height: 32px;
+  min-height: 32px;
+}
+
+:global(.tag-classification-upsert-form .el-input--small .el-input__wrapper) {
+  margin-top: 4px;
+  padding: 1px 15px;
+}
+
+:global(.tag-classification-upsert-form .el-select) {
+  display: inline-block;
+  line-height: 40px;
+  position: relative;
+  top: 1px;
+  vertical-align: top;
+}
+
+:global(.tag-classification-upsert-form .el-select--small .el-select__wrapper) {
+  margin-top: 4px;
+  padding-left: 15px;
+}
+
+:global(.tag-classification-upsert-form .el-input-number) {
+  display: inline-flex;
+  height: 40px;
+  line-height: 38px;
+  vertical-align: top;
+  width: 180px;
+}
+
+:global(.tag-classification-upsert-form .el-input-number .el-input),
+:global(.tag-classification-upsert-form .el-input-number .el-input__wrapper) {
+  height: 40px;
+  min-height: 40px;
+  width: 180px;
+}
+
+:global(.tag-classification-upsert-form .el-input-number__decrease),
+:global(.tag-classification-upsert-form .el-input-number__increase) {
+  height: 38px;
+  line-height: 38px;
+  top: 1px;
+  width: 40px;
+}
+
+:global(.tag-classification-upsert-form .el-button--primary) {
+  box-sizing: border-box;
+  height: 40px;
+  padding: 12px 20px;
+}
+
+:global(.tag-classification-upsert-form .el-form-item:last-child .el-button--primary) {
+  vertical-align: top;
 }
 </style>

@@ -1,5 +1,7 @@
 spring:
-  profiles: prod
+  config:
+    activate:
+      on-profile: prod
   datasource:
     username: ${hoj.db.username}
     password: ${hoj.db.password}

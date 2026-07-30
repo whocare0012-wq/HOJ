@@ -1,5 +1,5 @@
 <template>
-  <div style="text-align:center">
+  <div class="add-public-problem" style="text-align:center">
     <div style="margin-bottom:10px" v-if="contest.type != undefined">
       <span class="tips">{{
         contest.type == 0
@@ -13,7 +13,7 @@
       type="search"
       size="medium"
       @search-click="filterByKeyword"
-      @keyup.enter.native="filterByKeyword"
+      @keyup.enter="filterByKeyword"
       style="margin-bottom:10px"
     ></vxe-input>
     <vxe-table
@@ -27,13 +27,18 @@
       </vxe-table-column>
       <vxe-table-column min-width="150" :title="$t('m.Title')" field="title">
       </vxe-table-column>
-      <vxe-table-column :title="$t('m.Option')" align="center" min-width="100">
+      <vxe-table-column
+        :title="$t('m.Option')"
+        align="center"
+        min-width="100"
+        fixed="right"
+      >
         <template v-slot="{ row }">
           <el-tooltip effect="dark" :content="$t('m.Add')" placement="top">
             <el-button
-              icon="el-icon-plus"
-              size="mini"
-              @click.native="handleAddProblem(row.id, row.problemId)"
+              :icon="legacyElementIcons['el-icon-plus']"
+              size="small"
+              @click="handleAddProblem(row.id, row.problemId)"
               type="primary"
             >
             </el-button>
@@ -47,7 +52,7 @@
       layout="prev, pager, next"
       @current-change="getPublicProblem"
       :page-size="limit"
-      :current-page.sync="page"
+      v-model:current-page="page"
       :total="total"
     >
     </el-pagination>
@@ -115,7 +120,7 @@ export default {
     handleAddProblem(id, problemId) {
       if (this.contestID) {
         this.$prompt(
-          this.$i18n.t('m.Enter_The_Problem_Display_ID_in_the_Contest'),
+          this.$t('m.Enter_The_Problem_Display_ID_in_the_Contest'),
           'Tips'
         ).then(
           ({ value }) => {
@@ -127,7 +132,7 @@ export default {
             api.admin_addContestProblemFromPublic(data).then(
               (res) => {
                 this.$emit('on-change');
-                myMessage.success(this.$i18n.t('m.Add_Successfully'));
+                myMessage.success(this.$t('m.Add_Successfully'));
                 this.getPublicProblem(this.page);
               },
               () => {}
@@ -144,7 +149,7 @@ export default {
         api.admin_addTrainingProblemFromPublic(data).then(
           (res) => {
             this.$emit('on-change');
-            myMessage.success(this.$i18n.t('m.Add_Successfully'));
+            myMessage.success(this.$t('m.Add_Successfully'));
             this.getPublicProblem(this.page);
           },
           () => {}
@@ -160,8 +165,38 @@ export default {
 </script>
 <style scoped>
 .page {
+  display: block;
   margin-top: 20px;
+  text-align: right !important;
+}
+.add-public-problem :deep(.vxe-table .el-button--small) {
+  box-sizing: border-box;
+  height: 29px;
+  min-height: 29px;
+  min-width: 44px;
+  padding: 7px 15px;
+}
+.add-public-problem :deep(.el-pagination.page) {
+  box-sizing: border-box;
+  display: block;
+  height: 32px;
+  padding: 2px 5px;
   text-align: right;
+  --el-pagination-button-width: 35.5px;
+  --el-pagination-button-height: 28px;
+}
+.add-public-problem :deep(.el-pagination.page .btn-prev),
+.add-public-problem :deep(.el-pagination.page .btn-next),
+.add-public-problem :deep(.el-pagination.page .el-pager) {
+  display: inline-block;
+  vertical-align: top;
+}
+.add-public-problem :deep(.el-pagination.page .el-pager) {
+  width: auto;
+}
+.add-public-problem :deep(.el-pagination.page .el-pager li) {
+  display: inline-block;
+  vertical-align: top;
 }
 .tips {
   color: red;

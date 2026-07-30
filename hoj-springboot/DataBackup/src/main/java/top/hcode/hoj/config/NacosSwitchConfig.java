@@ -106,7 +106,7 @@ public class NacosSwitchConfig {
                 switchConfig = yaml.loadAs(config, SwitchConfig.class);
                 switchConfig.convertUnicodeRemoteAccount2Str();
             } catch (Exception e) {
-                log.error("[Nacos Config] refresh switch config error:{}, config:{}", e, config);
+                log.error("[Nacos Config] refresh switch config error", e);
             }
         }
     }
@@ -123,7 +123,7 @@ public class NacosSwitchConfig {
                 Yaml yaml = new Yaml();
                 webConfig = yaml.loadAs(config, WebConfig.class);
             } catch (Exception e) {
-                log.error("[Nacos Config] refresh web config error:{}, config:{}", e, config);
+                log.error("[Nacos Config] refresh web config error", e);
             }
         }
     }
@@ -143,7 +143,7 @@ public class NacosSwitchConfig {
         try {
             return configService.publishConfig(switchConfigFileName, group, content, ConfigType.YAML.getType());
         } catch (NacosException e) {
-            log.error("[Nacos Config] publish switch config error:{}, config:{}", e, content);
+            log.error("[Nacos Config] publish switch config error", e);
             return false;
         }
     }
@@ -157,7 +157,7 @@ public class NacosSwitchConfig {
         try {
             return configService.publishConfig(webConfigFileName, group, content, ConfigType.YAML.getType());
         } catch (NacosException e) {
-            log.error("[Nacos Config] publish web config error:{}, config:{}", e, content);
+            log.error("[Nacos Config] publish web config error", e);
             return false;
         }
     }

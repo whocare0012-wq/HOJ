@@ -3,7 +3,7 @@
 # redis配置
 redis-host: ${REDIS_HOST:172.20.0.2}
 redis-port: ${REDIS_PORT:6379}
-redis-password: ${REDIS_PASSWORD:hoj123456}
+redis-password: ${REDIS_PASSWORD}
 
 # 本服务连接mysql的地址和端口号
 mysql-host: ${MYSQL_HOST:172.20.0.3}
@@ -12,11 +12,11 @@ mysql-port: ${MYSQL_PORT:3306}
 mysql-public-host: ${MYSQL_PUBLIC_HOST:172.20.0.3}
 mysql-public-port: ${MYSQL_PUBLIC_PORT:3306}
 mysql-username: ${MYSQL_USERNAME:root}
-mysql-password: ${MYSQL_ROOT_PASSWORD:hoj123456}
+mysql-password: ${MYSQL_ROOT_PASSWORD}
 mysql-name: ${MYSQL_DATABASE_NAME:hoj}
 
-# token密钥，default表示随机生成
-jwt-token-secret: ${JWT_TOKEN_SECRET:default}
+# token密钥，生产环境必须显式提供
+jwt-token-secret: ${JWT_TOKEN_SECRET}
 # token过期时间 单位s
 jwt-token-expire: ${JWT_TOKEN_EXPIRE:86400}
 # token可刷新的过期时间 单位s
@@ -24,8 +24,23 @@ jwt-token-fresh-expire: ${JWT_TOKEN_FRESH_EXPIRE:43200}
 
 # 网站是否开启远程评测
 open-remote-judge: ${OPEN_REMOTE_JUDGE:true}
-# 调用评测服务的token, default表示随机生成
-judge-token: ${JUDGE_TOKEN:default}
+# 是否允许应用启动时初始化或同步数据库业务数据。升级期间默认关闭以保护已有数据。
+startup-database-initialization-enabled: ${STARTUP_DATABASE_INITIALIZATION_ENABLED:false}
+# 密码升级开关。先部署双读兼容版本，再按顺序灰度开启写入和登录迁移。
+password-bcrypt-write-enabled: ${PASSWORD_BCRYPT_WRITE_ENABLED:false}
+password-upgrade-on-login-enabled: ${PASSWORD_UPGRADE_ON_LOGIN_ENABLED:false}
+# ZIP 导入解压后的全局资源限制，可按服务器容量调整。
+archive-max-entries: ${ARCHIVE_MAX_ENTRIES:20000}
+archive-max-uncompressed-bytes: ${ARCHIVE_MAX_UNCOMPRESSED_BYTES:2147483648}
+# 调用评测服务的token，生产环境必须显式提供
+judge-token: ${JUDGE_TOKEN}
+# 允许跨域访问的前端来源，多个来源以英文逗号分隔；同源部署无需额外配置。
+cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost,http://127.0.0.1}
+# AI 服务默认只允许 HTTPS，并可用逗号分隔的主机白名单进一步限制出口。
+ai-assistant-allow-http: ${AI_ASSISTANT_ALLOW_HTTP:false}
+ai-assistant-allowed-hosts: ${AI_ASSISTANT_ALLOWED_HOSTS:}
+# 独立于 JWT 的 AI API Key 静态加密密钥，至少 32 个字符。
+ai-assistant-key-encryption-secret: ${AI_ASSISTANT_KEY_ENCRYPTION_SECRET:}
 
 # 邮箱服务地址
 email-host: ${EMAIL_SERVER_HOST:smtp.qq.com}

@@ -1,7 +1,19 @@
 import moment from 'moment'
+import 'moment/locale/zh-cn'
+import 'moment/locale/zh-tw'
+import 'moment/locale/ja'
+import 'moment/locale/ko'
 import i18n from '@/i18n'
+
+const MOMENT_LOCALE_MAP = {
+  'en-US': 'en',
+  'zh-CN': 'zh-cn',
+  'zh-TW': 'zh-tw',
+  'ja-JP': 'ja',
+  'ko-KR': 'ko',
+}
 // 全局设定语言
-moment.locale(i18n.locale);
+moment.locale(MOMENT_LOCALE_MAP[i18n.locale.value] || 'zh-cn');
 
 
 // convert utc time to localtime
@@ -31,7 +43,7 @@ function formatSpecificDuration(startTime, endTime){
 
   let res = '';
 
-  if(i18n.locale=='en-US'){
+  if(i18n.locale.value=='en-US'){
     for(let i=0;i<arr.length;i++){
       let tmp = parseFloat((ms / arr[i]).toFixed(1));
       if(tmp>=1){
@@ -46,13 +58,13 @@ function formatSpecificDuration(startTime, endTime){
     for(let i=0;i<arr.length;i++){
       let tmp = parseFloat((ms / arr[i]).toFixed(1));
       if(tmp>=1){
-        if(i18n.locale=='zh-CN'){
+        if(i18n.locale.value=='zh-CN'){
           return tmp+zh_time[i];
-        } else if(i18n.locale=='zh-TW'){
+        } else if(i18n.locale.value=='zh-TW'){
           return tmp+zh_tw_time[i];
-        }else if(i18n.locale=='ja-JP'){
+        }else if(i18n.locale.value=='ja-JP'){
           return tmp+ja_time[i];
-        }else if(i18n.locale=='ko-KR'){
+        }else if(i18n.locale.value=='ko-KR'){
           return tmp+ko_time[i];
         }
       }

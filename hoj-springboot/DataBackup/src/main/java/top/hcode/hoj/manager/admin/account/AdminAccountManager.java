@@ -1,7 +1,6 @@
 package top.hcode.hoj.manager.admin.account;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.crypto.SecureUtil;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,6 +20,7 @@ import top.hcode.hoj.utils.Constants;
 import top.hcode.hoj.utils.IpUtils;
 import top.hcode.hoj.utils.JwtUtils;
 import top.hcode.hoj.utils.RedisUtils;
+import top.hcode.hoj.utils.UserPasswordService;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -49,6 +49,9 @@ public class AdminAccountManager {
     @Autowired
     private UserRoleEntityService userRoleEntityService;
 
+    @Autowired
+    private UserPasswordService userPasswordService;
+
     public UserInfoVO login(LoginDTO loginDto) throws StatusFailException, StatusAccessDeniedException {
 
         ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -69,7 +72,7 @@ public class AdminAccountManager {
             throw new StatusFailException("用户名或密码错误");
         }
 
-        if (!userRolesVo.getPassword().equals(SecureUtil.md5(loginDto.getPassword()))) {
+        if (!userPasswordService.matches(loginDto.getPassword(), userRolesVo.getPassword())) {
             if (tryLoginCount == null) {
                 redisUtils.set(key, 1, 60 * 30); // 三十分钟不尝试，该限制会自动清空消失
             } else {
@@ -94,6 +97,8 @@ public class AdminAccountManager {
 
 
         if (rolesList.contains("admin") || rolesList.contains("root") || rolesList.contains("problem_admin")) { // 超级管理员或管理员、题目管理员
+            userPasswordService.upgradeAfterSuccessfulLogin(
+                    userRolesVo.getUid(), loginDto.getPassword(), userRolesVo.getPassword());
             String jwt = jwtUtils.generateToken(userRolesVo.getUid());
 
             response.setHeader("Authorization", jwt); //放到信息头部

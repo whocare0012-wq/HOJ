@@ -1,3 +1,5 @@
+import { reactive } from 'vue'
+
 export const JUDGE_STATUS = {
   '-10': {
     name: 'Not Submitted',
@@ -137,37 +139,96 @@ export const JUDGE_STATUS_RESERVE={
   'sf':10,
 }
 
-export const PROBLEM_LEVEL={
-  '0':{
-    name:{
-      'zh-CN':'简单',
-      'en-US':'Easy',
-      'zh-TW':'簡單',
-      'ja-JP':'簡単',
-      'ko-KR':'간단한'
+const DEFAULT_PROBLEM_LEVEL = {
+  '0': {
+    name: {
+      'zh-CN': '简单',
+      'en-US': 'Easy',
+      'zh-TW': '簡單',
+      'ja-JP': '簡単',
+      'ko-KR': '쉬움',
     },
-    color:'#19be6b'
+    color: '#19BE6B',
+    borderColor: '#19BE6B',
   },
-  '1':{
-    name:{
-      'zh-CN':'中等',
-      'en-US':'Mid',
-      'zh-TW':'中等',
-      'ja-JP':'中等',
-      'ko-KR':'중간'
+  '1': {
+    name: {
+      'zh-CN': '中等',
+      'en-US': 'Medium',
+      'zh-TW': '中等',
+      'ja-JP': '中等',
+      'ko-KR': '보통',
     },
-    color:'#2d8cf0'
+    color: '#2D8CF0',
+    borderColor: '#2D8CF0',
   },
-  '2':{
-    name:{
-      'zh-CN':'困难',
-      'en-US':'Hard',
-      'zh-TW':'困難​​',
-      'ja-JP':'困難',
-      'ko-KR':'곤란'
+  '2': {
+    name: {
+      'zh-CN': '困难',
+      'en-US': 'Hard',
+      'zh-TW': '困難',
+      'ja-JP': '困難',
+      'ko-KR': '어려움',
     },
-    color:'#ed3f14'
+    color: '#ED3F14',
+    borderColor: '#ED3F14',
+  },
+}
+
+export const PROBLEM_LEVEL = reactive(DEFAULT_PROBLEM_LEVEL)
+
+export const PROBLEM_LEVEL_OPTIONS = reactive(
+  Object.entries(DEFAULT_PROBLEM_LEVEL).map(([value, level]) => ({
+    value: Number(value),
+    ...level,
+  }))
+)
+
+export function applyProblemLevelConfig(difficulties) {
+  if (!Array.isArray(difficulties) || difficulties.length === 0) {
+    return
   }
+  const nextLevels = {}
+  const nextOptions = []
+  difficulties.forEach((difficulty) => {
+    const key = String(difficulty.difficultyValue)
+    const displayText = difficulty.displayText
+    const borderColor = difficulty.borderColor
+    if (
+      !Number.isInteger(Number(difficulty.difficultyValue)) ||
+      Number(difficulty.difficultyValue) < 0 ||
+      !displayText ||
+      !borderColor
+    ) {
+      return
+    }
+    const level = {
+      name: {
+        'zh-CN': displayText,
+        'en-US': displayText,
+        'zh-TW': displayText,
+        'ja-JP': displayText,
+        'ko-KR': displayText,
+      },
+      color: borderColor,
+      borderColor,
+    }
+    nextLevels[key] = level
+    nextOptions.push({
+      value: Number(difficulty.difficultyValue),
+      ...level,
+    })
+  })
+  if (Object.keys(nextLevels).length !== difficulties.length) {
+    return
+  }
+  Object.keys(PROBLEM_LEVEL).forEach((key) => delete PROBLEM_LEVEL[key])
+  Object.assign(PROBLEM_LEVEL, nextLevels)
+  PROBLEM_LEVEL_OPTIONS.splice(
+    0,
+    PROBLEM_LEVEL_OPTIONS.length,
+    ...nextOptions
+  )
 }
 
 

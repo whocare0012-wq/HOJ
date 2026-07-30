@@ -37,8 +37,8 @@
       </vxe-table-column>
       <vxe-table-column min-width="210" :title="$t('m.Info')">
         <template v-slot="{ row }">
-          <p>{{ $t('m.Created_Time') }}: {{ row.gmtCreate | localtime }}</p>
-          <p>{{ $t('m.Update_Time') }}: {{ row.gmtModified | localtime }}</p>
+          <p>{{ $t('m.Created_Time') }}: {{ $filters.localtime(row.gmtCreate) }}</p>
+          <p>{{ $t('m.Update_Time') }}: {{ $filters.localtime(row.gmtModified) }}</p>
           <p>{{ $t('m.Creator') }}: {{ row.author }}</p>
         </template>
       </vxe-table-column>
@@ -51,9 +51,9 @@
             v-if="isGroupRoot || userInfo.username == row.author"
           >
             <el-button
-              icon="el-icon-edit"
-              size="mini"
-              @click.native="goEditTraining(row.id)"
+              :icon="legacyElementIcons['el-icon-edit']"
+              size="small"
+              @click="goEditTraining(row.id)"
               type="primary"
             >
             </el-button>
@@ -65,9 +65,9 @@
             v-if="isGroupRoot || userInfo.username == row.author"
           >
             <el-button
-              icon="el-icon-tickets"
-              size="mini"
-              @click.native="goTrainingProblemList(row.id)"
+              :icon="legacyElementIcons['el-icon-tickets']"
+              size="small"
+              @click="goTrainingProblemList(row.id)"
               type="success"
             >
             </el-button>
@@ -80,9 +80,9 @@
             v-if="isGroupRoot || userInfo.username == row.author"
           >
             <el-button
-              icon="el-icon-delete"
-              size="mini"
-              @click.native="deleteTraining(row.id)"
+              :icon="legacyElementIcons['el-icon-delete']"
+              size="small"
+              @click="deleteTraining(row.id)"
               type="danger"
             >
             </el-button>
@@ -95,7 +95,7 @@
       :total="total"
       :page-size="limit"
       @on-change="currentChange"
-      :current.sync="currentPage"
+      v-model:current="currentPage"
       @on-page-size-change="onPageSizeChange"
       :layout="'prev, pager, next, sizes'"
     ></Pagination>
@@ -180,18 +180,18 @@ export default {
     },
     changeTrainingStatus(tid, status) {
       api.changeGroupTrainingStatus(tid, status).then((res) => {
-        mMessage.success(this.$i18n.t('m.Update_Successfully'));
+        mMessage.success(this.$t('m.Update_Successfully'));
         this.$emit("currentChange", 1);
         this.currentChange(1);
       });
     },
     deleteTraining(id) {
-      this.$confirm(this.$i18n.t('m.Delete_Training_Tips'), this.$i18n.t('m.Warning'), {
+      this.$confirm(this.$t('m.Delete_Training_Tips'), this.$t('m.Warning'), {
         type: 'warning',
       }).then(() => {
           api.deleteGroupTraining(id, this.$route.params.groupID)
             .then((res) => {
-              mMessage.success(this.$i18n.t('m.Delete_successfully'));
+              mMessage.success(this.$t('m.Delete_successfully'));
               this.$emit("currentChange", 1);
               this.currentChange(1);
             })

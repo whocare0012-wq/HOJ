@@ -155,9 +155,7 @@ public class JwtFilter extends AuthenticatingFilter {
         boolean locked = redisUtils.getLock(ShiroConstant.SHIRO_TOKEN_LOCK + userId, 20, requestId);// 获取锁20s
         if (locked) {
             String newToken = jwtUtils.generateToken(userId);
-            response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Authorization", newToken); //放到信息头部
-            response.setHeader("Access-Control-Expose-Headers", "Refresh-Token,Authorization,Url-Type"); //让前端可用访问
             response.setHeader("Url-Type", request.getHeader("Url-Type")); // 为了前端能区别请求来源
             response.setHeader("Refresh-Token", "true"); //告知前端需要刷新token
         }
@@ -180,8 +178,6 @@ public class JwtFilter extends AuthenticatingFilter {
             CommonResult<Void> result = CommonResult.errorResponse(throwable.getMessage(), resultStatus);
             String json = JSONUtil.toJsonStr(result);
             httpResponse.setContentType("application/json;charset=utf-8");
-            httpResponse.setHeader("Access-Control-Expose-Headers", "Refresh-Token,Authorization,Url-Type"); //让前端可用访问
-            httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
             httpResponse.setHeader("Url-Type", httpRequest.getHeader("Url-Type")); // 为了前端能区别请求来源
             httpResponse.setStatus(resultStatus.getStatus());
             httpResponse.getWriter().print(json);
@@ -196,11 +192,6 @@ public class JwtFilter extends AuthenticatingFilter {
     protected boolean preHandle(ServletRequest request, ServletResponse response) throws Exception {
         HttpServletRequest httpServletRequest = WebUtils.toHttp(request);
         HttpServletResponse httpServletResponse = WebUtils.toHttp(response);
-        httpServletResponse.setHeader("Access-control-Allow-Origin", httpServletRequest.getHeader("Origin"));
-        httpServletResponse.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS,PUT,DELETE");
-        httpServletResponse.setHeader("Access-Control-Allow-Headers", httpServletRequest.getHeader("Access-Control-Request-Headers"));
-        httpServletResponse.setHeader("Access-Control-Expose-Headers",
-                "Refresh-Token,Authorization,Url-Type,Content-disposition,Content-Type"); //让前端可用访问
         // 跨域时会首先发送一个OPTIONS请求，这里我们给OPTIONS请求直接返回正常状态
         if (httpServletRequest.getMethod().equals(RequestMethod.OPTIONS.name())) {
             httpServletResponse.setStatus(org.springframework.http.HttpStatus.OK.value());

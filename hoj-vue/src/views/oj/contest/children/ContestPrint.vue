@@ -1,8 +1,10 @@
 <template>
   <el-card shadow="always">
-    <div slot="header">
-      <span class="panel-title">{{ $t('m.Print') }}</span>
-    </div>
+    <template #header>
+      <div>
+        <span class="panel-title">{{ $t('m.Print') }}</span>
+      </div>
+    </template>
     <div class="print-tips">
       <el-alert
         :title="$t('m.Print_Title')"
@@ -58,12 +60,12 @@ export default {
   methods: {
     onSubmit() {
       if (!this.ruleForm.content) {
-        mMessage.error(this.$i18n.t('m.Content_cannot_be_empty'));
+        mMessage.error(this.$t('m.Content_cannot_be_empty'));
         return;
       }
       if (this.ruleForm.content.length < 50) {
         mMessage.error(
-          this.$i18n.t('m.The_number_of_content_cannot_be_less_than_50')
+          this.$t('m.The_number_of_content_cannot_be_less_than_50')
         );
         return;
       }
@@ -73,12 +75,12 @@ export default {
       };
       api.submitPrintText(data).then((res) => {
         this.$confirm(
-          this.$i18n.t('m.Success_submit_tips'),
-          this.$i18n.t('m.Submit_code_successfully'),
+          this.$t('m.Success_submit_tips'),
+          this.$t('m.Submit_code_successfully'),
           {
             type: 'success',
             center: true,
-            confirmButtonText: this.$i18n.t('m.OK'),
+            confirmButtonText: this.$t('m.OK'),
           }
         );
       });

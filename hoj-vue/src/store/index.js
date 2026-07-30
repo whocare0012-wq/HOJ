@@ -1,5 +1,4 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 import user from '@/store/user'
 import contest from "@/store/contest"
 import training from "@/store/training"
@@ -8,8 +7,30 @@ import api from '@/common/api'
 import i18n from '@/i18n'
 import storage from '@/common/storage'
 import moment from 'moment'
-Vue.use(Vuex)
+import { applyProblemLevelConfig } from '@/common/constants'
+import 'moment/locale/zh-cn'
+import 'moment/locale/zh-tw'
+import 'moment/locale/ja'
+import 'moment/locale/ko'
+
+const MOMENT_LOCALE_MAP = {
+  'en-US': 'en',
+  'zh-CN': 'zh-cn',
+  'zh-TW': 'zh-tw',
+  'ja-JP': 'ja',
+  'ko-KR': 'ko',
+}
+
 const rootState = {
+  route: {
+    name: null,
+    path: '/',
+    hash: '',
+    query: {},
+    params: {},
+    fullPath: '/',
+    meta: {}
+  },
   modalStatus: {
     mode: 'Login', // or 'register',
     visible: false
@@ -48,6 +69,9 @@ const rootGetters = {
 }
 
 const rootMutations = {
+  updateRoute(state, route) {
+    state.route = route
+  },
   changeModalStatus(state, { mode, visible }) {
     if (mode !== undefined) {
       state.modalStatus.mode = mode
@@ -89,8 +113,8 @@ const rootMutations = {
   changeWebLanguage (state, {language}) {
     if (language) {
       state.language = language
-      i18n.locale = language
-      moment.locale(language);
+      i18n.locale.value = language
+      moment.locale(MOMENT_LOCALE_MAP[language] || 'zh-cn');
     }
     storage.set('Web_Language', language)
   }
@@ -123,9 +147,15 @@ const rootActions = {
       })
     })
   },
+  getProblemDifficulties () {
+    return api.getProblemDifficulties().then(res => {
+      applyProblemLevelConfig(res.data.data)
+      return res.data.data
+    })
+  },
 }
 
-export default new Vuex.Store({
+export default createStore({
   modules: {
     user,
     contest,

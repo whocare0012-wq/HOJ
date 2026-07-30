@@ -1,8 +1,10 @@
 <template>
   <el-card shadow="always">
-    <div slot="header">
-      <span class="panel-title">{{ $t('m.Contest_Rejudge') }}</span>
-    </div>
+    <template #header>
+      <div>
+        <span class="panel-title">{{ $t('m.Contest_Rejudge') }}</span>
+      </div>
+    </template>
     <vxe-table
       border="inner"
       stripe
@@ -37,7 +39,7 @@
             type="primary"
             size="small"
             :loading="btnLoading"
-            icon="el-icon-refresh-right"
+            :icon="legacyElementIcons['el-icon-refresh-right']"
             @click="rejudgeProblem(row)"
             round
             >{{ $t('m.Rejudge_All') }}</el-button
@@ -68,9 +70,9 @@ export default {
   methods: {
     ...mapActions(['getContestProblems']),
     rejudgeProblem(row) {
-      this.$confirm(this.$i18n.t('m.Contest_Rejudge_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Contest_Rejudge_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       }).then(
         () => {
@@ -82,7 +84,7 @@ export default {
           api
             .ContestRejudgeProblem(params)
             .then((res) => {
-              myMessage.success(this.$i18n.t('m.Rejudge_successfully'));
+              myMessage.success(this.$t('m.Rejudge_successfully'));
               this.btnLoading = false;
             })
             .catch(() => {
@@ -103,7 +105,7 @@ export default {
 </script>
 <style scoped>
 @media screen and (min-width: 1050px) {
-  /deep/ .vxe-table--body-wrapper {
+  :deep(.vxe-table--body-wrapper) {
     overflow-x: hidden !important;
   }
 }

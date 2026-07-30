@@ -23,6 +23,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import top.hcode.hoj.common.exception.*;
 import top.hcode.hoj.common.result.CommonResult;
 import top.hcode.hoj.common.result.ResultStatus;
@@ -157,6 +158,16 @@ public class GlobalExceptionAdvice {
     /**
      * 400 - Bad Request 参数解析失败
      */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public CommonResult<Void> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException e) {
+        String parameterName = e.getName() == null ? "request parameter" : e.getName();
+        return CommonResult.errorResponse(
+                "Invalid value for parameter: " + parameterName,
+                ResultStatus.FAIL);
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public CommonResult<Void> handleHttpMessageNotReadableException(

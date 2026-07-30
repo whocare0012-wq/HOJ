@@ -18,7 +18,7 @@
       </vxe-table-column>
       <vxe-table-column :title="$t('m.Type')" width="100">
         <template v-slot="{ row }">
-          <el-tag type="gray">{{ row.type | parseContestType }}</el-tag>
+          <el-tag type="gray">{{ $filters.parseContestType(row.type) }}</el-tag>
         </template>
       </vxe-table-column>
       <vxe-table-column :title="$t('m.Auth')" width="100">
@@ -39,7 +39,7 @@
           <el-tag
             effect="dark"
             :color="CONTEST_STATUS_REVERSE[row.status].color"
-            size="medium"
+            size="default"
           >
             {{ $t('m.' + CONTEST_STATUS_REVERSE[row.status]['name']) }}
           </el-tag>
@@ -57,9 +57,9 @@
       </vxe-table-column>
       <vxe-table-column min-width="210" :title="$t('m.Info')">
         <template v-slot="{ row }">
-          <p>{{ $t('m.Start_Time') }}: {{ row.startTime | localtime }}</p>
-          <p>{{ $t('m.End_Time') }}: {{ row.endTime | localtime }}</p>
-          <p>{{ $t('m.Created_Time') }}: {{ row.gmtCreate | localtime }}</p>
+          <p>{{ $t('m.Start_Time') }}: {{ $filters.localtime(row.startTime) }}</p>
+          <p>{{ $t('m.End_Time') }}: {{ $filters.localtime(row.endTime) }}</p>
+          <p>{{ $t('m.Created_Time') }}: {{ $filters.localtime(row.gmtCreate) }}</p>
           <p>{{ $t('m.Creator') }}: {{ row.author }}</p>
         </template>
       </vxe-table-column>
@@ -72,9 +72,9 @@
             v-if="isGroupRoot || userInfo.uid == row.uid"
           >
             <el-button
-              icon="el-icon-edit"
-              size="mini"
-              @click.native="goEditContest(row.id)"
+              :icon="legacyElementIcons['el-icon-edit']"
+              size="small"
+              @click="goEditContest(row.id)"
               type="primary"
             >
             </el-button>
@@ -86,9 +86,9 @@
             v-if="isGroupRoot || userInfo.uid == row.uid"
           >
             <el-button
-              icon="el-icon-tickets"
-              size="mini"
-              @click.native="goContestProblemList(row.id)"
+              :icon="legacyElementIcons['el-icon-tickets']"
+              size="small"
+              @click="goContestProblemList(row.id)"
               type="success"
             >
             </el-button>
@@ -101,9 +101,9 @@
             v-if="isGroupRoot || userInfo.uid == row.uid"
           >
             <el-button
-              icon="el-icon-info"
-              size="mini"
-              @click.native="goContestAnnouncementList(row.id)"
+              :icon="legacyElementIcons['el-icon-info']"
+              size="small"
+              @click="goContestAnnouncementList(row.id)"
               type="info"
             >
             </el-button>
@@ -115,9 +115,9 @@
             v-if="isGroupRoot || userInfo.uid == row.uid"
           >
             <el-button
-              icon="el-icon-download"
-              size="mini"
-              @click.native="openDownloadOptions(row.id)"
+              :icon="legacyElementIcons['el-icon-download']"
+              size="small"
+              @click="openDownloadOptions(row.id)"
               type="warning"
             >
             </el-button>
@@ -130,9 +130,9 @@
             v-if="isGroupRoot || userInfo.uid == row.uid"
           >
             <el-button
-              icon="el-icon-delete"
-              size="mini"
-              @click.native="deleteContest(row.id)"
+              :icon="legacyElementIcons['el-icon-delete']"
+              size="small"
+              @click="deleteContest(row.id)"
               type="danger"
             >
             </el-button>
@@ -145,7 +145,7 @@
       :total="total"
       :page-size="limit"
       @on-change="currentChange"
-      :current.sync="currentPage"
+      v-model:current="currentPage"
       @on-page-size-change="onPageSizeChange"
       :layout="'prev, pager, next, sizes'"
     ></Pagination>
@@ -161,21 +161,23 @@
     <el-dialog
       :title="$t('m.Download_Contest_AC_Submission')"
       width="320px"
-      :visible.sync="downloadDialogVisible"
+      v-model="downloadDialogVisible"
     >
       <el-switch
         v-model="excludeAdmin"
         :active-text="$t('m.Exclude_admin_submissions')"
       ></el-switch>
       <el-radio-group v-model="splitType" style="margin-top:10px">
-        <el-radio label="user">{{ $t('m.SplitType_User') }}</el-radio>
-        <el-radio label="problem">{{ $t('m.SplitType_Problem') }}</el-radio>
+        <el-radio value="user">{{ $t('m.SplitType_User') }}</el-radio>
+        <el-radio value="problem">{{ $t('m.SplitType_Problem') }}</el-radio>
       </el-radio-group>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="downloadSubmissions">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="downloadSubmissions">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -279,15 +281,15 @@ export default {
     },
     changeContestVisible(cid, visible) {
       api.changeGroupContestVisible(cid, visible).then((res) => {
-        mMessage.success(this.$i18n.t('m.Update_Successfully'));
+        mMessage.success(this.$t('m.Update_Successfully'));
         this.$emit('currentChange', 1);
         this.currentChange(1);
       });
     },
     deleteContest(id) {
       this.$confirm(
-        this.$i18n.t('m.Delete_Contest_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Delete_Contest_Tips'),
+        this.$t('m.Warning'),
         {
           type: 'warning',
         }
@@ -296,7 +298,7 @@ export default {
           api
             .deleteGroupContest(id, this.$route.params.groupID)
             .then((res) => {
-              mMessage.success(this.$i18n.t('m.Delete_successfully'));
+              mMessage.success(this.$t('m.Delete_successfully'));
               this.$emit('currentChange', 1);
               this.currentChange(1);
             })

@@ -1,40 +1,43 @@
 <template>
   <div class="view">
     <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.General_User') }}</span>
-        <div class="filter-row">
-          <span>
-            <el-button
-              type="danger"
-              icon="el-icon-delete-solid"
-              @click="deleteUsers(null)"
-              size="small"
-              >{{ $t('m.Delete') }}
-            </el-button>
-          </span>
-          <span>
-            <vxe-input
-              v-model="keyword"
-              :placeholder="$t('m.Enter_keyword')"
-              type="search"
-              size="medium"
-              @search-click="filterByKeyword"
-              @keyup.enter.native="filterByKeyword"
-            ></vxe-input>
-          </span>
-          <span>
-            <el-switch
-              v-model="onlyAdmin"
-              :active-text="$t('m.OnlyAdmin')"
-              :width="40"
-              @change="filterByAdmin"
-              :inactive-text="$t('m.All')"
-            >
-            </el-switch>
-          </span>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.General_User') }}</span>
+          <div class="filter-row">
+            <span>
+              <el-button
+                type="danger"
+                :icon="legacyElementIcons['el-icon-delete-solid']"
+                @click="deleteUsers(null)"
+                size="small"
+                class="user-batch-delete"
+                >{{ $t('m.Delete') }}
+              </el-button>
+            </span>
+            <span>
+              <vxe-input
+                v-model="keyword"
+                :placeholder="$t('m.Enter_keyword')"
+                type="search"
+                size="medium"
+                @search-click="filterByKeyword"
+                @keyup.enter="filterByKeyword"
+              ></vxe-input>
+            </span>
+            <span>
+              <el-switch
+                v-model="onlyAdmin"
+                :active-text="$t('m.OnlyAdmin')"
+                :width="40"
+                @change="filterByAdmin"
+                :inactive-text="$t('m.All')"
+              >
+              </el-switch>
+            </span>
+          </div>
         </div>
-      </div>
+      </template>
       <vxe-table
         stripe
         auto-resize
@@ -84,7 +87,7 @@
           min-width="150"
         >
           <template v-slot="{ row }">
-            {{ row.gmtCreate | localtime }}
+            {{ $filters.localtime(row.gmtCreate) }}
           </template>
         </vxe-table-column>
         <vxe-table-column
@@ -93,7 +96,7 @@
           min-width="100"
         >
           <template v-slot="{ row }">
-            {{ getRole(row.roles) | parseRole }}
+            {{ $filters.parseRole(getRole(row.roles)) }}
           </template>
         </vxe-table-column>
         <vxe-table-column
@@ -102,15 +105,27 @@
           min-width="100"
         >
           <template v-slot="{ row }">
-            <el-tag effect="dark" color="#19be6b" v-if="row.status == 0">{{
-              $t('m.Normal')
-            }}</el-tag>
-            <el-tag effect="dark" color="#ed3f14" v-else>{{
-              $t('m.Disable')
-            }}</el-tag>
+            <el-tag
+              effect="dark"
+              color="#19be6b"
+              class="user-status-tag"
+              v-if="row.status == 0"
+              >{{ $t('m.Normal') }}</el-tag
+            >
+            <el-tag
+              effect="dark"
+              color="#ed3f14"
+              class="user-status-tag"
+              v-else
+              >{{ $t('m.Disable') }}</el-tag
+            >
           </template>
         </vxe-table-column>
-        <vxe-table-column :title="$t('m.Option')" min-width="150">
+        <vxe-table-column
+          :title="$t('m.Option')"
+          min-width="150"
+          fixed="right"
+        >
           <template v-slot="{ row }">
             <el-tooltip
               effect="dark"
@@ -118,10 +133,11 @@
               placement="top"
             >
               <el-button
-                icon="el-icon-edit-outline"
-                size="mini"
-                @click.native="openUserDialog(row)"
+                :icon="legacyElementIcons['el-icon-edit-outline']"
+                size="small"
+                @click="openUserDialog(row)"
                 type="primary"
+                class="user-action-button"
               >
               </el-button>
             </el-tooltip>
@@ -131,10 +147,11 @@
               placement="top"
             >
               <el-button
-                icon="el-icon-delete-solid"
-                size="mini"
-                @click.native="deleteUsers([row.uid])"
+                :icon="legacyElementIcons['el-icon-delete-solid']"
+                size="small"
+                @click="deleteUsers([row.uid])"
                 type="danger"
+                class="user-action-button"
               >
               </el-button>
             </el-tooltip>
@@ -157,9 +174,11 @@
 
     <!-- 导入csv用户数据 -->
     <el-card style="margin-top:20px">
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Import_User') }}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Import_User') }}</span>
+        </div>
+      </template>
       <p>1. {{ $t('m.Import_User_Tips1') }}</p>
       <p>2. {{ $t('m.Import_User_Tips2') }}</p>
       <p>3. {{ $t('m.Import_User_Tips3') }}</p>
@@ -172,7 +191,7 @@
         accept=".csv"
         :before-upload="handleUsersCSV"
       >
-        <el-button size="small" icon="el-icon-folder-opened" type="primary">{{
+        <el-button size="small" :icon="legacyElementIcons['el-icon-folder-opened']" type="primary">{{
           $t('m.Choose_File')
         }}</el-button>
       </el-upload>
@@ -254,14 +273,14 @@
           <el-button
             type="primary"
             size="small"
-            icon="el-icon-upload"
+            :icon="legacyElementIcons['el-icon-upload']"
             @click="handleUsersUpload"
             >{{ $t('m.Upload_All') }}
           </el-button>
           <el-button
             type="danger"
             size="small"
-            icon="el-icon-delete"
+            :icon="legacyElementIcons['el-icon-delete']"
             @click="handleResetData"
             >{{ $t('m.Clear_All') }}
           </el-button>
@@ -269,7 +288,7 @@
             class="page"
             layout="prev, pager, next"
             :page-size="uploadUsersPageSize"
-            :current-page.sync="uploadUsersCurrentPage"
+            v-model:current-page="uploadUsersCurrentPage"
             :total="uploadUsers.length"
           >
           </el-pagination>
@@ -279,9 +298,11 @@
 
     <!--生成用户数据-->
     <el-card style="margin-top:20px">
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Generate_User') }}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Generate_User') }}</span>
+        </div>
+      </template>
       <el-form
         :model="formGenerateUser"
         ref="formGenerateUser"
@@ -337,7 +358,7 @@
           <el-button
             type="primary"
             @click="generateUser"
-            icon="fa fa-users"
+            :icon="legacyElementIcons['el-icon-user-solid']"
             :loading="loadingGenerate"
             size="small"
           >
@@ -384,8 +405,9 @@
     <!--编辑用户的对话框-->
     <el-dialog
       :title="$t('m.User')"
-      :visible.sync="showUserDialog"
+      v-model="showUserDialog"
       width="350px"
+      class="user-edit-dialog"
     >
       <el-form
         :model="selectUser"
@@ -393,6 +415,7 @@
         label-position="left"
         :rules="updateUserRules"
         ref="updateUser"
+        class="user-edit-form"
       >
         <el-row :gutter="10">
           <el-col :span="24">
@@ -488,7 +511,10 @@
             <el-form-item :label="$t('m.Title_Name')">
               <el-input v-model="selectUser.titleName" size="small"></el-input>
             </el-form-item>
-            <el-form-item :label="$t('m.Title_Color')">
+            <el-form-item
+              :label="$t('m.Title_Color')"
+              class="user-edit-color-item"
+            >
               <el-color-picker
                 v-model="selectUser.titleColor"
               ></el-color-picker>
@@ -508,14 +534,16 @@
           </el-col>
         </el-row>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="danger" @click.native="showUserDialog = false">{{
-          $t('m.Cancel')
-        }}</el-button>
-        <el-button type="primary" @click.native="saveUser">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="danger" @click="showUserDialog = false">{{
+            $t('m.Cancel')
+          }}</el-button>
+          <el-button type="primary" @click="saveUser">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -532,7 +560,7 @@ export default {
       if (value < this.formGenerateUser.number_from) {
         callback(
           new Error(
-            this.$i18n.t(
+            this.$t(
               'm.The_end_number_cannot_be_less_than_the_start_number'
             )
           )
@@ -544,7 +572,7 @@ export default {
       if (value < 6 || value > 25) {
         callback(
           new Error(
-            this.$i18n.t(
+            this.$t(
               'm.Please_select_6_to_25_characters_for_password_length'
             )
           )
@@ -559,7 +587,7 @@ export default {
             res.data.data.username === true &&
             value != this.selectUser.username
           ) {
-            callback(new Error(this.$i18n.t('m.The_username_already_exists')));
+            callback(new Error(this.$t('m.The_username_already_exists')));
           } else {
             callback();
           }
@@ -571,7 +599,7 @@ export default {
       api.checkUsernameOrEmail(undefined, value).then(
         (res) => {
           if (res.data.data.email === true && value != this.selectUser.email) {
-            callback(new Error(this.$i18n.t('m.The_email_already_exists')));
+            callback(new Error(this.$t('m.The_email_already_exists')));
           } else {
             callback();
           }
@@ -615,11 +643,11 @@ export default {
           {
             validator: CheckUsernameNotExist,
             trigger: 'blur',
-            message: this.$i18n.t('m.The_username_already_exists'),
+            message: this.$t('m.The_username_already_exists'),
           },
           {
             max: 255,
-            message: this.$i18n.t('m.Username_Check_Max'),
+            message: this.$t('m.Username_Check_Max'),
             trigger: 'blur',
           },
         ],
@@ -632,12 +660,12 @@ export default {
         email: [
           {
             type: 'email',
-            message: this.$i18n.t('m.Email_Check_Format'),
+            message: this.$t('m.Email_Check_Format'),
             trigger: 'blur',
           },
           {
             validator: CheckEmailNotExist,
-            message: this.$i18n.t('m.The_email_already_exists'),
+            message: this.$t('m.The_email_already_exists'),
             trigger: 'blur',
           },
         ],
@@ -658,14 +686,14 @@ export default {
         number_from: [
           {
             required: true,
-            message: this.$i18n.t('m.Start_Number_Required'),
+            message: this.$t('m.Start_Number_Required'),
             trigger: 'blur',
           },
         ],
         number_to: [
           {
             required: true,
-            message: this.$i18n.t('m.End_Number_Required'),
+            message: this.$t('m.End_Number_Required'),
             trigger: 'blur',
           },
           { validator: CheckTogtFrom, trigger: 'blur' },
@@ -673,12 +701,12 @@ export default {
         password_length: [
           {
             required: true,
-            message: this.$i18n.t('m.Password_Check_Required'),
+            message: this.$t('m.Password_Check_Required'),
             trigger: 'blur',
           },
           {
             type: 'number',
-            message: this.$i18n.t('m.Password_Length_Checked'),
+            message: this.$t('m.Password_Length_Checked'),
             trigger: 'blur',
           },
           { validator: CheckPwdLength, trigger: 'blur' },
@@ -707,7 +735,7 @@ export default {
             .admin_editUser(this.selectUser)
             .then((res) => {
               // 更新列表
-              myMessage.success(this.$i18n.t('m.Update_Successfully'));
+              myMessage.success(this.$t('m.Update_Successfully'));
               this.getUserList(this.currentPage);
             })
             .then(() => {
@@ -761,16 +789,16 @@ export default {
         ids = this.selectedUsers;
       }
       if (ids.length > 0) {
-        this.$confirm(this.$i18n.t('m.Delete_User_Tips'), 'Tips', {
-          confirmButtonText: this.$i18n.t('m.OK'),
-          cancelButtonText: this.$i18n.t('m.Cancel'),
+        this.$confirm(this.$t('m.Delete_User_Tips'), 'Tips', {
+          confirmButtonText: this.$t('m.OK'),
+          cancelButtonText: this.$t('m.Cancel'),
           type: 'warning',
         }).then(
           () => {
             api
               .admin_deleteUsers(ids)
               .then((res) => {
-                myMessage.success(this.$i18n.$t('m.Delete_successfully'));
+                myMessage.success(this.$t('m.Delete_successfully'));
                 this.selectedUsers = [];
                 this.getUserList(this.currentPage);
               })
@@ -783,7 +811,7 @@ export default {
         );
       } else {
         myMessage.warning(
-          this.$i18n.t('m.The_number_of_users_selected_cannot_be_empty')
+          this.$t('m.The_number_of_users_selected_cannot_be_empty')
         );
       }
     },
@@ -808,7 +836,7 @@ export default {
     generateUser() {
       this.$refs['formGenerateUser'].validate((valid) => {
         if (!valid) {
-          myMessage.error(this.$i18n.t('m.Error_Please_check_your_choice'));
+          myMessage.error(this.$t('m.Error_Please_check_your_choice'));
           return;
         }
         this.loadingGenerate = true;
@@ -819,7 +847,7 @@ export default {
             this.loadingGenerate = false;
             let url = '/api/file/generate-user-excel?key=' + res.data.data.key;
             utils.downloadFile(url).then(() => {
-              this.$alert(this.$i18n.t('m.Generate_User_Success'), 'Tips');
+              this.$alert(this.$t('m.Generate_User_Success'), 'Tips');
             });
             this.getUserList(1);
           })
@@ -837,7 +865,7 @@ export default {
           let delta = results.data.length - data.length;
           if (delta > 0) {
             myMessage.warning(
-              delta + this.$i18n.t('m.Generate_Skipped_Reason')
+              delta + this.$t('m.Generate_Skipped_Reason')
             );
           }
           this.uploadUsersCurrentPage = 1;
@@ -855,7 +883,7 @@ export default {
         .then((res) => {
           this.getUserList(1);
           this.handleResetData();
-          myMessage.success(this.$i18n.t('m.Upload_Users_Successfully'));
+          myMessage.success(this.$t('m.Upload_Users_Successfully'));
         })
         .catch(() => {});
     },
@@ -896,13 +924,105 @@ export default {
   padding-left: 10px;
 }
 
-/deep/ .el-tag--dark {
+.user-batch-delete {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+.user-status-tag {
+  height: 30px;
+  line-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.user-action-button {
+  width: 44px;
+  height: 30px;
+  padding: 0;
+  font-size: 12px;
+}
+
+.user-action-button + .user-action-button {
+  margin-left: 10px;
+}
+
+:deep(.user-edit-dialog) {
+  padding: 20px;
+}
+
+:deep(.user-edit-dialog .el-dialog__body) {
+  padding: 25px 0 0;
+}
+
+:deep(.user-edit-dialog .el-dialog__headerbtn) {
+  top: 7px;
+  right: 4px;
+}
+
+:deep(.user-edit-dialog .el-dialog__footer) {
+  padding: 8px 0 0;
+}
+
+:deep(.user-edit-form .el-form-item) {
+  margin-bottom: 11px !important;
+}
+
+:deep(.user-edit-form .el-form-item__label),
+:deep(.user-edit-form .el-form-item__content) {
+  height: 40px;
+  line-height: 40px;
+}
+
+:deep(.user-edit-form .el-input),
+:deep(.user-edit-form .el-select) {
+  height: 32px;
+}
+
+:deep(.user-edit-form .el-input__wrapper) {
+  min-height: 32px;
+}
+
+:deep(.user-edit-form .el-select__wrapper) {
+  min-height: 32px;
+}
+
+:deep(.user-edit-form .el-select) {
+  width: 100%;
+}
+
+:deep(.user-edit-form .el-switch) {
+  height: 40px;
+}
+
+:deep(.user-edit-form .el-color-picker),
+:deep(.user-edit-form .el-color-picker__trigger) {
+  width: 40px;
+  height: 40px;
+}
+
+:deep(.user-edit-form .user-edit-color-item) {
+  margin-bottom: 24px !important;
+}
+
+:deep(.user-edit-dialog .el-dialog__footer .el-button) {
+  width: 70px;
+  height: 41px;
+  padding: 0;
+}
+
+:deep(.user-edit-dialog .el-dialog__footer .el-button + .el-button) {
+  margin-left: 10px;
+}
+
+:deep(.el-tag--dark) {
   border-color: #fff;
 }
-/deep/.el-dialog__body {
+:deep(.el-dialog__body) {
   padding-bottom: 0;
 }
-/deep/.el-form-item {
+:deep(.el-form-item) {
   margin-bottom: 10px !important;
 }
 .notification p {

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="login-panel">
     <el-form
       :model="formLogin"
       :rules="rules"
@@ -9,19 +9,19 @@
       <el-form-item prop="username">
         <el-input
           v-model="formLogin.username"
-          prefix-icon="el-icon-user-solid"
+          :prefix-icon="legacyElementIcons['el-icon-user-solid']"
           :placeholder="$t('m.Login_Username')"
           width="100%"
-          @keyup.enter.native="enterHandleLogin"
+          @keyup.enter="enterHandleLogin"
         ></el-input>
       </el-form-item>
       <el-form-item prop="password">
         <el-input
           v-model="formLogin.password"
-          prefix-icon="el-icon-lock"
+          :prefix-icon="legacyElementIcons['el-icon-lock']"
           :placeholder="$t('m.Login_Password')"
           type="password"
-          @keyup.enter.native="enterHandleLogin"
+          @keyup.enter="enterHandleLogin"
         ></el-input>
       </el-form-item>
     </el-form>
@@ -40,9 +40,11 @@
         trigger="click"
         v-else
       >
-        <el-button type="primary" :loading="btnLoginLoading" slot="reference">{{
-          $t('m.Login_Btn')
-        }}</el-button>
+        <template #reference>
+          <el-button type="primary" :loading="btnLoginLoading">{{
+            $t('m.Login_Btn')
+          }}</el-button>
+        </template>
         <slide-verify
           :l="42"
           :r="10"
@@ -67,12 +69,6 @@
         >
         </el-alert>
       </el-popover>
-      <el-link
-        v-if="websiteConfig.register"
-        type="primary"
-        @click="switchMode('Register')"
-        >{{ $t('m.Login_No_Account') }}</el-link
-      >
       <el-link
         type="primary"
         @click="switchMode('ResetPwd')"
@@ -116,25 +112,25 @@ export default {
         username: [
           {
             required: true,
-            message: this.$i18n.t('m.Username_Check_Required'),
+            message: this.$t('m.Username_Check_Required'),
             trigger: 'blur',
           },
           {
             max: 20,
-            message: this.$i18n.t('m.Username_Check_Max'),
+            message: this.$t('m.Username_Check_Max'),
             trigger: 'blur',
           },
         ],
         password: [
           {
             required: true,
-            message: this.$i18n.t('m.Password_Check_Required'),
+            message: this.$t('m.Password_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 6,
             max: 20,
-            message: this.$i18n.t('m.Password_Check_Between'),
+            message: this.$t('m.Password_Check_Between'),
             trigger: 'blur',
           },
         ],
@@ -151,7 +147,7 @@ export default {
     },
     enterHandleLogin() {
       if (this.needVerify) {
-        this.visible.loginSlideBlock = true;
+        this.loginSlideBlockVisible = true;
       } else {
         this.handleLogin();
       }
@@ -178,7 +174,7 @@ export default {
               this.$store.commit('changeUserToken', jwt);
               this.$store.dispatch('setUserInfo', res.data.data);
               this.$store.dispatch('incrLoginFailNum', true);
-              mMessage.success(this.$i18n.t('m.Welcome_Back'));
+              mMessage.success(this.$t('m.Welcome_Back'));
             },
             (_) => {
               this.$store.dispatch('incrLoginFailNum', false);
@@ -190,7 +186,7 @@ export default {
     },
   },
   computed: {
-    ...mapGetters(['modalStatus', 'loginFailNum','websiteConfig']),
+    ...mapGetters(['modalStatus', 'loginFailNum']),
     visible: {
       get() {
         return this.modalStatus.visible;
@@ -214,16 +210,24 @@ export default {
 <style scoped>
 .footer {
   overflow: auto;
-  margin-top: 20px;
-  margin-bottom: -15px;
+  margin-top: 22px;
+  margin-bottom: 0;
   text-align: left;
 }
-/deep/.el-button {
-  margin: 0 0 15px 0;
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+:deep(.el-input__wrapper) {
+  min-height: 40px;
+}
+:deep(.el-button) {
+  margin: 0 0 20px 0;
+  height: 40px;
+  padding: 0 20px;
   width: 100%;
 }
 
-/deep/ .el-form-item__content {
+:deep(.el-form-item__content) {
   margin-left: 0px !important;
 }
 </style>

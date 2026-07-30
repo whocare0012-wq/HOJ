@@ -1,15 +1,18 @@
 <template>
-  <el-card shadow>
-    <div slot="header">
-      <span class="panel-title">{{ $t('m.Contest_Rank') }}</span>
-    </div>
+  <el-card shadow="always">
+    <template #header>
+      <div>
+        <span class="panel-title">{{ $t('m.Contest_Rank') }}</span>
+      </div>
+    </template>
     <div
       v-show="showChart"
       class="echarts"
     >
       <ECharts
-        :options="options"
-        ref="chart"
+        :option="options"
+        :loading="chartLoading"
+        :loading-options="chartLoadingOptions"
         :autoresize="true"
       ></ECharts>
     </div>
@@ -22,14 +25,15 @@
           <el-input
             :placeholder="$t('m.Contest_Rank_Search_Placeholder')"
             v-model="keyword"
-            @keyup.enter.native="getContestRankData(page)"
+            @keyup.enter="getContestRankData(page)"
           >
-            <el-button
-              slot="append"
-              icon="el-icon-search"
-              class="search-btn"
-              @click="getContestRankData(page)"
-            ></el-button>
+            <template #append>
+              <el-button
+                  :icon="legacyElementIcons['el-icon-search']"
+                class="search-btn"
+                @click="getContestRankData(page)"
+              ></el-button>
+            </template>
           </el-input>
         </div>
       </el-col>
@@ -42,13 +46,14 @@
             trigger="hover"
             placement="left-start"
           >
-            <el-button
-              round
-              size="small"
-              slot="reference"
-            >
-              {{$t('m.Contest_Rank_Setting')}}
-            </el-button>
+            <template #reference>
+              <el-button
+                round
+                size="small"
+                >
+                {{$t('m.Contest_Rank_Setting')}}
+              </el-button>
+            </template>
             <div id="switches">
               <p>
                 <span>{{ $t('m.Chart') }}</span>
@@ -156,11 +161,13 @@
                 ></avatar>
               </span>
               <el-tooltip placement="top">
-                <div slot="content">
-                  {{
-                    row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
-                  }}
-                </div>
+                <template #content>
+                  <div>
+                    {{
+                      row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
+                    }}
+                  </div>
+                </template>
                 <span
                   class="contest-rank-concerned"
                   @click="updateConcernedList(row.uid, !row.isConcerned)"
@@ -228,11 +235,13 @@
                 ></avatar>
               </span>
               <el-tooltip placement="top">
-                <div slot="content">
-                  {{
-                    row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
-                  }}
-                </div>
+                <template #content>
+                  <div>
+                    {{
+                      row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
+                    }}
+                  </div>
+                </template>
                 <span
                   class="contest-rank-concerned"
                   @click="updateConcernedList(row.uid, !row.isConcerned)"
@@ -312,9 +321,11 @@
               effect="dark"
               placement="top"
             >
-              <div slot="content">
-                {{ parseTimeToSpecific(row.totalTime) }}
-              </div>
+              <template #content>
+                <div>
+                  {{ parseTimeToSpecific(row.totalTime) }}
+                </div>
+              </template>
               <span>{{ parseInt(row.totalTime / 60) }}</span>
             </el-tooltip>
           </template>
@@ -362,13 +373,15 @@
                 effect="dark"
                 placement="top"
               >
-                <div slot="content">
-                  {{ problem.displayId + '. ' + problem.displayTitle }}
-                  <br />
-                  {{ 'Accepted: ' + problem.ac }}
-                  <br />
-                  {{ 'Rejected: ' + (problem.total - problem.ac) }}
-                </div>
+                <template #content>
+                  <div>
+                    {{ problem.displayId + '. ' + problem.displayTitle }}
+                    <br />
+                    {{ 'Accepted: ' + problem.ac }}
+                    <br />
+                    {{ 'Rejected: ' + (problem.total - problem.ac) }}
+                  </div>
+                </template>
                 <span>({{ problem.ac }}/{{ problem.total }}) </span>
               </el-tooltip>
             </span>
@@ -382,9 +395,11 @@
                 effect="dark"
                 placement="top"
               >
-                <div slot="content">
-                  {{ row.submissionInfo[problem.displayId].specificTime }}
-                </div>
+                <template #content>
+                  <div>
+                    {{ row.submissionInfo[problem.displayId].specificTime }}
+                  </div>
+                </template>
                 <span
                   v-if="row.submissionInfo[problem.displayId].isAC"
                   class="submission-time"
@@ -424,9 +439,9 @@
     </div>
     <Pagination
       :total="total"
-      :page-size.sync="limit"
+      v-model:page-size="limit"
       :page-sizes="[10, 30, 50, 100, 300, 500]"
-      :current.sync="page"
+      v-model:current="page"
       @on-change="getContestRankData"
       @on-page-size-change="getContestRankData(1)"
       :layout="'prev, pager, next, sizes'"
@@ -434,11 +449,12 @@
   </el-card>
 </template>
 <script>
-import Avatar from "vue-avatar";
+import { defineAsyncComponent } from 'vue';
+import Avatar from "@/components/common/Avatar.vue";
 import moment from "moment";
 import { mapActions } from "vuex";
-const Pagination = () => import("@/components/oj/common/Pagination");
-const RankBox = () => import("@/components/oj/common/RankBox");
+const Pagination = defineAsyncComponent(() => import("@/components/oj/common/Pagination"));
+const RankBox = defineAsyncComponent(() => import("@/components/oj/common/RankBox"));
 import time from "@/common/time";
 import utils from "@/common/utils";
 import ContestRankMixin from "./contestRankMixin";
@@ -460,9 +476,27 @@ export default {
       contestID: "",
       dataRank: [],
       keyword: null,
+      chartLoading: false,
+      chartLoadingOptions: {
+        maskColor: "rgba(250, 250, 250, 0.8)",
+        color: "#c23531",
+      },
       options: {
+        color: [
+          "#c23531",
+          "#2f4554",
+          "#61a0a8",
+          "#d48265",
+          "#91c7ae",
+          "#749f83",
+          "#ca8622",
+          "#bda29a",
+          "#6e7074",
+          "#546570",
+          "#c4ccd3",
+        ],
         title: {
-          text: this.$i18n.t("m.Top_10_Teams"),
+          text: this.$t("m.Top_10_Teams"),
           left: "center",
           top: 0,
         },
@@ -478,7 +512,7 @@ export default {
         toolbox: {
           show: true,
           feature: {
-            saveAsImage: { show: true, title: this.$i18n.t("m.save_as_image") },
+            saveAsImage: { show: true, title: this.$t("m.save_as_image") },
           },
           right: "0",
         },
@@ -753,7 +787,7 @@ export default {
   height: 400px;
   width: 100%;
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 20px !important;
   padding-top: 0px !important;
 }
@@ -778,16 +812,16 @@ export default {
   padding: 0;
 }
 
-/deep/.vxe-table .vxe-header--column:not(.col--ellipsis) {
+:deep(.vxe-table .vxe-header--column:not(.col--ellipsis)) {
   padding: 4px 0 !important;
 }
 
-/deep/.vxe-table .vxe-body--column {
+:deep(.vxe-table .vxe-body--column) {
   line-height: 20px !important;
   padding: 0 !important;
 }
 @media screen and (max-width: 768px) {
-  /deep/.el-card__body {
+  :deep(.el-card__body) {
     padding: 0 !important;
   }
 }
@@ -797,7 +831,7 @@ a.emphasis {
 a.emphasis:hover {
   color: #2d8cf0 !important;
 }
-/deep/.vxe-body--column {
+:deep(.vxe-body--column) {
   min-width: 0;
   height: 48px;
   box-sizing: border-box;
@@ -805,7 +839,7 @@ a.emphasis:hover {
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-/deep/.vxe-table .vxe-cell {
+:deep(.vxe-table .vxe-cell) {
   padding-left: 5px !important;
   padding-right: 5px !important;
 }

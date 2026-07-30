@@ -52,7 +52,7 @@ public class ContestVO implements Serializable {
     private Date endTime;
 
     @ApiModelProperty(value = "比赛时长（秒）")
-    private Integer duration;
+    private Long duration;
 
     @ApiModelProperty(value = "是否开启封榜")
     private Boolean sealRank;

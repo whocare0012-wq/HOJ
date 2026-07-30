@@ -100,9 +100,9 @@ const getters = {
     // 还未开始的显示
     if (getters.contestStatus === CONTEST_STATUS.SCHEDULED) {
 
-      let durationMs = getters.contestStartTime.diff(state.now, 'seconds')
+      let durationSeconds = getters.contestStartTime.diff(state.now, 'seconds')
 
-      let duration = moment.duration(durationMs, 'seconds')
+      let duration = moment.duration(durationSeconds, 'seconds')
       // time is too long
       if (duration.weeks() > 0) {
         return 'Start At ' + duration.humanize()
@@ -110,16 +110,16 @@ const getters = {
 
       if(duration.asSeconds()<=0){
         state.contest.status = CONTEST_STATUS.RUNNING
+        return '00:00:00'
       }
 
-      let texts = time.secondFormat(durationMs)
-      return '-' + texts
+      return time.secondFormat(durationSeconds)
       // 比赛进行中的显示
     } else if (getters.contestStatus === CONTEST_STATUS.RUNNING) {
       // 倒计时文本显示
-      if(getters.contestEndTime.diff(state.now, 'seconds')>0){
-        let texts = time.secondFormat(getters.contestEndTime.diff(state.now, 'seconds'))
-        return '-' + texts
+      let durationSeconds = getters.contestEndTime.diff(state.now, 'seconds')
+      if(durationSeconds > 0){
+        return time.secondFormat(durationSeconds)
       }else{
         state.contest.status = CONTEST_STATUS.ENDED
         return "00:00:00"

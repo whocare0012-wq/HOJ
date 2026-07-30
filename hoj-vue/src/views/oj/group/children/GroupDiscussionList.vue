@@ -14,7 +14,7 @@
             type="primary"
             size="small"
             @click="goCreateDiscussion"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
           >
             {{
               this.problemID ? $t('m.Post_problem_discussion') : $t('m.Create')
@@ -25,7 +25,7 @@
             type="success"
             @click="goGroupAllDiscussion"
             size="small"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             ><i class="el-icon-s-home"> {{ $t('m.Group_Discussion') }}</i>
           </el-button>
           <el-button
@@ -33,7 +33,7 @@
             :type="adminPage ? 'warning' : 'success'"
             size="small"
             @click="handleAdminPage"
-            :icon="adminPage ? 'el-icon-back' : 'el-icon-s-opportunity'"
+            :icon="legacyElementIcons[adminPage ? 'el-icon-back' : 'el-icon-s-opportunity']"
             >{{
               adminPage ? $t('m.Back') : $t('m.Discussion_Admin')
             }}</el-button
@@ -85,7 +85,7 @@
             }}</a>
             <el-button
               type="primary"
-              size="mini"
+              size="small"
               style="margin-left:5px;"
               v-if="discussion.pid"
               @click="goGroupProblemDetails(discussion.pid)"
@@ -126,7 +126,10 @@
             </span>
 
             <span class="pr pl"
-              ><label class="fw"><i class="el-icon-chat-round"></i></label
+              ><label class="fw"
+                ><i
+                  class="el-icon-chat-round discussion-meta-icon"
+                ></i></label
               ><span>
                 <span class="hidden-xs-only"> {{ $t('m.Comment') }}:</span>
                 {{ discussion.commentNum }}</span
@@ -134,14 +137,18 @@
             >
 
             <span class="pr"
-              ><label class="fw"><i class="fa fa-thumbs-o-up"></i></label
+              ><label class="fw"
+                ><i
+                  class="fa fa-thumbs-o-up discussion-meta-icon"
+                ></i></label
               ><span>
                 <span class="hidden-xs-only"> {{ $t('m.Likes') }}:</span>
                 {{ discussion.likeNum }}</span
               ></span
             >
             <span class="pr"
-              ><label class="fw"><i class="fa fa-eye"></i></label
+              ><label class="fw"
+                ><i class="fa fa-eye discussion-meta-icon"></i></label
               ><span>
                 <span class="hidden-xs-only"> {{ $t('m.Views') }}:</span>
                 {{ discussion.viewNum }}</span
@@ -149,18 +156,21 @@
             >
             <span class="pr">
               <label class="fw">
-                <i class="el-icon-folder-opened"></i>
+                <i
+                  class="el-icon-folder-opened discussion-meta-icon"
+                ></i>
                 {{ cidMapName[discussion.categoryId] }}
               </label>
             </span>
             <span class="pr pl hidden-xs-only">
-              <label class="fw"><i class="fa fa-clock-o"></i></label
+              <label class="fw"
+                ><i class="fa fa-clock-o discussion-meta-icon"></i></label
               ><span>
                 {{ $t('m.Release_Time') }}：<el-tooltip
-                  :content="discussion.gmtCreate | localtime"
+                  :content="$filters.localtime(discussion.gmtCreate)"
                   placement="top"
                 >
-                  <span>{{ discussion.gmtCreate | fromNow }}</span>
+                  <span>{{ $filters.fromNow(discussion.gmtCreate) }}</span>
                 </el-tooltip></span
               >
             </span>
@@ -177,20 +187,22 @@
               <span class="el-dropdown-link">
                 <i class="el-icon-more"></i>
               </span>
-              <el-dropdown-menu slot="dropdown">
+              <template #dropdown>
+                <el-dropdown-menu>
                 <el-dropdown-item
-                  icon="el-icon-edit-outline"
+                  :icon="legacyElementIcons['el-icon-edit-outline']"
                   :command="'edit:' + index"
                   v-show="discussion.uid === userInfo.uid"
                   >{{ $t('m.Edit') }}</el-dropdown-item
                 >
                 <el-dropdown-item
-                  icon="el-icon-delete"
+                  :icon="legacyElementIcons['el-icon-delete']"
                   :command="'delete:' + index"
                   v-show="discussion.uid === userInfo.uid || isAdminRole"
                   >{{ $t('m.Delete') }}</el-dropdown-item
                 >
-              </el-dropdown-menu>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
 
             <div class="hidden-sm-and-up">
@@ -205,25 +217,27 @@
                 <span class="el-dropdown-link">
                   <i class="el-icon-more"></i>
                 </span>
-                <el-dropdown-menu slot="dropdown">
+                <template #dropdown>
+                  <el-dropdown-menu>
                   <el-dropdown-item
-                    icon="el-icon-edit-outline"
+                    :icon="legacyElementIcons['el-icon-edit-outline']"
                     :command="'edit:' + index"
                     v-show="discussion.uid === userInfo.uid"
                     >{{ $t('m.Edit') }}</el-dropdown-item
                   >
                   <el-dropdown-item
-                    icon="el-icon-delete"
+                    :icon="legacyElementIcons['el-icon-delete']"
                     :command="'delete:' + index"
                     v-show="discussion.uid === userInfo.uid || isAdminRole"
                     >{{ $t('m.Delete') }}</el-dropdown-item
                   >
-                </el-dropdown-menu>
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
 
               <span class="pr" style="float:right;margin-top:10px; "
                 ><label class="fw"><i class="fa fa-clock-o"></i></label
-                ><span> {{ discussion.gmtCreate | localtime }}</span></span
+                ><span> {{ $filters.localtime(discussion.gmtCreate) }}</span></span
               >
             </div>
           </div>
@@ -233,7 +247,7 @@
         :total="total"
         :page-size="limit"
         @on-change="currentChange"
-        :current.sync="currentPage"
+        v-model:current="currentPage"
         @on-page-size-change="onPageSizeChange"
         :layout="'prev, pager, next, sizes'"
       ></Pagination>
@@ -244,8 +258,11 @@
     ></DiscussionList>
     <el-dialog
       :title="title"
-      :visible.sync="showEditDiscussionDialog"
-      :fullscreen="true"
+      v-model="showEditDiscussionDialog"
+      width="min(1180px, calc(100vw - 48px))"
+      top="4vh"
+      :close-on-click-modal="false"
+      modal-class="discussion-editor-dialog"
       @open="onOpenEditDialog"
       style="text-align: left"
     >
@@ -267,7 +284,11 @@
           </el-input>
         </el-form-item>
         <el-form-item :label="$t('m.Discussion_Category')" required>
-          <el-select v-model="discussion.categoryId" placeholder="---">
+          <el-select
+            v-model="discussion.categoryId"
+            placeholder="---"
+            class="discussion-category-select"
+          >
             <el-option
               v-for="category in categoryList"
               :key="category.id"
@@ -285,25 +306,27 @@
           <el-switch v-model="discussion.topPriority"> </el-switch>
         </el-form-item>
         <el-form-item :label="$t('m.Discussion_content')" required>
-          <Editor :value.sync="discussion.content"></Editor>
+          <Editor v-model:value="discussion.content"></Editor>
         </el-form-item>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button
-          type="danger"
-          @click.native="showEditDiscussionDialog = false"
-          >{{ $t('m.Cancel') }}</el-button
-        >
-        <el-button type="primary" @click.native="submitDiscussion">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button
+            type="danger"
+            @click="showEditDiscussionDialog = false"
+            >{{ $t('m.Cancel') }}</el-button
+          >
+          <el-button type="primary" @click="submitDiscussion">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </el-card>
 </template>
 
 <script>
-import Avatar from 'vue-avatar';
+import Avatar from '@/components/common/Avatar.vue';
 import { mapGetters } from 'vuex';
 import Pagination from '@/components/oj/common/Pagination';
 import DiscussionList from '@/components/oj/group/DiscussionList';
@@ -435,29 +458,93 @@ export default {
       }, 0);
     },
     goCreateDiscussion() {
+      this.title = this.$t('m.Create_Discussion');
+      this.discussion = {
+        id: null,
+        pid: this.problemID || null,
+        title: '',
+        content: '',
+        description: '',
+        categoryId: '',
+        topPriority: false,
+        uid: '',
+        author: '',
+        avatar: '',
+      };
       this.showEditDiscussionDialog = true;
-      this.title = this.$i18n.t('m.Create_Discussion');
     },
     submitDiscussion() {
+      if (!this.discussion.title || this.discussion.title.trim() === '') {
+        mMessage.error(
+          this.$t('m.Discussion_title') + ' ' + this.$t('m.is_required')
+        );
+        return;
+      }
+      if (this.discussion.title.length > 255) {
+        mMessage.error(
+          this.$t('m.Discussion_title') +
+            ' ' +
+            this.$t('m.Can_not_exceed_255')
+        );
+        return;
+      }
+      if (
+        !this.discussion.description ||
+        this.discussion.description.trim() === ''
+      ) {
+        mMessage.error(
+          this.$t('m.Discussion_Desc') + ' ' + this.$t('m.is_required')
+        );
+        return;
+      }
+      if (this.discussion.description.length > 255) {
+        mMessage.error(
+          this.$t('m.Discussion_Desc') +
+            ' ' +
+            this.$t('m.Can_not_exceed_255')
+        );
+        return;
+      }
+      if (!this.discussion.categoryId) {
+        mMessage.error(
+          this.$t('m.Discussion_Category') + ' ' + this.$t('m.is_required')
+        );
+        return;
+      }
+      if (!this.discussion.content || this.discussion.content.trim() === '') {
+        mMessage.error(
+          this.$t('m.Discussion_content') + ' ' + this.$t('m.is_required')
+        );
+        return;
+      }
+      if (this.discussion.content.length > 65535) {
+        mMessage.error(
+          this.$t('m.Discussion_content') +
+            ' ' +
+            this.$t('m.Can_not_exceed_65535')
+        );
+        return;
+      }
+
       let discussion = Object.assign({}, this.discussion);
 
       if (this.problemID) {
         discussion.pid = this.problemID;
       }
 
-      if (this.title == this.$i18n.t('m.Create_Discussion')) {
+      if (this.title == this.$t('m.Create_Discussion')) {
         if (discussion.pid) {
           discussion.title = '[' + discussion.pid + '] ' + discussion.title;
         }
         discussion.gid = this.$route.params.groupID;
         api.addGroupDiscussion(discussion).then((res) => {
-          mMessage.success(this.$i18n.t('m.Post_successfully'));
+          mMessage.success(this.$t('m.Post_successfully'));
           this.showEditDiscussionDialog = false;
           this.currentChange(1);
         });
       } else {
         api.updateGroupDiscussion(discussion).then((res) => {
-          mMessage.success(this.$i18n.t('m.Update_Successfully'));
+          mMessage.success(this.$t('m.Update_Successfully'));
           this.showEditDiscussionDialog = false;
           this.currentChange(1);
         });
@@ -467,7 +554,7 @@ export default {
       let tmpArr = command.split(':');
       switch (tmpArr[0]) {
         case 'edit':
-          this.title = this.$i18n.t('m.Edit_Discussion');
+          this.title = this.$t('m.Edit_Discussion');
           this.discussion = Object.assign(
             {},
             this.discussionList[parseInt(tmpArr[1])]
@@ -475,9 +562,9 @@ export default {
           this.showEditDiscussionDialog = true;
           break;
         case 'delete':
-          this.$confirm(this.$i18n.t('m.Delete_Discussion_Tips'), 'Tips', {
-            confirmButtonText: this.$i18n.t('m.OK'),
-            cancelButtonText: this.$i18n.t('m.Cancel'),
+          this.$confirm(this.$t('m.Delete_Discussion_Tips'), 'Tips', {
+            confirmButtonText: this.$t('m.OK'),
+            cancelButtonText: this.$t('m.Cancel'),
             type: 'warning',
           }).then(() => {
             api
@@ -485,7 +572,7 @@ export default {
                 this.discussionList[parseInt(tmpArr[1])].id
               )
               .then((res) => {
-                mMessage.success(this.$i18n.t('m.Delete_successfully'));
+                mMessage.success(this.$t('m.Delete_successfully'));
                 this.currentChange(1);
               });
           });
@@ -517,6 +604,53 @@ export default {
   },
 };
 </script>
+
+<style>
+.discussion-editor-dialog .el-dialog {
+  max-width: 1180px;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 18px 50px rgba(31, 45, 61, 0.2);
+}
+
+.discussion-editor-dialog .el-dialog__header {
+  margin-right: 0;
+  padding: 20px 28px 16px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.discussion-editor-dialog .el-dialog__body {
+  max-height: calc(92vh - 130px);
+  overflow-y: auto;
+  padding: 22px 28px 8px;
+}
+
+.discussion-editor-dialog .el-dialog__footer {
+  padding: 16px 28px 20px;
+  border-top: 1px solid #ebeef5;
+  background: #fff;
+}
+
+@media screen and (max-width: 768px) {
+  .discussion-editor-dialog .el-dialog {
+    width: calc(100vw - 24px) !important;
+    margin-top: 64px;
+  }
+
+  .discussion-editor-dialog .el-dialog__header {
+    padding: 16px 18px 14px;
+  }
+
+  .discussion-editor-dialog .el-dialog__body {
+    max-height: calc(100vh - 215px);
+    padding: 18px 18px 6px;
+  }
+
+  .discussion-editor-dialog .el-dialog__footer {
+    padding: 14px 18px 16px;
+  }
+}
+</style>
 
 <style scoped>
 .title {
@@ -605,5 +739,8 @@ a {
 }
 .title-article .title-msg .pr {
   padding-right: 0.3rem !important;
+}
+.discussion-meta-icon {
+  margin-right: 4px;
 }
 </style>

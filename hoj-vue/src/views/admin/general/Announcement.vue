@@ -1,18 +1,23 @@
 <template>
   <div>
     <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{
-          $t('m.General_Announcement')
-        }}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{
+            $t('m.General_Announcement')
+          }}</span>
+        </div>
+      </template>
       <div class="create">
         <el-button
+          class="announcement-create-button"
           type="primary"
           size="small"
           @click="openAnnouncementDialog(null)"
-          icon="el-icon-plus"
-          >{{ $t('m.Create') }}</el-button
+          ><span class="announcement-create-content"
+            ><i class="el-icon-plus" aria-hidden="true"></i
+            ><span>{{ $t('m.Create') }}</span></span
+          ></el-button
         >
       </div>
       <div class="list">
@@ -38,7 +43,7 @@
             :title="$t('m.Created_Time')"
           >
             <template v-slot="{ row }">
-              {{ row.gmtCreate | localtime }}
+              {{ $filters.localtime(row.gmtCreate) }}
             </template>
           </vxe-table-column>
           <vxe-table-column
@@ -47,7 +52,7 @@
             :title="$t('m.Modified_Time')"
           >
             <template v-slot="{ row }">
-              {{ row.gmtModified | localtime }}
+              {{ $filters.localtime(row.gmtModified) }}
             </template>
           </vxe-table-column>
           <vxe-table-column
@@ -74,7 +79,7 @@
               </el-switch>
             </template>
           </vxe-table-column>
-          <vxe-table-column title="Option" min-width="150">
+          <vxe-table-column title="Option" min-width="150" fixed="right">
             <template v-slot="row">
               <el-tooltip
                 class="item"
@@ -83,10 +88,15 @@
                 placement="top"
               >
                 <el-button
-                  icon="el-icon-edit-outline"
-                  @click.native="openAnnouncementDialog(row.row)"
-                  size="mini"
+                  class="announcement-action-button"
+                  :aria-label="$t('m.Edit_Announcement')"
+                  @click="openAnnouncementDialog(row.row)"
+                  size="small"
                   type="primary"
+                  ><i
+                    class="el-icon-edit-outline"
+                    aria-hidden="true"
+                  ></i
                 ></el-button>
               </el-tooltip>
               <el-tooltip
@@ -96,10 +106,15 @@
                 placement="top"
               >
                 <el-button
-                  icon="el-icon-delete-solid"
-                  @click.native="deleteAnnouncement(row.row.id)"
-                  size="mini"
+                  class="announcement-action-button"
+                  :aria-label="$t('m.Delete_Announcement')"
+                  @click="deleteAnnouncement(row.row.id)"
+                  size="small"
                   type="danger"
+                  ><i
+                    class="el-icon-delete-solid"
+                    aria-hidden="true"
+                  ></i
                 ></el-button>
               </el-tooltip>
             </template>
@@ -122,9 +137,13 @@
 
     <!--编辑公告对话框-->
     <el-dialog
+      class="announcement-dialog"
       :title="announcementDialogTitle"
-      :visible.sync="showEditAnnouncementDialog"
-      :fullscreen="true"
+      v-model="showEditAnnouncementDialog"
+      width="min(1120px, calc(100vw - 48px))"
+      top="4vh"
+      :close-on-click-modal="false"
+      destroy-on-close
       @open="onOpenEditDialog"
     >
       <el-form label-position="top" :model="announcement">
@@ -137,7 +156,7 @@
           </el-input>
         </el-form-item>
         <el-form-item :label="$t('m.Announcement_Content')" required>
-          <Editor :value.sync="announcement.content"></Editor>
+          <Editor v-model:value="announcement.content"></Editor>
         </el-form-item>
         <div class="visible-box">
           <span>{{ $t('m.Announcement_visible') }}</span>
@@ -151,25 +170,28 @@
           </el-switch>
         </div>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button
-          type="danger"
-          @click.native="showEditAnnouncementDialog = false"
-          >{{ $t('m.Cancel') }}</el-button
-        >
-        <el-button type="primary" @click.native="submitAnnouncement">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button
+            type="danger"
+            @click="showEditAnnouncementDialog = false"
+            >{{ $t('m.Cancel') }}</el-button
+          >
+          <el-button type="primary" @click="submitAnnouncement">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import { mapGetters } from 'vuex';
-const Editor = () => import('@/components/admin/Editor.vue');
+const Editor = defineAsyncComponent(() => import('@/components/admin/Editor.vue'));
 export default {
   name: 'announcement',
   components: {
@@ -294,7 +316,7 @@ export default {
       api[funcName](requestData)
         .then((res) => {
           this.showEditAnnouncementDialog = false;
-          myMessage.success(this.$i18n.t('m.Post_successfully'));
+          myMessage.success(this.$t('m.Post_successfully'));
           this.init();
         })
         .catch();
@@ -302,9 +324,9 @@ export default {
 
     // 删除公告
     deleteAnnouncement(announcementId) {
-      this.$confirm(this.$i18n.t('m.Delete_Announcement_Tips'), 'Warning', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Announcement_Tips'), 'Warning', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       })
         .then(() => {
@@ -315,7 +337,7 @@ export default {
             : 'admin_deleteAnnouncement';
           api[funcName](announcementId).then((res) => {
             this.loading = true;
-            myMessage.success(this.$i18n.t('m.Delete_successfully'));
+            myMessage.success(this.$t('m.Delete_successfully'));
             this.init();
           });
         })
@@ -328,11 +350,11 @@ export default {
     openAnnouncementDialog(row) {
       this.showEditAnnouncementDialog = true;
       if (row !== null) {
-        this.announcementDialogTitle = this.$i18n.t('m.Edit_Announcement');
+        this.announcementDialogTitle = this.$t('m.Edit_Announcement');
         this.announcement = Object.assign({}, row);
         this.mode = 'edit';
       } else {
-        this.announcementDialogTitle = this.$i18n.t('m.Create_Announcement');
+        this.announcementDialogTitle = this.$t('m.Create_Announcement');
         this.announcement.title = '';
         this.announcement.status = 0;
         this.announcement.content = '';
@@ -364,6 +386,14 @@ export default {
 </script>
 
 <style scoped>
+@font-face {
+  font-family: 'announcement-element-icons';
+  src: url('../../../assets/fonts/element-icons.woff') format('woff');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
 .title-input {
   margin-bottom: 20px;
 }
@@ -379,10 +409,72 @@ export default {
 .el-form-item {
   margin-bottom: 2px !important;
 }
-/deep/.el-dialog__body {
-  padding-top: 0 !important;
+:deep(.announcement-dialog) {
+  margin-bottom: 4vh;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+:deep(.announcement-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+:deep(.announcement-dialog .el-dialog__body) {
+  max-height: calc(92vh - 150px);
+  overflow-y: auto;
+  padding: 18px 24px 20px;
+}
+
+:deep(.announcement-dialog .el-dialog__footer) {
+  padding: 14px 24px;
+  border-top: 1px solid #ebeef5;
+  background: #fafafa;
 }
 .create {
   margin-bottom: 5px;
+}
+
+.announcement-create-button {
+  width: 73px;
+  height: 32px;
+  padding: 0;
+}
+
+.announcement-create-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.announcement-create-content .el-icon-plus {
+  font-size: 12px;
+}
+
+.announcement-create-content .el-icon-plus::before {
+  content: '\e6d9';
+  font-family: 'announcement-element-icons';
+}
+
+.announcement-action-button {
+  width: 40px;
+  height: 24px;
+  padding: 0;
+}
+
+.announcement-action-button .el-icon-edit-outline,
+.announcement-action-button .el-icon-delete-solid {
+  font-size: 14px;
+}
+
+.announcement-action-button .el-icon-edit-outline::before {
+  content: '\e764';
+  font-family: 'announcement-element-icons';
+}
+
+.announcement-action-button .el-icon-delete-solid::before {
+  content: '\e7c9';
+  font-family: 'announcement-element-icons';
 }
 </style>

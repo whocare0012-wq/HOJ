@@ -11,7 +11,7 @@
             :type="adminPage ? 'warning' : 'success'"
             size="small"
             @click="adminPage = !adminPage"
-            :icon="adminPage ? 'el-icon-back' : 'el-icon-s-opportunity'"
+            :icon="legacyElementIcons[adminPage ? 'el-icon-back' : 'el-icon-s-opportunity']"
             >{{ adminPage ? $t('m.Back') : $t('m.Member_Admin') }}</el-button
           >
         </el-col>
@@ -46,7 +46,7 @@
           :title="$t('m.Join_Time')"
         >
           <template v-slot="{ row }">
-            {{ row.gmtCreate | localtime }}
+            {{ $filters.localtime(row.gmtCreate) }}
           </template>
         </vxe-table-column>
         <vxe-table-column
@@ -55,7 +55,7 @@
           :title="$t('m.Change_Time')"
         >
           <template v-slot="{ row }">
-            {{ row.gmtModify | localtime }}
+            {{ $filters.localtime(row.gmtModify) }}
           </template>
         </vxe-table-column>
         <vxe-table-column
@@ -78,7 +78,7 @@
         :total="total"
         :page-size="limit"
         @on-change="currentChange"
-        :current.sync="currentPage"
+        v-model:current="currentPage"
         @on-page-size-change="onPageSizeChange"
         :layout="'prev, pager, next, sizes'"
       ></Pagination>
@@ -194,7 +194,7 @@ export default {
 .el-form-item {
   margin-bottom: 2px !important;
 }
-/deep/.el-dialog__body {
+:deep(.el-dialog__body) {
   padding-top: 0 !important;
 }
 </style>

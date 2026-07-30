@@ -1,9 +1,11 @@
 <template>
   <div class="problem">
     <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ title }}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ title }}</span>
+        </div>
+      </template>
       <el-form
         ref="form"
         :model="problem"
@@ -84,7 +86,7 @@
               :label="$t('m.Description')"
               required
             >
-              <Editor :value.sync="problem.description"></Editor>
+              <Editor v-model:value="problem.description"></Editor>
             </el-form-item>
           </el-col>
         </el-row>
@@ -152,10 +154,10 @@
                 v-model="problem.difficulty"
               >
                 <el-option
-                  :label="getLevelName(key)"
-                  :value="parseInt(key)"
-                  v-for="(value, key, index) in PROBLEM_LEVEL"
-                  :key="index"
+                  :label="getLevelName(level.value)"
+                  :value="level.value"
+                  v-for="level in PROBLEM_LEVEL_OPTIONS"
+                  :key="level.value"
                 ></el-option>
               </el-select>
             </el-form-item>
@@ -169,7 +171,7 @@
               :label="$t('m.Input')"
               required
             >
-              <Editor :value.sync="problem.input"></Editor>
+              <Editor v-model:value="problem.input"></Editor>
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -178,7 +180,7 @@
               :label="$t('m.Output')"
               required
             >
-              <Editor :value.sync="problem.output"></Editor>
+              <Editor v-model:value="problem.output"></Editor>
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -186,7 +188,7 @@
               style="margin-top: 20px"
               :label="$t('m.Hint')"
             >
-              <Editor :value.sync="problem.hint"></Editor>
+              <Editor v-model:value="problem.hint"></Editor>
             </el-form-item>
           </el-col>
         </el-row>
@@ -227,8 +229,8 @@
                 :disabled="disableRuleType || problem.isRemote"
                 @change="problemTypeChange"
               >
-                <el-radio :label="0">ACM</el-radio>
-                <el-radio :label="1">OI</el-radio>
+                <el-radio :value="0">ACM</el-radio>
+                <el-radio :value="1">OI</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -264,11 +266,11 @@
               <!-- 输入时建议，回车，选择，光标消失触发更新 -->
               <el-autocomplete
                 v-if="inputVisible"
-                size="mini"
+                size="small"
                 class="input-new-tag"
                 v-model="tagInput"
                 :trigger-on-focus="true"
-                @keyup.enter.native="addTag"
+                @keyup.enter="addTag"
                 @click="selectTag"
                 @select="addTag"
                 :fetch-suggestions="querySearch"
@@ -284,7 +286,7 @@
                   class="button-new-tag"
                   size="small"
                   @click="inputVisible = true"
-                  icon="el-icon-plus"
+                  :icon="legacyElementIcons['el-icon-plus']"
                 ></el-button>
               </el-tooltip>
             </el-form-item>
@@ -300,7 +302,10 @@
               :error="error.languages"
               required
             >
-              <el-checkbox-group v-model="problemLanguages">
+              <el-checkbox-group
+                class="language-checkbox-group"
+                v-model="problemLanguages"
+              >
                 <el-tooltip
                   class="spj-radio"
                   v-for="lang in allLanguage"
@@ -309,7 +314,9 @@
                   :content="lang.description"
                   placement="top-start"
                 >
-                  <el-checkbox :label="lang.name"></el-checkbox>
+                  <el-checkbox :value="lang.name">
+                    {{ lang.name }}
+                  </el-checkbox>
                 </el-tooltip>
               </el-checkbox-group>
             </el-form-item>
@@ -326,10 +333,11 @@
               <p>
                 {{ $t('m.Problem_Examples_Desc') }}
               </p>
-              <i
-                slot="reference"
-                class="el-icon-question"
-              ></i>
+              <template #reference>
+                <i
+                    class="el-icon-question"
+                ></i>
+              </template>
             </el-popover>
           </div>
           <el-form-item
@@ -342,15 +350,16 @@
               :index="index"
               @changeVisible="changeExampleVisible"
             >
-              <el-button
-                type="danger"
-                size="small"
-                icon="el-icon-delete"
-                slot="header"
-                @click="deleteExample(index)"
-              >
-                {{ $t('m.Delete') }}
-              </el-button>
+              <template #header>
+                <el-button
+                  type="danger"
+                  size="small"
+                  :icon="legacyElementIcons['el-icon-delete']"
+                    @click="deleteExample(index)"
+                >
+                  {{ $t('m.Delete') }}
+                </el-button>
+              </template>
               <el-row :gutter="20">
                 <el-col
                   :xs="24"
@@ -396,7 +405,7 @@
           <el-button
             class="add-examples"
             @click="addExample()"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             type="small"
           >{{ $t('m.Add_Example') }}
           </el-button>
@@ -411,10 +420,11 @@
             >
               <p>{{ $t('m.Judge_Extra_File_Tips1') }}</p>
               <p>{{ $t('m.Judge_Extra_File_Tips2') }}</p>
-              <i
-                slot="reference"
-                class="el-icon-question"
-              ></i>
+              <template #reference>
+                <i
+                    class="el-icon-question"
+                ></i>
+              </template>
             </el-popover>
           </div>
 
@@ -430,7 +440,7 @@
               </el-form-item>
               <el-form-item v-if="addUserExtraFile">
                 <AddExtraFile
-                  :files.sync="userExtraFile"
+                  v-model:files="userExtraFile"
                   type="user"
                   @upsertFile="upsertFile"
                   @deleteFile="deleteFile"
@@ -448,7 +458,7 @@
               </el-form-item>
               <el-form-item v-if="addJudgeExtraFile">
                 <AddExtraFile
-                  :files.sync="judgeExtraFile"
+                  v-model:files="judgeExtraFile"
                   type="judge"
                   @upsertFile="upsertFile"
                   @deleteFile="deleteFile"
@@ -470,10 +480,10 @@
                   <el-radio-group
                     v-model="problem.isFileIO"
                   >
-                    <el-radio :label="false">
+                    <el-radio :value="false">
                       {{  $t('m.Standard_IO')}}
                     </el-radio>
-                    <el-radio :label="true">
+                    <el-radio :value="true">
                       {{  $t('m.File_IO')}}
                     </el-radio>
                   </el-radio-group>
@@ -482,14 +492,14 @@
             <el-col :xs="24" :md="8">
               <el-form-item v-if="problem.isFileIO">
                 <el-input  v-model="problem.ioReadFileName" size="small">
-                    <template slot="prepend">{{  $t('m.Input_File_Name')}}</template>
+                    <template #prepend>{{  $t('m.Input_File_Name')}}</template>
                 </el-input>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="8">
               <el-form-item v-if="problem.isFileIO">
                 <el-input v-model="problem.ioWriteFileName" size="small">
-                  <template slot="prepend">{{  $t('m.Output_File_Name')}}</template>
+                  <template #prepend>{{  $t('m.Output_File_Name')}}</template>
                 </el-input>
               </el-form-item>
             </el-col>
@@ -506,10 +516,11 @@
               <p>1. {{ $t('m.General_Judge_Mode_Tips') }}</p>
               <p>2. {{ $t('m.Special_Judge_Mode_Tips') }}</p>
               <p>3. {{ $t('m.Interactive_Judge_Mode_Tips') }}</p>
-              <i
-                slot="reference"
-                class="el-icon-question"
-              ></i>
+              <template #reference>
+                <i
+                    class="el-icon-question"
+                ></i>
+              </template>
             </el-popover>
           </div>
           <el-form-item
@@ -521,9 +532,9 @@
                 v-model="problem.judgeMode"
                 @change="switchMode"
               >
-                <el-radio label="default">{{ $t('m.General_Judge') }}</el-radio>
-                <el-radio label="spj">{{ $t('m.Special_Judge') }}</el-radio>
-                <el-radio label="interactive">{{
+                <el-radio value="default">{{ $t('m.General_Judge') }}</el-radio>
+                <el-radio value="spj">{{ $t('m.Special_Judge') }}</el-radio>
+                <el-radio value="interactive">{{
                   $t('m.Interactive_Judge')
                 }}</el-radio>
               </el-radio-group>
@@ -535,7 +546,7 @@
                   ? $t('m.Special_Judge_Code')
                   : $t('m.Interactive_Judge_Code')
               ">
-              <template slot="header">
+              <template #header>
                 <span style="margin-right:5px;">{{
                     problem.judgeMode == 'spj'
                       ? $t('m.SPJ_Language')
@@ -550,13 +561,13 @@
                     :content="lang.description"
                     placement="top-start"
                   >
-                    <el-radio :label="lang.name">{{ lang.name }}</el-radio>
+                    <el-radio :value="lang.name">{{ lang.name }}</el-radio>
                   </el-tooltip>
                 </el-radio-group>
                 <el-button
                   type="primary"
                   size="small"
-                  icon="el-icon-folder-checked"
+                  :icon="legacyElementIcons['el-icon-folder-checked']"
                   @click="compileSPJ"
                   :loading="loadingCompile"
                   style="margin-left:10px"
@@ -593,6 +604,7 @@
         </el-form-item>
 
         <el-row
+          class="judge-samples-row"
           :gutter="20"
           v-if="!problem.isRemote"
         >
@@ -603,10 +615,11 @@
               trigger="hover"
             >
               <p>{{ $t('m.Sample_Tips') }}</p>
-              <i
-                slot="reference"
-                class="el-icon-question"
-              ></i>
+              <template #reference>
+                <i
+                    class="el-icon-question"
+                ></i>
+              </template>
             </el-popover>
           </div>
 
@@ -617,15 +630,15 @@
               v-model="problem.judgeCaseMode"
               @change="switchJudgeCaseMode"
             >
-              <el-radio :label="JUDGE_CASE_MODE.DEFAULT">
+              <el-radio :value="JUDGE_CASE_MODE.DEFAULT">
                 {{ problem.type == 1 ? $t('m.OI_Judge_Case_Default_Mode'): $t('m.ACM_Judge_Case_Default_Mode')}}
               </el-radio>
               <template v-if="problem.type == 1">
-                <el-radio :label="JUDGE_CASE_MODE.SUBTASK_LOWEST">{{$t('m.Judge_Case_Subtask_Lowest_Mode')}}</el-radio>
-                <el-radio :label="JUDGE_CASE_MODE.SUBTASK_AVERAGE">{{$t('m.Judge_Case_Subtask_Average_Mode')}}</el-radio>
+                <el-radio :value="JUDGE_CASE_MODE.SUBTASK_LOWEST">{{$t('m.Judge_Case_Subtask_Lowest_Mode')}}</el-radio>
+                <el-radio :value="JUDGE_CASE_MODE.SUBTASK_AVERAGE">{{$t('m.Judge_Case_Subtask_Average_Mode')}}</el-radio>
               </template>
               <template v-else>
-                <el-radio :label="JUDGE_CASE_MODE.ERGODIC_WITHOUT_ERROR">{{$t('m.Judge_Case_Ergodic_Without_Error_Mode')}}</el-radio>
+                <el-radio :value="JUDGE_CASE_MODE.ERGODIC_WITHOUT_ERROR">{{$t('m.Judge_Case_Ergodic_Without_Error_Mode')}}</el-radio>
               </template>
             </el-radio-group>
           </el-form-item>
@@ -653,7 +666,7 @@
                   <el-button
                     size="small"
                     type="primary"
-                    icon="el-icon-upload"
+                    :icon="legacyElementIcons['el-icon-upload']"
                   >{{ $t('m.Choose_File') }}</el-button>
                 </el-upload>
               </el-form-item>
@@ -736,15 +749,16 @@
                 :index="index"
                 @changeVisible="changeSampleVisible"
               >
-                <el-button
-                  type="danger"
-                  size="small"
-                  icon="el-icon-delete"
-                  slot="header"
-                  @click="deleteSample(index)"
-                >
-                  {{ $t('m.Delete') }}
-                </el-button>
+                <template #header>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    :icon="legacyElementIcons['el-icon-delete']"
+                      @click="deleteSample(index)"
+                  >
+                    {{ $t('m.Delete') }}
+                  </el-button>
+                </template>
                 <el-row :gutter="20">
                   <el-col
                     :xs="24"
@@ -818,7 +832,7 @@
               <el-button
                 class="add-samples"
                 @click="addSample()"
-                icon="el-icon-plus"
+                :icon="legacyElementIcons['el-icon-plus']"
                 type="small"
               >{{ $t('m.Add_Sample') }}
               </el-button>
@@ -856,7 +870,7 @@
 
         <el-button
           type="primary"
-          @click.native="submit()"
+          @click="submit()"
           size="small"
         >{{
           $t('m.Save')
@@ -867,15 +881,16 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import utils from "@/common/utils";
 import { mapGetters } from "vuex";
 import api from "@/common/api";
 import myMessage from "@/common/message";
-import { PROBLEM_LEVEL, JUDGE_CASE_MODE } from "@/common/constants";
-const Editor = () => import("@/components/admin/Editor.vue");
-const Accordion = () => import("@/components/admin/Accordion.vue");
-const AddExtraFile = () => import("@/components/admin/AddExtraFile.vue");
-const CodeMirror = () => import("@/components/admin/CodeMirror.vue");
+import { PROBLEM_LEVEL_OPTIONS, JUDGE_CASE_MODE } from "@/common/constants";
+const Editor = defineAsyncComponent(() => import("@/components/admin/Editor.vue"));
+const Accordion = defineAsyncComponent(() => import("@/components/admin/Accordion.vue"));
+const AddExtraFile = defineAsyncComponent(() => import("@/components/admin/AddExtraFile.vue"));
+const CodeMirror = defineAsyncComponent(() => import("@/components/admin/CodeMirror.vue"));
 export default {
   name: "Problem",
   components: {
@@ -975,8 +990,8 @@ export default {
         languages: "",
         testCase: "",
       },
-      PROBLEM_LEVEL: {},
-      JUDGE_CASE_MODE: {},
+      PROBLEM_LEVEL_OPTIONS,
+      JUDGE_CASE_MODE: Object.assign({}, JUDGE_CASE_MODE),
       spjRecord: {
         spjCode: "",
         spjLanguage: "",
@@ -990,8 +1005,6 @@ export default {
     };
   },
   mounted() {
-    this.PROBLEM_LEVEL = Object.assign({}, PROBLEM_LEVEL);
-    this.JUDGE_CASE_MODE = Object.assign({}, JUDGE_CASE_MODE);
     this.routeName = this.$route.name;
     let contestID = this.$route.params.contestId;
     this.uploadFileUrl = "/api/file/upload-testcase-zip";
@@ -1143,7 +1156,7 @@ export default {
       if (this.mode === "edit") {
         this.pid = this.$route.params.problemId;
         this.backPath = this.$route.query.back;
-        this.title = this.$i18n.t("m.Edit_Problem");
+        this.title = this.$t("m.Edit_Problem");
         let funcName = {
           "admin-edit-problem": "admin_getProblem",
           "admin-edit-contest-problem": "admin_getContestProblem",
@@ -1215,10 +1228,8 @@ export default {
       } else {
         this.addExample();
         this.testCaseUploaded = false;
-        this.title = this.$i18n.t("m.Create_Problem");
-        for (let item of this.allLanguage) {
-          this.problemLanguages.push(item.name);
-        }
+        this.title = this.$t("m.Create_Problem");
+        this.problemLanguages = this.allLanguage.map((item) => item.name);
       }
     },
 
@@ -1229,9 +1240,7 @@ export default {
       });
       api.getProblemLanguages(that.pid).then((res) => {
         let Languages = res.data.data;
-        for (let i = 0; i < Languages.length; i++) {
-          that.problemLanguages.push(Languages[i].name);
-        }
+        that.problemLanguages = Languages.map((language) => language.name);
       });
     },
 
@@ -1247,18 +1256,18 @@ export default {
       }
       const h = this.$createElement;
       this.$msgbox({
-        title: this.$i18n.t("m." + modeName),
+        title: this.$t("m." + modeName),
         message: h("div", null, [
           h(
             "p",
             { style: "text-align: center;font-weight:bolder;color:red" },
-            this.$i18n.t("m.Change_Judge_Mode")
+            this.$t("m.Change_Judge_Mode")
           ),
           h("br", null, null),
           h(
             "p",
             { style: "font-weight:bolder" },
-            this.$i18n.t("m." + modeTips)
+            this.$t("m." + modeTips)
           ),
         ]),
       });
@@ -1287,7 +1296,7 @@ export default {
     selectTag(item) {
       for (var i = 0; i < this.problemTags.length; i++) {
         if (this.problemTags[i].name == item.value) {
-          myMessage.warning(this.$i18n.t("m.Add_Tag_Error"));
+          myMessage.warning(this.$t("m.Add_Tag_Error"));
           this.tagInput = "";
           return;
         }
@@ -1301,7 +1310,7 @@ export default {
       if (this.tagInput) {
         for (var i = 0; i < this.problemTags.length; i++) {
           if (this.problemTags[i].name == this.tagInput) {
-            myMessage.warning(this.$i18n.t("m.Add_Tag_Error"));
+            myMessage.warning(this.$t("m.Add_Tag_Error"));
             this.tagInput = "";
             return;
           }
@@ -1322,16 +1331,16 @@ export default {
 
     deleteFile(type, name) {
       if (type == "user") {
-        this.$delete(this.userExtraFile, name);
+        delete this.userExtraFile[name];
       } else {
-        this.$delete(this.judgeExtraFile, name);
+        delete this.judgeExtraFile[name];
       }
     },
 
     upsertFile(type, name, oldname, content) {
       if (type == "user") {
         if (oldname && oldname != name) {
-          this.$delete(this.userExtraFile, oldname);
+          delete this.userExtraFile[oldname];
         }
         if (!this.userExtraFile) {
           this.userExtraFile = {};
@@ -1339,7 +1348,7 @@ export default {
         this.userExtraFile[name] = content;
       } else {
         if (oldname && oldname != name) {
-          this.$delete(this.judgeExtraFile, name);
+          delete this.judgeExtraFile[oldname];
         }
         if (!this.judgeExtraFile) {
           this.judgeExtraFile = {};
@@ -1414,7 +1423,7 @@ export default {
         this.testCaseUploaded = false;
         return;
       }
-      myMessage.success(this.$i18n.t("m.Upload_Testcase_Successfully"));
+      myMessage.success(this.$t("m.Upload_Testcase_Successfully"));
       let fileList = response.data.fileList;
       let averSorce = parseInt(100 / fileList.length);
       let add_1_num = 100 - averSorce * fileList.length;
@@ -1439,7 +1448,7 @@ export default {
       this.problem.uploadTestcaseDir = response.data.fileListDir;
     },
     uploadFailed() {
-      myMessage.error(this.$i18n.t("m.Upload_Testcase_Failed"));
+      myMessage.error(this.$t("m.Upload_Testcase_Failed"));
     },
 
     compileSPJ() {
@@ -1459,7 +1468,7 @@ export default {
           this.loadingCompile = false;
           this.problem.spjCompileOk = true;
           this.error.spj = "";
-          myMessage.success(this.$i18n.t("m.Compiled_Successfully"));
+          myMessage.success(this.$t("m.Compiled_Successfully"));
         },
         (err) => {
           this.loadingCompile = false;
@@ -1511,9 +1520,9 @@ export default {
     submit() {
       if (!this.problem.problemId) {
         myMessage.error(
-          this.$i18n.t("m.Problem_Display_ID") +
+          this.$t("m.Problem_Display_ID") +
             " " +
-            this.$i18n.t("m.is_required")
+            this.$t("m.is_required")
         );
         return;
       }
@@ -1521,33 +1530,33 @@ export default {
       if (this.contestID) {
         if (!this.contestProblem.displayId) {
           myMessage.error(
-            this.$i18n.t("m.Contest_Display_ID") +
+            this.$t("m.Contest_Display_ID") +
               " " +
-              this.$i18n.t("m.is_required")
+              this.$t("m.is_required")
           );
           return;
         }
         if (!this.contestProblem.displayTitle) {
           myMessage.error(
-            this.$i18n.t("m.Contest_Display_Title") +
+            this.$t("m.Contest_Display_Title") +
               " " +
-              this.$i18n.t("m.is_required")
+              this.$t("m.is_required")
           );
           return;
         }
       }
 
       if(this.problem.isFileIO && (!this.problem.ioReadFileName || !this.problem.ioWriteFileName)){
-        myMessage.error(this.$i18n.t("m.When_the_read_write_mode_is_File_IO_the_input_file_name_or_output_file_name_cannot_be_empty"));
+        myMessage.error(this.$t("m.When_the_read_write_mode_is_File_IO_the_input_file_name_or_output_file_name_cannot_be_empty"));
         return;
       }
 
       // // 不强制校验题目样例不能为空
       // if (!this.problem.examples.length && !this.problem.isRemote) {
       //   myMessage.error(
-      //     this.$i18n.t('m.Problem_Examples') +
+      //     this.$t('m.Problem_Examples') +
       //       ' ' +
-      //       this.$i18n.t('m.is_required')
+      //       this.$t('m.is_required')
       //   );
       //   return;
       // }
@@ -1557,9 +1566,9 @@ export default {
         if (!this.problem.isUploadCase) {
           if (!this.problemSamples.length) {
             myMessage.error(
-              this.$i18n.t("m.Judge_Samples") +
+              this.$t("m.Judge_Samples") +
                 " " +
-                this.$i18n.t("m.is_required")
+                this.$t("m.is_required")
             );
             return;
           }
@@ -1567,11 +1576,11 @@ export default {
           for (let sample of this.problemSamples) {
             if (!sample.input && !sample.output) {
               myMessage.error(
-                this.$i18n.t("m.Sample_Input") +
+                this.$t("m.Sample_Input") +
                   " or " +
-                  this.$i18n.t("m.Sample_Output") +
+                  this.$t("m.Sample_Output") +
                   " " +
-                  this.$i18n.t("m.is_required")
+                  this.$t("m.is_required")
               );
               return;
             }
@@ -1582,25 +1591,25 @@ export default {
             for (let i = 0; i < this.problemSamples.length; i++) {
               if (this.problemSamples[i].score == "") {
                 myMessage.error(
-                  this.$i18n.t("m.Problem_Sample") +
+                  this.$t("m.Problem_Sample") +
                     (this.problemSamples[i].index) +
                     " " +
-                    this.$i18n.t("m.Score_must_be_an_integer")
+                    this.$t("m.Score_must_be_an_integer")
                 );
                 return;
               }
               try {
                 if (parseInt(this.problemSamples[i].score) < 0) {
                   myMessage.error(
-                    this.$i18n.t("m.Problem_Sample") +
+                    this.$t("m.Problem_Sample") +
                       (this.problemSamples[i].index) +
                       " " +
-                      this.$i18n.t("m.Score_must_be_greater_than_or_equal_to_0")
+                      this.$t("m.Score_must_be_greater_than_or_equal_to_0")
                   );
                   return;
                 }
               } catch (e) {
-                myMessage.error(this.$i18n.t("m.Score_must_be_an_integer"));
+                myMessage.error(this.$t("m.Score_must_be_an_integer"));
                 return;
               }
               if (
@@ -1609,10 +1618,10 @@ export default {
                 ) && this.problemSamples[i].groupNum == ""
               ) {
                 myMessage.error(
-                  this.$i18n.t("m.Problem_Sample") +
+                  this.$t("m.Problem_Sample") +
                     (this.problemSamples[i].index) +
                     "：" +
-                    this.$i18n.t(
+                    this.$t(
                       "m.Non_Default_Judge_Case_Mode_And_Group_Num_IS_NULL"
                     )
                 );
@@ -1625,9 +1634,9 @@ export default {
           // 两种情况：create模式是需要校验是否上传成功了，edit模式获取题目数据已经默认为true了，若是edit又重新上传数据，需要校验
           if (!this.testCaseUploaded) {
             this.error.testCase =
-              this.$i18n.t("m.Judge_Samples") +
+              this.$t("m.Judge_Samples") +
               " " +
-              this.$i18n.t("m.is_required");
+              this.$t("m.is_required");
             myMessage.error(this.error.testCase);
             return;
           }
@@ -1638,25 +1647,25 @@ export default {
             for (let i = 0; i < problemSamples.length; i++) {
               if (problemSamples[i].score == "") {
                 myMessage.error(
-                  this.$i18n.t("m.Problem_Sample") +
+                  this.$t("m.Problem_Sample") +
                     (i + 1) +
                     " " +
-                    this.$i18n.t("m.Score_must_be_an_integer")
+                    this.$t("m.Score_must_be_an_integer")
                 );
                 return;
               }
               try {
                 if (parseInt(problemSamples[i].score) < 0) {
                   myMessage.error(
-                    this.$i18n.t("m.Problem_Sample") +
+                    this.$t("m.Problem_Sample") +
                       (i + 1) +
                       " " +
-                      this.$i18n.t("m.Score_must_be_greater_than_or_equal_to_0")
+                      this.$t("m.Score_must_be_greater_than_or_equal_to_0")
                   );
                   return;
                 }
               } catch (e) {
-                myMessage.error(this.$i18n.t("m.Score_must_be_an_integer"));
+                myMessage.error(this.$t("m.Score_must_be_an_integer"));
                 return;
               }
               if (
@@ -1665,10 +1674,10 @@ export default {
                 ) && problemSamples[i].groupNum == ""
               ) {
                 myMessage.error(
-                  this.$i18n.t("m.Problem_Sample") +
+                  this.$t("m.Problem_Sample") +
                     (i + 1) +
                     "：" +
-                    this.$i18n.t(
+                    this.$t(
                       "m.Non_Default_Judge_Case_Mode_And_Group_Num_IS_NULL"
                     )
                 );
@@ -1681,7 +1690,7 @@ export default {
       // 运行题目标签为空
       // if (!this.problemTags.length) {
       //   this.error.tags =
-      //     this.$i18n.t('m.Tags') + ' ' + this.$i18n.t('m.is_required');
+      //     this.$t('m.Tags') + ' ' + this.$t('m.is_required');
       //   myMessage.error(this.error.tags);
       //   return;
       // }
@@ -1692,12 +1701,12 @@ export default {
         if (this.problem.judgeMode != "default") {
           if (!this.problem.spjCode) {
             this.error.spj =
-              this.$i18n.t("m.Spj_Or_Interactive_Code") +
+              this.$t("m.Spj_Or_Interactive_Code") +
               " " +
-              this.$i18n.t("m.is_required");
+              this.$t("m.is_required");
             myMessage.error(this.error.spj);
           } else if (!this.problem.spjCompileOk && isChangeModeCode) {
-            this.error.spj = this.$i18n.t(
+            this.error.spj = this.$t(
               "m.Spj_Or_Interactive_Code_not_Compile_Success"
             );
           }
@@ -1710,7 +1719,7 @@ export default {
 
       if (!this.problemLanguages.length) {
         this.error.languages =
-          this.$i18n.t("m.Language") + " " + this.$i18n.t("m.is_required");
+          this.$t("m.Language") + " " + this.$t("m.is_required");
         myMessage.error(this.error.languages);
         return;
       }
@@ -1763,7 +1772,7 @@ export default {
                   myMessage.error(
                     lang.name +
                       "：" +
-                      this.$i18n.t("m.Code_template_of_the_language_cannot_be_empty")
+                      this.$t("m.Code_template_of_the_language_cannot_be_empty")
                   );
                   return;
               }
@@ -1872,27 +1881,120 @@ export default {
 </script>
 
 <style scoped>
-/deep/.el-form-item__label {
+:deep(.el-form-item__label) {
+  display: inline-block;
+  height: 40px;
+  margin: 0;
   padding: 0 !important;
+  line-height: 40px;
 }
 .el-form-item {
   margin-bottom: 10px !important;
 }
+:deep(.el-form-item__content) {
+  min-height: 40px;
+  line-height: 40px;
+}
+:deep(.el-input__wrapper) {
+  min-height: 40px;
+  padding: 1px 15px;
+}
+:deep(.el-input__inner) {
+  height: 38px;
+  line-height: 38px;
+}
+:deep(.el-select__wrapper) {
+  min-height: 40px;
+  padding: 4px 15px;
+}
+:deep(.el-radio-group) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  line-height: 40px;
+}
+:deep(.el-radio) {
+  height: 16px;
+  line-height: 16px;
+}
+:deep(.el-checkbox-group) {
+  width: 100%;
+  line-height: 40px;
+}
+:deep(.el-checkbox) {
+  height: 40px;
+  line-height: 40px;
+}
+.language-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.language-checkbox-group :deep(.el-checkbox) {
+  margin-right: 32px;
+}
+:deep(.el-switch) {
+  height: 20px;
+}
+:deep(.el-textarea__inner) {
+  min-height: 117px !important;
+  padding: 5px 15px;
+  line-height: 21px;
+}
+:deep(.el-button:not(.el-button--small)) {
+  min-height: 40px;
+  padding: 12px 20px;
+}
+:deep(.el-button--small) {
+  min-height: 32px;
+  padding: 9px 15px;
+}
+:deep(.markdown-editor .md-editor-toolbar-wrapper) {
+  height: 41px;
+  min-height: 41px;
+}
+:deep(.markdown-editor .md-editor-footer) {
+  display: none;
+}
 .difficulty-select {
   width: 120px;
 }
-.input-new-tag {
-  width: 120px;
+:deep(.input-new-tag) {
+  width: 120px !important;
+}
+:deep(.input-new-tag .el-input__wrapper) {
+  min-height: 28px;
+}
+:deep(.input-new-tag .el-input__inner) {
+  height: 26px;
+  line-height: 26px;
 }
 .button-new-tag {
+  width: 44px;
   height: 24px;
+  min-height: 24px !important;
   line-height: 22px;
-  padding-top: 0;
-  padding-bottom: 0;
+  padding: 0 15px !important;
 }
 
 .accordion {
+  width: 100%;
   margin-bottom: 10px;
+}
+.accordion :deep(.el-button--danger.el-button--small) {
+  min-width: 76px;
+}
+.judge-samples-row {
+  display: block;
+}
+.judge-samples-row :deep(.el-upload-list:empty) {
+  display: none;
+  margin-top: 0;
+}
+.judge-samples-row :deep(.vxe-table.is--empty .vxe-table--body-wrapper),
+.judge-samples-row :deep(.vxe-table.is--empty .vxe-table--empty-placeholder) {
+  height: 48px !important;
+  min-height: 48px !important;
 }
 
 .add-examples {

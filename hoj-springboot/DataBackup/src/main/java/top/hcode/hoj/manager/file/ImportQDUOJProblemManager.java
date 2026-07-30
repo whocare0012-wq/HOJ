@@ -4,7 +4,6 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.file.FileReader;
 import cn.hutool.core.text.UnicodeUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.ZipUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -28,9 +27,9 @@ import top.hcode.hoj.pojo.entity.problem.ProblemCase;
 import top.hcode.hoj.pojo.entity.problem.Tag;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
+import top.hcode.hoj.utils.SafeZipService;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +51,9 @@ public class ImportQDUOJProblemManager {
     @Autowired
     private TagEntityService tagEntityService;
 
+    @Autowired
+    private SafeZipService safeZipService;
+
     /**
      * @param file
      * @MethodName importQDOJProblem
@@ -61,28 +63,9 @@ public class ImportQDUOJProblemManager {
      */
     public void importQDOJProblem(MultipartFile file) throws StatusFailException, StatusSystemErrorException {
 
-        String suffix = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".") + 1);
-        if (!"zip".toUpperCase().contains(suffix.toUpperCase())) {
-            throw new StatusFailException("请上传zip格式的题目文件压缩包！");
-        }
-
         String fileDirId = IdUtil.simpleUUID();
         String fileDir = Constants.File.TESTCASE_TMP_FOLDER.getPath() + File.separator + fileDirId;
-        String filePath = fileDir + File.separator + file.getOriginalFilename();
-        // 文件夹不存在就新建
-        FileUtil.mkdir(fileDir);
-        try {
-            file.transferTo(new File(filePath));
-        } catch (IOException e) {
-            FileUtil.del(fileDir);
-            throw new StatusSystemErrorException("服务器异常：qduoj题目上传失败！");
-        }
-
-        // 将压缩包压缩到指定文件夹
-        ZipUtil.unzip(filePath, fileDir);
-
-        // 删除zip文件
-        FileUtil.del(filePath);
+        safeZipService.transferAndUnzip(file, fileDir);
 
 
         // 检查文件是否存在

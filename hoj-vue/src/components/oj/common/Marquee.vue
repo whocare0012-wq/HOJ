@@ -47,7 +47,7 @@ export default {
       }, 20);
     },
   },
-  beforeDestroy() {
+  beforeUnmount() {
     clearInterval(this.timer);
   },
 };

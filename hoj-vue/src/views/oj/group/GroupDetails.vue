@@ -5,27 +5,33 @@
         <div class="sub-menu">
           <el-tabs @tab-click="tabClick" v-model="route_name">
             <el-tab-pane name="GroupDetails" lazy>
-              <span slot="label">
-                <i class="el-icon-s-home"></i>&nbsp;{{ $t('m.Group_Home') }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="el-icon-s-home"></i>&nbsp;{{ $t('m.Group_Home') }}
+                </span>
+              </template>
             </el-tab-pane>
             <el-tab-pane
               lazy
               name="GroupProblemList"
               :disabled="groupMenuDisabled"
             >
-              <span slot="label">
-                <i class="fa fa-list"></i>&nbsp;{{ $t('m.Group_Problem') }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="fa fa-list"></i>&nbsp;{{ $t('m.Group_Problem') }}
+                </span>
+              </template>
             </el-tab-pane>
             <el-tab-pane
               lazy
               name="GroupTrainingList"
               :disabled="groupMenuDisabled"
             >
-              <span slot="label">
-                <i class="el-icon-s-flag"></i>&nbsp;{{ $t('m.Group_Training') }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="el-icon-s-flag"></i>&nbsp;{{ $t('m.Group_Training') }}
+                </span>
+              </template>
             </el-tab-pane>
 
             <el-tab-pane
@@ -33,9 +39,11 @@
               name="GroupContestList"
               :disabled="groupMenuDisabled"
             >
-              <span slot="label">
-                <i class="el-icon-s-data"></i>&nbsp;{{ $t('m.Group_Contest') }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="el-icon-s-data"></i>&nbsp;{{ $t('m.Group_Contest') }}
+                </span>
+              </template>
             </el-tab-pane>
 
             <el-tab-pane
@@ -43,11 +51,13 @@
               name="GroupSubmissionList"
               :disabled="groupMenuDisabled"
             >
-              <span slot="label">
-                <i class="el-icon-s-marketing"></i>&nbsp;{{
-                  $t('m.Group_Submission')
-                }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="el-icon-s-marketing"></i>&nbsp;{{
+                    $t('m.Group_Submission')
+                  }}
+                </span>
+              </template>
             </el-tab-pane>
 
             <el-tab-pane
@@ -56,42 +66,55 @@
               :disabled="groupMenuDisabled"
               v-if="websiteConfig.openGroupDiscussion"
             >
-              <span slot="label">
-                <i class="el-icon-share"></i>&nbsp;{{
-                  $t('m.Group_Discussion')
-                }}
-              </span>
+              <template #label>
+                <span>
+                  <el-icon class="group-tab-icon">
+                    <ChatDotRound />
+                  </el-icon>
+                  {{
+                    $t('m.Group_Discussion')
+                  }}
+                </span>
+              </template>
             </el-tab-pane>
             <el-tab-pane
               lazy
               name="GroupMemberList"
               :disabled="groupMenuDisabled"
             >
-              <span slot="label">
-                <i class="el-icon-user-solid"></i>&nbsp;{{
-                  $t('m.Group_Member')
-                }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="el-icon-user-solid"></i>&nbsp;{{
+                    $t('m.Group_Member')
+                  }}
+                </span>
+              </template>
             </el-tab-pane>
             <el-tab-pane lazy name="GroupAnnouncementList" v-if="isGroupAdmin">
-              <span slot="label">
-                <i class="fa fa-bullhorn"></i>&nbsp;{{
-                  $t('m.Group_Announcement')
-                }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="fa fa-bullhorn"></i>&nbsp;{{
+                    $t('m.Group_Announcement')
+                  }}
+                </span>
+              </template>
             </el-tab-pane>
             <el-tab-pane lazy name="GroupSetting" v-if="isGroupRoot">
-              <span slot="label">
-                <i class="el-icon-s-tools"></i>&nbsp;{{ $t('m.Group_Setting') }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="el-icon-s-tools"></i>&nbsp;{{ $t('m.Group_Setting') }}
+                </span>
+              </template>
             </el-tab-pane>
             <el-tab-pane 
               lazy 
               name="GroupRank" 
               :disabled="groupMenuDisabled">
-              <span slot="label">
-                <i class="el-icon-medal-1"></i>&nbsp;{{ $t('m.Group_Rank') }}
-              </span>
+              <template #label>
+                <span>
+                  <i class="el-icon-medal-1"></i>&nbsp;{{ $t('m.Group_Rank') }}
+                </span>
+              </template>
             </el-tab-pane>
           </el-tabs>
         </div>
@@ -107,17 +130,21 @@
         "
       >
         <el-col :span="24" style=" margin-bottom: 10px;">
-          <transition name="el-fade-in-linear">
-            <router-view></router-view>
-          </transition>
+          <router-view v-slot="{ Component }">
+            <transition name="el-fade-in-linear">
+              <component :is="Component"></component>
+            </transition>
+          </router-view>
         </el-col>
       </template>
 
       <template v-else>
         <el-col :md="18" :xs="24" style=" margin-bottom: 10px;">
-          <transition name="el-fade-in-linear">
-            <router-view></router-view>
-          </transition>
+          <router-view v-slot="{ Component }">
+            <transition name="el-fade-in-linear">
+              <component :is="Component"></component>
+            </transition>
+          </router-view>
           <el-card v-show="$route.name === 'GroupDetails'">
             <el-row>
               <el-col
@@ -153,15 +180,16 @@
         </el-col>
         <el-col :md="6" :xs="24" style="margin-bottom: 10px;">
           <el-card>
-            <div slot="header" style="text-align: center">
-              <avatar
-                :inline="true"
-                :size="130"
-                color="#FFF"
-                :src="group.avatar ? group.avatar : defaultAvatar"
-                shape="square"
-              ></avatar>
-            </div>
+            <template #header>
+              <div style="text-align: center">
+                <avatar
+                  :inline="true"
+                  :size="130"
+                  color="#FFF"
+                  :src="group.avatar ? group.avatar : defaultAvatar"
+                ></avatar>
+              </div>
+            </template>
             <div class="info-rows">
               <div>
                 <span>
@@ -174,7 +202,7 @@
                     :content="group.name"
                     placement="top"
                   >
-                    <span>{{ group.name | ellipsis }}</span>
+                    <span>{{ $filters.ellipsis(group.name) }}</span>
                   </el-tooltip>
                 </span>
               </div>
@@ -184,11 +212,15 @@
                 </span>
                 <span>
                   <el-link
-                    style="font-size: 16px"
+                    class="group-owner-link"
                     type="primary"
-                    :underline="false"
+                    underline="never"
                     @click="toUserHome(group.owner)"
-                    ><i class="el-icon-user-solid"></i> {{ group.owner }}
+                    ><i
+                      class="el-icon-user-solid group-info-icon"
+                      aria-hidden="true"
+                    ></i>
+                    <span>{{ group.owner }}</span>
                   </el-link>
                 </span>
               </div>
@@ -203,16 +235,18 @@
                   >
                     <el-tag
                       :type="GROUP_TYPE_REVERSE[group.auth].color"
-                      size="medium"
+                      size="default"
                       effect="dark"
                     >
                       {{ $t('m.Group_' + GROUP_TYPE_REVERSE[group.auth].name) }}
                     </el-tag>
                   </el-tooltip>
-                  <el-tooltip :content="$t('m.Group_Hidden_Tips')">
+                  <el-tooltip
+                    v-if="!group.visible"
+                    :content="$t('m.Group_Hidden_Tips')"
+                  >
                     <el-tag
-                      v-if="!group.visible"
-                      size="medium"
+                      size="default"
                       type="primary"
                       effect="dark"
                     >
@@ -226,9 +260,15 @@
                   <span>{{ $t('m.Created_Time') }}</span>
                 </span>
                 <span>
-                  <i class="el-icon-time">
-                    {{ group.gmtCreate | localtime((format = 'YYYY-MM-DD')) }}
-                  </i>
+                  <span class="group-created-time">
+                    <i
+                      class="el-icon-time group-info-icon"
+                      aria-hidden="true"
+                    ></i>
+                    <span>{{
+                      $filters.localtime(group.gmtCreate, 'YYYY-MM-DD')
+                    }}</span>
+                  </span>
                 </span>
               </div>
               <div>
@@ -273,7 +313,7 @@
     </el-row>
     <el-dialog
       :title="$t('m.Apply_Group')"
-      :visible.sync="showApplyDialog"
+      v-model="showApplyDialog"
       width="400px"
       :close-on-click-modal="false"
     >
@@ -315,14 +355,16 @@
           </el-col>
         </el-row>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="danger" @click.native="showApplyDialog = false">{{
-          $t('m.Cancel')
-        }}</el-button>
-        <el-button type="primary" @click.native="submitApply">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="danger" @click="showApplyDialog = false">{{
+            $t('m.Cancel')
+          }}</el-button>
+          <el-button type="primary" @click="submitApply">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -330,17 +372,20 @@
 <script>
 import { GROUP_TYPE, GROUP_TYPE_REVERSE } from '@/common/constants';
 import { mapState, mapGetters, mapActions } from 'vuex';
-import Avatar from 'vue-avatar';
+import Avatar from '@/components/common/Avatar.vue';
 import Announcement from '@/components/oj/group/Announcement.vue';
 import api from '@/common/api';
 import mMessage from '@/common/message';
 import Markdown from '@/components/oj/common/Markdown';
+import defaultAvatarImage from '@/assets/default.jpg';
+import { ChatDotRound } from '@element-plus/icons-vue';
 export default {
   name: 'GroupDetails',
   components: {
     Avatar,
     Announcement,
-    Markdown
+    Markdown,
+    ChatDotRound,
   },
   data() {
     var checkGroupReason = (rule, value, callback) => {
@@ -365,7 +410,7 @@ export default {
     };
     return {
       route_name: 'GroupDetails',
-      defaultAvatar: require('@/assets/default.jpg'),
+      defaultAvatar: defaultAvatarImage,
       showApplyDialog: false,
       appliaction: {
         code: '',
@@ -407,9 +452,14 @@ export default {
   methods: {
     ...mapActions(['changeDomTitle']),
     tabClick(tab) {
-      let name = tab.name;
-      if (name !== this.$route.name) {
-        this.$router.push({ name: name });
+      const name = tab?.paneName || tab?.props?.name || tab?.name;
+      if (name && name !== this.$route.name) {
+        this.$router.push({
+          name,
+          params: {
+            groupID: this.$route.params.groupID,
+          },
+        });
       }
     },
     handleApply() {
@@ -442,11 +492,11 @@ export default {
     },
     exitGroup() {
       this.$confirm(
-        this.$i18n.t('m.Exit_Group_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Exit_Group_Tips'),
+        this.$t('m.Warning'),
         {
-          confirmButtonText: this.$i18n.t('m.OK'),
-          cancelButtonText: this.$i18n.t('m.Cancel'),
+          confirmButtonText: this.$t('m.OK'),
+          cancelButtonText: this.$t('m.Cancel'),
           type: 'warning',
         }
       )
@@ -456,7 +506,7 @@ export default {
             .exitGroup(this.$route.params.groupID)
             .then((res) => {
               this.loading = false;
-              mMessage.success(this.$i18n.t('m.Exit_Successfully'));
+              mMessage.success(this.$t('m.Exit_Successfully'));
               this.$store.dispatch('getGroup');
             })
             .catch(() => {});
@@ -467,11 +517,11 @@ export default {
     },
     disbandGroup() {
       this.$confirm(
-        this.$i18n.t('m.Disband_Group_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Disband_Group_Tips'),
+        this.$t('m.Warning'),
         {
-          confirmButtonText: this.$i18n.t('m.OK'),
-          cancelButtonText: this.$i18n.t('m.Cancel'),
+          confirmButtonText: this.$t('m.OK'),
+          cancelButtonText: this.$t('m.Cancel'),
           type: 'warning',
         }
       )
@@ -481,7 +531,7 @@ export default {
             .deleteGroup(this.$route.params.groupID)
             .then((res) => {
               this.loading = false;
-              mMessage.success(this.$i18n.t('m.Disband_Successfully'));
+              mMessage.success(this.$t('m.Disband_Successfully'));
               this.$router.push({
                 name: 'GroupList',
               });
@@ -516,26 +566,6 @@ export default {
       'websiteConfig'
     ]),
   },
-  filters: {
-    //文字数超出时，超出部分使用...
-    ellipsis(value) {
-      if (!value) return '';
-      var l = value.length;
-      var ans = '';
-      var blen = 0;
-      for (let i = 0; i < l; i++) {
-        if ((value.charCodeAt(i) & 0xff00) != 0) {
-          blen++;
-        }
-        blen++;
-        if (blen > 26) {
-          return ans + '...';
-        }
-        ans += value.charAt(i);
-      }
-      return ans;
-    },
-  },
   watch: {
     $route(newVal) {
       if (
@@ -569,23 +599,44 @@ export default {
       this.changeDomTitle({ title: this.group.name });
     },
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.$store.commit('clearGroup');
   },
 };
 </script>
 
 <style scoped>
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   border-bottom: 0px;
   padding-bottom: 0px;
 }
-/deep/.el-tabs__nav-wrap {
+:deep(.el-tabs__nav-wrap) {
   background: #fff;
   border-radius: 3px;
 }
-/deep/.el-tabs--top .el-tabs__item.is-top:nth-child(2) {
+:deep(.el-tabs--top .el-tabs__item.is-top:nth-child(2)) {
   padding-left: 20px;
+}
+.group-tab-icon {
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+.group-owner-link {
+  font-size: 16px;
+}
+.group-owner-link :deep(.el-link__inner),
+.group-created-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-style: normal;
+}
+.group-owner-link :deep(.el-link__inner > span) {
+  margin-left: 0;
+}
+.group-info-icon {
+  flex: 0 0 auto;
+  font-style: normal;
 }
 .description-body {
   background: #fff;

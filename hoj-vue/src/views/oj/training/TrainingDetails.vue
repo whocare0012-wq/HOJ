@@ -1,9 +1,11 @@
 <template>
   <div>
-    <el-card shadow class="training-header">
-      <div slot="header">
-        <span class="panel-title">{{ training.title }}</span>
-      </div>
+    <el-card shadow="always" class="training-header">
+      <template #header>
+        <div>
+          <span class="panel-title">{{ training.title }}</span>
+        </div>
+      </template>
       <template v-if="isAuthenticated">
         <div>
           <el-tooltip
@@ -27,24 +29,28 @@
     <div class="card-top">
       <el-tabs @tab-click="tabClick" v-model="route_name">
         <el-tab-pane :name="groupID?'GroupTrainingDetails':'TrainingDetails'" lazy>
-          <span slot="label"
-            ><i class="el-icon-s-home"></i>&nbsp;{{
-              $t('m.Training_Introduction')
-            }}</span
-          >
+          <template #label>
+            <span
+              ><i class="el-icon-s-home"></i>&nbsp;{{
+                $t('m.Training_Introduction')
+              }}</span
+            >
+          </template>
           <el-row :gutter="30">
             <el-col :sm="24" :md="7">
               <el-card
                 v-if="trainingPasswordFormVisible"
                 class="password-form-card"
               >
-                <div slot="header">
-                  <span class="panel-title" style="color: #e6a23c;"
-                    ><i class="el-icon-warning">
-                      {{ $t('m.Password_Required') }}</i
-                    ></span
-                  >
-                </div>
+                <template #header>
+                  <div>
+                    <span class="panel-title" style="color: #e6a23c;"
+                      ><i class="el-icon-warning">
+                        {{ $t('m.Password_Required') }}</i
+                      ></span
+                    >
+                  </div>
+                </template>
                 <h3>
                   {{ $t('m.To_Enter_Training_Need_Password') }}
                 </h3>
@@ -53,7 +59,7 @@
                     v-model="trainingPassword"
                     type="password"
                     :placeholder="$t('m.Enter_the_training_password')"
-                    @keydown.enter.native="checkPassword"
+                    @keydown.enter="checkPassword"
                     style="width:70%"
                   />
                   <el-button
@@ -82,6 +88,7 @@
                     <span v-if="training.auth">
                       <el-tag
                         :type="TRAINING_TYPE[training.auth]['color']"
+                        size="large"
                         effect="dark"
                       >
                         {{ $t('m.Training_' + training.auth) }}
@@ -95,7 +102,7 @@
                     <span>
                       <span
                         ><el-tag
-                          size="medium"
+                          size="default"
                           class="category-item"
                           :style="
                             'color: #fff;background-color: ' +
@@ -136,7 +143,7 @@
                       <span>{{ $t('m.Recent_Update') }}</span>
                     </span>
                     <span>
-                      <span>{{ training.gmtModified | localtime }}</span>
+                      <span>{{ $filters.localtime(training.gmtModified) }}</span>
                     </span>
                   </div>
                 </div>
@@ -144,11 +151,13 @@
             </el-col>
             <el-col :sm="24" :md="17">
               <el-card>
-                <div slot="header">
-                  <span class="panel-title">{{
-                    $t('m.Training_Introduction')
-                  }}</span>
-                </div>
+                <template #header>
+                  <div>
+                    <span class="panel-title">{{
+                      $t('m.Training_Introduction')
+                    }}</span>
+                  </div>
+                </template>
                 <Markdown 
                   :isAvoidXss="groupID" 
                   :content="training.description">
@@ -163,16 +172,21 @@
           lazy
           :disabled="trainingMenuDisabled"
         >
-          <span slot="label"
-            ><i class="fa fa-list" aria-hidden="true"></i>&nbsp;{{
-              $t('m.Problem_List')
-            }}</span
+          <template #label>
+            <span
+              ><i class="fa fa-list" aria-hidden="true"></i>&nbsp;{{
+                $t('m.Problem_List')
+              }}</span
+            >
+          </template>
+          <router-view
+            v-if="route_name === 'TrainingProblemList' || route_name === 'GroupTrainingProblemList'"
+            v-slot="{ Component }"
           >
-          <transition name="el-zoom-in-bottom">
-            <router-view
-              v-if="route_name === 'TrainingProblemList' || route_name === 'GroupTrainingProblemList'"
-            ></router-view>
-          </transition>
+            <transition name="el-zoom-in-bottom">
+              <component :is="Component"></component>
+            </transition>
+          </router-view>
         </el-tab-pane>
 
         <el-tab-pane
@@ -181,14 +195,21 @@
           :disabled="trainingMenuDisabled"
           v-if="isPrivateTraining"
         >
-          <span slot="label"
-            ><i class="fa fa-bar-chart" aria-hidden="true"></i>&nbsp;{{
-              $t('m.Record_List')
-            }}</span
+          <template #label>
+            <span
+              ><i class="fa fa-bar-chart" aria-hidden="true"></i>&nbsp;{{
+                $t('m.Record_List')
+              }}</span
+            >
+          </template>
+          <router-view
+            v-if="route_name === 'TrainingRank' || route_name === 'GroupTrainingRank'"
+            v-slot="{ Component }"
           >
-          <transition name="el-zoom-in-bottom">
-            <router-view v-if="route_name === 'TrainingRank' || route_name === 'GroupTrainingRank' "></router-view>
-          </transition>
+            <transition name="el-zoom-in-bottom">
+              <component :is="Component"></component>
+            </transition>
+          </router-view>
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -242,20 +263,29 @@ export default {
   methods: {
     ...mapActions(['changeDomTitle']),
     tabClick(tab) {
-      let name = tab.name;
-      if (name !== this.$route.name) {
-        this.$router.push({ name: name });
+      const name = tab?.paneName || tab?.props?.name || tab?.name;
+      if (name && name !== this.$route.name) {
+        const params = {
+          trainingID: this.$route.params.trainingID,
+        };
+        if (this.$route.params.groupID) {
+          params.groupID = this.$route.params.groupID;
+        }
+        this.$router.push({
+          name,
+          params,
+        });
       }
     },
     checkPassword() {
       if (this.trainingPassword === '') {
-        myMessage.warning(this.$i18n.t('m.Enter_the_training_password'));
+        myMessage.warning(this.$t('m.Enter_the_training_password'));
         return;
       }
       this.btnLoading = true;
       api.registerTraining(this.training.id + '', this.trainingPassword).then(
         (res) => {
-          myMessage.success(this.$i18n.t('m.Register_training_successfully'));
+          myMessage.success(this.$t('m.Register_training_successfully'));
           this.$store.commit('trainingIntoAccess', { intoAccess: true });
           this.btnLoading = false;
         },
@@ -274,13 +304,10 @@ export default {
       if (!this.training.problemCount) {
         return 100;
       }
-      if (this.training.acCount == null) {
-        this.training.acCount = 0;
-      }
-      return (
-        (this.training.acCount / this.training.problemCount) *
-        100
-      ).toFixed(2);
+      const acCount = Number(this.training.acCount) || 0;
+      const problemCount = Number(this.training.problemCount);
+      const percentage = (acCount / problemCount) * 100;
+      return Math.min(100, Math.max(0, percentage)).toFixed(2);
     },
   },
   computed: {
@@ -309,7 +336,7 @@ export default {
       this.changeDomTitle({ title: this.training.title });
     },
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.$store.commit('clearTraining');
   },
 };
@@ -326,6 +353,7 @@ export default {
   margin-top: 10px;
   font-size: 18px;
   font-weight: 700;
+  line-height: 27px;
 }
 .password-form-card {
   text-align: center;
@@ -347,15 +375,15 @@ export default {
 .info-rows > :last-child {
   margin-bottom: 0;
 }
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   border-bottom: 0px;
   padding-bottom: 0px;
 }
-/deep/.el-tabs__nav-wrap {
+:deep(.el-tabs__nav-wrap) {
   background: #fff;
   border-radius: 3px;
 }
-/deep/.el-tabs--top .el-tabs__item.is-top:nth-child(2) {
+:deep(.el-tabs--top .el-tabs__item.is-top:nth-child(2)) {
   padding-left: 20px;
 }
 </style>

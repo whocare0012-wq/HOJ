@@ -13,25 +13,28 @@
         :closable="false"
         style="background-color: rgb(14, 176, 201)!important;"
       >
-        <template slot="title">
+        <template #title>
           <span class="title">{{
-            $i18n.t('m.Announcement_of_contest_Q_and_A_area')
+            $t('m.Announcement_of_contest_Q_and_A_area')
           }}</span></template
         >
-        <template slot>
+        <template #default>
           <p>
-            1. {{ $i18n.t('m.Announcement_of_contest_Q_and_A_area_tips1') }}
+            1. {{ $t('m.Announcement_of_contest_Q_and_A_area_tips1') }}
           </p>
           <p>
-            2. {{ $i18n.t('m.Announcement_of_contest_Q_and_A_area_tips2') }}
+            2. {{ $t('m.Announcement_of_contest_Q_and_A_area_tips2') }}
           </p>
           <p>
-            3. {{ $i18n.t('m.Announcement_of_contest_Q_and_A_area_tips3') }}
+            3. {{ $t('m.Announcement_of_contest_Q_and_A_area_tips3') }}
           </p>
         </template>
       </el-alert>
     </div>
-    <div class="container" :style="cid ? 'max-width: 100% !important;' : ''">
+    <div
+      class="container discussion-comment-container"
+      :style="cid ? 'max-width: 100% !important;' : ''"
+    >
       <div class="own-input">
         <el-input
           v-model="ownInputComment"
@@ -59,7 +62,9 @@
                   >{{ item }}</a
                 >
               </div>
-              <i class="fa fa-smile-o emotionSelect" slot="reference"></i>
+              <template #reference>
+                <i class="fa fa-smile-o emotionSelect"></i>
+              </template>
             </el-popover>
           </span>
           <span
@@ -156,11 +161,15 @@
               ></path></svg
           ></span>
           <span class="own-btn-comment">
-            <el-button class="btn" type="primary" round @click="commitComment"
-              ><i class="el-icon-edit">
-                {{ $t('m.Submit_Comment') }}</i
-              ></el-button
+            <el-button
+              class="btn comment-submit-button"
+              type="primary"
+              round
+              :icon="legacyElementIcons['el-icon-edit-outline']"
+              @click="commitComment"
             >
+              {{ $t('m.Submit_Comment') }}
+            </el-button>
           </span>
         </div>
       </div>
@@ -219,8 +228,8 @@
               >
             </div>
             <div class="date">
-              <el-tooltip :content="item.gmtCreate | localtime" placement="top">
-                <span>{{ item.gmtCreate | fromNow }}</span>
+              <el-tooltip :content="$filters.localtime(item.gmtCreate)" placement="top">
+                <span>{{ $filters.fromNow(item.gmtCreate) }}</span>
               </el-tooltip>
             </div>
           </div>
@@ -327,10 +336,10 @@
               </div>
               <div class="reply-bottom">
                 <el-tooltip
-                  :content="reply.gmtCreate | localtime"
+                  :content="$filters.localtime(reply.gmtCreate)"
                   placement="top"
                 >
-                  <span>{{ reply.gmtCreate | fromNow }}</span>
+                  <span>{{ $filters.fromNow(reply.gmtCreate) }}</span>
                 </el-tooltip>
 
                 <span
@@ -392,10 +401,11 @@
                           >{{ item }}</a
                         >
                       </div>
-                      <i
-                        class="fa fa-smile-o emotionSelect"
-                        slot="reference"
-                      ></i>
+                      <template #reference>
+                        <i
+                          class="fa fa-smile-o emotionSelect"
+                          ></i>
+                      </template>
                     </el-popover>
                   </span>
                   <span
@@ -525,12 +535,13 @@
 </template>
 
 <script>
-import Avatar from 'vue-avatar';
+import Avatar from '@/components/common/Avatar.vue';
 import { mapGetters, mapState } from 'vuex';
 import myMessage from '@/common/message';
 import api from '@/common/api';
 import { addCodeBtn } from '@/common/codeblock';
 import Markdown from '@/components/oj/common/Markdown';
+import emojiData from './emoji.json';
 export default {
   props: {
     did: {
@@ -581,9 +592,8 @@ export default {
   },
 
   created() {
-    const appData = require('./emoji.json');
-    for (let i in appData) {
-      this.faceList.push(appData[i]);
+    for (let i in emojiData) {
+      this.faceList.push(emojiData[i]);
     }
   },
   mounted() {
@@ -601,7 +611,7 @@ export default {
   methods: {
     init() {
       let queryParams = Object.assign({}, this.query);
-      this.replyPlaceholder = this.$i18n.t(
+      this.replyPlaceholder = this.$t(
         'm.Come_and_write_down_your_comments'
       );
       this.loading = true;
@@ -665,16 +675,16 @@ export default {
      */
     commitComment() {
       if (!this.isAuthenticated) {
-        myMessage.warning(this.$i18n.t('m.Please_login_first'));
+        myMessage.warning(this.$t('m.Please_login_first'));
         this.$store.dispatch('changeModalStatus', { visible: true });
         return;
       }
-      if (this.ownInputComment.replace(/(^s*)|(s*$)/g, '').length == 0) {
-        myMessage.warning(this.$i18n.t('m.Content_cannot_be_empty'));
+      if (this.ownInputComment.trim().length === 0) {
+        myMessage.warning(this.$t('m.Content_cannot_be_empty'));
         return;
       }
       if(this.ownInputComment.length > 10000){
-        myMessage.error(this.$i18n.t("m.Comment_Content") + " " +this.$i18n.t("m.Can_not_exceed_10000"));
+        myMessage.error(this.$t("m.Comment_Content") + " " +this.$t("m.Can_not_exceed_10000"));
         return;
       }
       let comment = {
@@ -686,7 +696,7 @@ export default {
         this.comments = [res.data.data].concat(this.comments);
         this.totalComment++;
         this.total++;
-        myMessage.success(this.$i18n.t('m.Comment_Successfully'));
+        myMessage.success(this.$t('m.Comment_Successfully'));
         this.ownInputComment = '';
         this.$nextTick((_) => {
           addCodeBtn();
@@ -700,16 +710,16 @@ export default {
 
     commitReply() {
       if (!this.isAuthenticated) {
-        myMessage.warning(this.$i18n.t('m.Please_login_first'));
+        myMessage.warning(this.$t('m.Please_login_first'));
         this.$store.dispatch('changeModalStatus', { visible: true });
         return;
       }
-      if (this.replyInputComment.replace(/(^s*)|(s*$)/g, '').length == 0) {
-        myMessage.warning(this.$i18n.t('m.Content_cannot_be_empty'));
+      if (this.replyInputComment.trim().length === 0) {
+        myMessage.warning(this.$t('m.Content_cannot_be_empty'));
         return;
       }
       if(this.replyInputComment.length > 10000){
-        myMessage.error(this.$i18n.t("m.Reply_Content") + " " +this.$i18n.t("m.Can_not_exceed_10000"));
+        myMessage.error(this.$t("m.Reply_Content") + " " +this.$t("m.Can_not_exceed_10000"));
         return;
       }
       this.replyObj.content = this.replyInputComment;
@@ -741,7 +751,7 @@ export default {
           addCodeBtn();
         });
         this.totalComment++;
-        myMessage.success(this.$i18n.t('m.Reply_Successfully'));
+        myMessage.success(this.$t('m.Reply_Successfully'));
         this.replyInputComment = '';
       });
     },
@@ -763,7 +773,7 @@ export default {
         this.replyQuoteId = reply.id;
         this.replyQuoteType = 'Reply';
       } else {
-        this.replyPlaceholder = this.$i18n.t(
+        this.replyPlaceholder = this.$t(
           'm.Come_and_write_down_your_comments'
         );
         this.replyObj.commentId = item.id;
@@ -781,9 +791,9 @@ export default {
      */
 
     deleteComment(comment, commentIndex) {
-      this.$confirm(this.$i18n.t('m.Delete_Comment_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Comment_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       })
         .then(() => {
@@ -798,7 +808,7 @@ export default {
             this.total--;
             this.totalComment -= comment.replyList.length;
             this.comments.splice(commentIndex, 1);
-            myMessage.success(this.$i18n.t('m.Delete_successfully'));
+            myMessage.success(this.$t('m.Delete_successfully'));
           });
         })
         .catch(() => {});
@@ -809,9 +819,9 @@ export default {
      */
 
     deleteReply(reply, commentIndex, replyIndex) {
-      this.$confirm(this.$i18n.t('m.Delete_Reply_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Reply_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       })
         .then(() => {
@@ -820,7 +830,7 @@ export default {
             reply: reply,
           };
           api.deleteReply(replyDeleteData).then((res) => {
-            myMessage.success(this.$i18n.t('m.Delete_successfully'));
+            myMessage.success(this.$t('m.Delete_successfully'));
             if (!this.comments[commentIndex].backupReplyList) {
               api
                 .getAllReply(this.comments[commentIndex].id, this.cid)
@@ -1017,6 +1027,10 @@ export default {
   border: 1px solid #ebeef5;
   margin-bottom: 10px;
 }
+#oj-content .container.discussion-comment-container {
+  padding-left: 20px;
+  padding-right: 20px;
+}
 .container .own-input {
   margin-top: 10px;
 }
@@ -1031,6 +1045,12 @@ export default {
 }
 .container .own-input .own-btn-comment {
   float: right;
+}
+.container .own-input .comment-submit-button {
+  width: 120px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
 }
 .container .emotionSelect {
   font-size: 25px;

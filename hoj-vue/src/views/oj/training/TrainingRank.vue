@@ -1,24 +1,26 @@
 <template>
   <div style="margin-top:5px">
-    <el-card shadow>
-      <div
-        slot="header"
-        class="rank-title"
-      >
-        <span class="panel-title">{{ $t('m.Record_List') }}</span>
-      </div>
+    <el-card shadow="always">
+      <template #header>
+        <div
+            class="rank-title"
+        >
+          <span class="panel-title">{{ $t('m.Record_List') }}</span>
+        </div>
+      </template>
       <div class="training-rank-search">
         <el-input
           :placeholder="$t('m.Training_Rank_Search_Placeholder')"
           v-model="keyword"
-          @keyup.enter.native="getTrainingRankData"
+          @keyup.enter="getTrainingRankData"
         >
-          <el-button
-            slot="append"
-            icon="el-icon-search"
-            class="search-btn"
-            @click="getTrainingRankData"
-          ></el-button>
+          <template #append>
+            <el-button
+                :icon="legacyElementIcons['el-icon-search']"
+              class="search-btn"
+              @click="getTrainingRankData"
+            ></el-button>
+          </template>
         </el-input>
       </div>
       <vxe-table
@@ -37,6 +39,7 @@
         <vxe-table-column
           field="rank"
           type="seq"
+          title="#"
           width="50"
           fixed="left"
         ></vxe-table-column>
@@ -177,12 +180,14 @@
                 effect="dark"
                 placement="top"
               >
-                <div slot="content">
-                  {{
-                    JUDGE_STATUS[row.submissionInfo[problem.problemId].status]
-                      .name
-                  }}
-                </div>
+                <template #content>
+                  <div>
+                    {{
+                      JUDGE_STATUS[row.submissionInfo[problem.problemId].status]
+                        .name
+                    }}
+                  </div>
+                </template>
                 <span
                   class="judge-status submission-hover"
                   :style="
@@ -211,8 +216,8 @@
       </vxe-table>
       <Pagination
         :total="total"
-        :page-size.sync="limit"
-        :current.sync="page"
+        v-model:page-size="limit"
+        v-model:current="page"
         @on-change="getTrainingRankData"
         @on-page-size-change="getTrainingRankData(1)"
         :layout="'prev, pager, next, sizes'"
@@ -221,10 +226,11 @@
   </div>
 </template>
 <script>
-import Avatar from "vue-avatar";
+import { defineAsyncComponent } from 'vue';
+import Avatar from "@/components/common/Avatar.vue";
 import { mapActions, mapGetters } from "vuex";
 import { JUDGE_STATUS } from "@/common/constants";
-const Pagination = () => import("@/components/oj/common/Pagination");
+const Pagination = defineAsyncComponent(() => import("@/components/oj/common/Pagination"));
 import api from "@/common/api";
 import { mapState } from "vuex";
 import time from "@/common/time";
@@ -387,7 +393,7 @@ export default {
 .rank-title {
   text-align: center;
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 20px !important;
 }
 .training-rank-search{
@@ -412,7 +418,7 @@ export default {
   padding: 0;
 }
 @media screen and (max-width: 768px) {
-  /deep/.el-card__body {
+  :deep(.el-card__body) {
     padding: 0 !important;
   }
 }
@@ -423,18 +429,18 @@ a.emphasis:hover {
   color: #2d8cf0 !important;
 }
 
-/deep/.vxe-table .vxe-header--column:not(.col--ellipsis) {
+:deep(.vxe-table .vxe-header--column:not(.col--ellipsis)) {
   padding: 4px 0 !important;
 }
-/deep/.vxe-table .vxe-body--column {
+:deep(.vxe-table .vxe-body--column) {
   padding: 4px 0 !important;
   line-height: 20px !important;
 }
-/deep/.vxe-table .vxe-body--column:not(.col--ellipsis) {
+:deep(.vxe-table .vxe-body--column:not(.col--ellipsis)) {
   line-height: 20px !important;
   padding: 0 !important;
 }
-/deep/.vxe-body--column {
+:deep(.vxe-body--column) {
   min-width: 0;
   height: 51px !important;
   box-sizing: border-box;
@@ -442,7 +448,7 @@ a.emphasis:hover {
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-/deep/.vxe-table .vxe-cell {
+:deep(.vxe-table .vxe-cell) {
   padding-left: 5px !important;
   padding-right: 5px !important;
 }

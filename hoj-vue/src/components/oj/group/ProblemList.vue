@@ -79,7 +79,7 @@
         v-if="!contestId"
       >
         <template v-slot="{ row }">
-          {{ row.gmtCreate | localtime }}
+          {{ $filters.localtime(row.gmtCreate) }}
         </template>
       </vxe-table-column>
       <vxe-table-column
@@ -121,9 +121,9 @@
             "
           >
             <el-button
-              icon="el-icon-edit-outline"
-              size="mini"
-              @click.native="goEditProblem(row.id)"
+              :icon="legacyElementIcons['el-icon-edit-outline']"
+              size="small"
+              @click="goEditProblem(row.id)"
               type="primary"
             >
             </el-button>
@@ -137,9 +137,9 @@
             "
           >
             <el-button
-              icon="el-icon-download"
-              size="mini"
-              @click.native="downloadTestCase(row.id)"
+              :icon="legacyElementIcons['el-icon-download']"
+              size="small"
+              @click="downloadTestCase(row.id)"
               type="success"
             >
             </el-button>
@@ -154,9 +154,9 @@
             "
           >
             <el-button
-              :icon="getApplyIcon(row.applyPublicProgress)"
-              size="mini"
-              @click.native="applyPublic(row.id,row.applyPublicProgress)"
+              :icon="legacyElementIcons[getApplyIcon(row.applyPublicProgress)]"
+              size="small"
+              @click="applyPublic(row.id,row.applyPublicProgress)"
               type="warning"
             >
             </el-button>
@@ -168,9 +168,9 @@
             v-if="contestId"
           >
             <el-button
-              icon="el-icon-close"
-              size="mini"
-              @click.native="removeProblem(row.id)"
+              :icon="legacyElementIcons['el-icon-close']"
+              size="small"
+              @click="removeProblem(row.id)"
               type="warning"
             >
             </el-button>
@@ -184,9 +184,9 @@
             "
           >
             <el-button
-              icon="el-icon-delete-solid"
-              size="mini"
-              @click.native="deleteProblem(row.id)"
+              :icon="legacyElementIcons['el-icon-delete-solid']"
+              size="small"
+              @click="deleteProblem(row.id)"
               type="danger"
             >
             </el-button>
@@ -199,7 +199,7 @@
       :total="total"
       :page-size="limit"
       @on-change="currentChange"
-      :current.sync="currentPage"
+      v-model:current="currentPage"
       @on-page-size-change="onPageSizeChange"
       :layout="'prev, pager, next, sizes'"
     ></Pagination>
@@ -323,24 +323,24 @@ export default {
     },
     changeProblemColor(contestProblem) {
       api.updateGroupContestProblem(contestProblem).then((res) => {
-        mMessage.success(this.$i18n.t('m.Update_Successfully'));
+        mMessage.success(this.$t('m.Update_Successfully'));
       });
     },
     changeProblemAuth(pid, auth) {
       api.changeGroupProblemAuth(pid, auth).then((res) => {
-        mMessage.success(this.$i18n.t('m.Update_Successfully'));
+        mMessage.success(this.$t('m.Update_Successfully'));
         this.$emit('currentChange', 1);
       });
     },
     getApplyContent(progress){
       if(progress == null){
-        return this.$i18n.t('m.Group_Problem_Apply_Public');
+        return this.$t('m.Group_Problem_Apply_Public');
       }else if(progress == 1){
-        return this.$i18n.t('m.Applying_for_Publicity');
+        return this.$t('m.Applying_for_Publicity');
       }else if(progress == 2){
-        return this.$i18n.t('m.Already_Public_Problem');
+        return this.$t('m.Already_Public_Problem');
       }else if(progress == 3){
-        return this.$i18n.t('m.Refused');
+        return this.$t('m.Refused');
       }
     },
     getApplyIcon(progress){
@@ -357,8 +357,8 @@ export default {
     applyPublic(pid, progress){
       if(progress == null){
         this.$confirm(
-        this.$i18n.t('m.Group_Problem_Apply_Public_Tips'),
-        this.$i18n.t('m.Tips'),
+        this.$t('m.Group_Problem_Apply_Public_Tips'),
+        this.$t('m.Tips'),
         {
           type: 'info',
         }
@@ -377,8 +377,8 @@ export default {
         );
       }else{
         this.$confirm(
-        this.$i18n.t('m.Cancel_Group_Problem_Apply_Public_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Cancel_Group_Problem_Apply_Public_Tips'),
+        this.$t('m.Warning'),
         {
           type: 'warning',
         }
@@ -400,8 +400,8 @@ export default {
     },
     removeProblem(pid) {
       this.$confirm(
-        this.$i18n.t('m.Remove_Contest_Problem_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Remove_Contest_Problem_Tips'),
+        this.$t('m.Warning'),
         {
           type: 'warning',
         }
@@ -422,15 +422,15 @@ export default {
       let url = '/api/file/download-testcase?pid=' + problemID;
       utils.downloadFile(url).then(() => {
         this.$alert(
-          this.$i18n.t('m.Download_Testcase_Success'),
-          this.$i18n.t('m.Tips')
+          this.$t('m.Download_Testcase_Success'),
+          this.$t('m.Tips')
         );
       });
     },
     deleteProblem(id) {
       this.$confirm(
-        this.$i18n.t('m.Delete_Problem_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Delete_Problem_Tips'),
+        this.$t('m.Warning'),
         {
           type: 'warning',
         }
@@ -439,7 +439,7 @@ export default {
           api
             .deleteGroupProblem(id, this.$route.params.groupID)
             .then((res) => {
-              mMessage.success(this.$i18n.t('m.Delete_successfully'));
+              mMessage.success(this.$t('m.Delete_successfully'));
               this.$emit('currentChange', 1);
               this.currentChange(1);
             })

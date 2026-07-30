@@ -1,27 +1,29 @@
 <template>
   <el-card shadow="never" style="border: 0">
-    <div slot="header" style="text-align: left">
-      <span class="home-title panel-title" >{{ title }}</span>
-      <span style="float: right">
-        <el-button
-          v-show="listVisible"
-          type="primary"
-          @click="init"
-          size="small"
-          icon="el-icon-refresh"
-          :loading="loading"
-          >{{ $t('m.Refresh') }}</el-button
-        >
-        <el-button
-          v-show="!listVisible"
-          type="primary"
-          icon="el-icon-back"
-          @click="goBack"
-          size="small"
-          >{{ $t('m.Back') }}</el-button
-        >
-      </span>
-    </div>
+    <template #header>
+      <div style="text-align: left">
+        <span class="home-title panel-title" >{{ title }}</span>
+        <span style="float: right">
+          <el-button
+            v-show="listVisible"
+            type="primary"
+            @click="init"
+            size="small"
+            :icon="legacyElementIcons['el-icon-refresh']"
+            :loading="loading"
+            >{{ $t('m.Refresh') }}</el-button
+          >
+          <el-button
+            v-show="!listVisible"
+            type="primary"
+            :icon="legacyElementIcons['el-icon-back']"
+            @click="goBack"
+            size="small"
+            >{{ $t('m.Back') }}</el-button
+          >
+        </span>
+      </div>
+    </template>
     <transition-group name="el-fade-in-linear">
       <div
         class="no-announcement"
@@ -43,7 +45,7 @@
               <div class="info">
                 <span class="date">
                   <i class="el-icon-edit"></i>
-                  {{ announcement.gmtCreate | localtime }}
+                  {{ $filters.localtime(announcement.gmtCreate) }}
                 </span>
                 <span class="creator">
                   <i class="el-icon-user"></i>
@@ -134,7 +136,7 @@ export default {
   computed: {
     title() {
       if (this.listVisible) {
-        return this.$i18n.t('m.Group_Announcement');
+        return this.$t('m.Group_Announcement');
       } else {
         return this.announcement.title;
       }

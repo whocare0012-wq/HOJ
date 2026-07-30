@@ -34,24 +34,23 @@
             <span class="title">{{ item.title }}</span>
             <span class="extra"
               ><el-tooltip
-                :content="item.gmtCreate | localtime"
+                :content="$filters.localtime(item.gmtCreate)"
                 placement="top"
               >
-                <span>&nbsp;{{ item.gmtCreate | fromNow }}</span>
+                <span>&nbsp;{{ $filters.fromNow(item.gmtCreate) }}</span>
               </el-tooltip></span
             >
-            <span class="extra delete"
-              ><i class="el-icon-delete" @click="deleteMsg(item.id)">
-                {{ $t('m.Delete') }}</i
-              ></span
-            >
+            <span class="extra delete" @click="deleteMsg(item.id)">
+              <i class="el-icon-delete" aria-hidden="true"></i>
+              {{ $t('m.Delete') }}
+            </span>
           </div>
 
           <div class="bottom">
             <span
               class="content markdown-body"
               v-highlight
-              v-html="$markDown.render(item.content)"
+              v-dompurify-html="$markDown.render(item.content)"
             >
             </span>
           </div>
@@ -65,7 +64,7 @@
       :total="total"
       :page-size="query.limit"
       @on-change="changeRoute"
-      :current.sync="query.currentPage"
+      v-model:current="query.currentPage"
     ></Pagination>
   </div>
 </template>
@@ -127,13 +126,13 @@ export default {
       });
     },
     deleteMsg(id = undefined) {
-      this.$confirm(this.$i18n.t('m.Delete_Msg_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Msg_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       }).then(() => {
         api.cleanMsg(this.route_name, id).then((res) => {
-          myMessage.success(this.$i18n.t('m.Delete_successfully'));
+          myMessage.success(this.$t('m.Delete_successfully'));
           this.getMsgList();
         });
       });
@@ -222,5 +221,8 @@ export default {
   cursor: pointer;
   color: red;
   font-weight: bolder;
+}
+.delete .el-icon-delete {
+  margin-right: 5px;
 }
 </style>

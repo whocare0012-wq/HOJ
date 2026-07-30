@@ -36,7 +36,7 @@
         min-width="150"
       >
         <template v-slot="{ row }">
-          {{ row.gmtCreate | localtime }}
+          {{ $filters.localtime(row.gmtCreate) }}
         </template>
       </vxe-table-column>
       <vxe-table-column field="status" :title="$t('m.Status')" min-width="100">
@@ -76,9 +76,9 @@
         <template v-slot="{ row }">
           <el-tooltip effect="dark" :content="$t('m.Delete')" placement="top">
             <el-button
-              icon="el-icon-delete-solid"
-              size="mini"
-              @click.native="deleteGroupDiscussion(row.id)"
+              :icon="legacyElementIcons['el-icon-delete-solid']"
+              size="small"
+              @click="deleteGroupDiscussion(row.id)"
               type="danger"
             >
             </el-button>
@@ -89,9 +89,9 @@
             placement="top"
           >
             <el-button
-              icon="el-icon-search"
-              size="mini"
-              @click.native="goGroupDiscussion(row.id)"
+              :icon="legacyElementIcons['el-icon-search']"
+              size="small"
+              @click="goGroupDiscussion(row.id)"
               type="primary"
             >
             </el-button>
@@ -103,7 +103,7 @@
       :total="adminTotal"
       :page-size="limit"
       @on-change="currentChange"
-      :current.sync="currentPage"
+      v-model:current="currentPage"
       @on-page-size-change="onPageSizeChange"
       :layout="'prev, pager, next, sizes'"
     ></Pagination>
@@ -176,18 +176,18 @@ export default {
     },
     updateGroupDiscussion(row) {
       api.updateGroupDiscussion(row).then((res) => {
-        mMessage.success(this.$i18n.t('m.Update_Successfully'));
+        mMessage.success(this.$t('m.Update_Successfully'));
         this.$emit('currentChange', 1);
         this.currentChange(1);
       });
     },
     deleteGroupDiscussion(did) {
       this.$confirm(
-        this.$i18n.t('m.Delete_Discussion_Tips'),
-        this.$i18n.t('m.Warning'),
+        this.$t('m.Delete_Discussion_Tips'),
+        this.$t('m.Warning'),
         {
-          confirmButtonText: this.$i18n.t('m.OK'),
-          cancelButtonText: this.$i18n.t('m.Cancel'),
+          confirmButtonText: this.$t('m.OK'),
+          cancelButtonText: this.$t('m.Cancel'),
           type: 'warning',
         }
       )
@@ -195,7 +195,7 @@ export default {
           this.loading = true;
           api.deleteGroupDiscussion(did).then((res) => {
             this.loading = true;
-            mMessage.success(this.$i18n.t('m.Delete_successfully'));
+            mMessage.success(this.$t('m.Delete_successfully'));
             this.$emit('currentChange', 1);
             this.currentChange(1);
           });
@@ -242,7 +242,7 @@ export default {
 .el-form-item {
   margin-bottom: 2px !important;
 }
-/deep/.el-dialog__body {
+:deep(.el-dialog__body) {
   padding-top: 0 !important;
 }
 </style>

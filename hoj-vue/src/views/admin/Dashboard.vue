@@ -3,40 +3,49 @@
     <el-row :gutter="20">
       <el-col :xs="24" :md="10" :lg="8">
         <el-card class="admin-info">
-          <div slot="header">
-            <el-row :gutter="10">
-              <el-col :span="8">
-              <avatar
-                  :username="userInfo.username"
-                  :inline="true"
-                  :size="100"
-                  color="#FFF"
-                  :src="userInfo.avatar"
-                ></avatar>
-              </el-col>
-              <el-col :span="16">
-                <span class="panel-title admin-info-name">{{
-                  userInfo.username
-                }}</span>
-                <p>
-                  <el-tag effect="dark" size="small" type="warning">
-                    {{
-                      isSuperAdmin == true
-                        ? $t('m.Super_Admin')
-                        : isProblemAdmin == true
-                        ? $t('m.All_Problem_Admin')
-                        : $t('m.Admin')
-                    }}
-                  </el-tag>
-                </p>
-              </el-col>
-            </el-row>
-          </div>
+          <template #header>
+            <div>
+              <el-row :gutter="10" class="admin-profile-header">
+                <el-col :span="8">
+                  <avatar
+                    :username="userInfo.username"
+                    :inline="true"
+                    :size="100"
+                    shape="circle"
+                    color="#FFF"
+                    :src="userInfo.avatar"
+                    class="admin-profile-avatar"
+                  ></avatar>
+                </el-col>
+                <el-col :span="16" class="admin-info-details">
+                  <span class="admin-info-name">{{
+                    userInfo.username
+                  }}</span>
+                  <p class="admin-role-row">
+                    <el-tag
+                      effect="dark"
+                      size="small"
+                      type="warning"
+                      class="admin-role-tag"
+                    >
+                      {{
+                        isSuperAdmin == true
+                          ? $t('m.Super_Admin')
+                          : isProblemAdmin == true
+                          ? $t('m.All_Problem_Admin')
+                          : $t('m.Admin')
+                      }}
+                    </el-tag>
+                  </p>
+                </el-col>
+              </el-row>
+            </div>
+          </template>
           <div class="last-info">
             <p class="last-info-title home-title">{{ $t('m.Last_Login') }}</p>
             <el-form label-width="80px" class="last-info-body">
               <el-form-item label="Time:">
-                <span>{{ session.gmtCreate | localtime }}</span>
+                <span>{{ $filters.localtime(session.gmtCreate) }}</span>
               </el-form-item>
               <el-form-item label="IP:">
                 <span>{{ session.ip }}</span>
@@ -80,16 +89,18 @@
         </div>
         <!-- <el-card title="System_Overview" v-if="isSuperAdmin"> -->
         <el-card>
-          <div slot="header">
-            <span class="panel-title home-title">{{
-              $t('m.Backend_System')
-            }}</span>
-          </div>
+          <template #header>
+            <div>
+              <span class="panel-title home-title">{{
+                $t('m.Backend_System')
+              }}</span>
+            </div>
+          </template>
           <el-row>
             <el-col :xs="24" :md="8">
               <span
                 >{{ $t('m.Server_Number') }}：
-                <el-tag effect="dark" color="#2d8cf0" size="mini">{{
+                <el-tag effect="dark" color="#2d8cf0" size="small">{{
                   generalInfo.backupService.length
                 }}</el-tag>
               </span>
@@ -100,11 +111,11 @@
                 <el-tag
                   effect="dark"
                   color="#19be6b"
-                  size="mini"
+                  size="small"
                   v-if="generalInfo.nacos.status == 'UP'"
                   >{{ generalInfo.nacos.status }}</el-tag
                 >
-                <el-tag effect="dark" color="#f90" size="mini" v-else>{{
+                <el-tag effect="dark" color="#f90" size="small" v-else>{{
                   generalInfo.nacos.status
                 }}</el-tag>
               </span>
@@ -126,6 +137,7 @@
           <vxe-table
             stripe
             auto-resize
+            :min-height="0"
             :data="generalInfo.backupService"
             align="center"
           >
@@ -178,7 +190,11 @@
                 </el-tooltip>
               </template>
             </vxe-table-column>
-            <vxe-table-column :title="$t('m.Healthy_Status')" min-width="100">
+            <vxe-table-column
+              :title="$t('m.Healthy_Status')"
+              min-width="100"
+              fixed="right"
+            >
               <template v-slot="{ row }">
                 <el-tag
                   effect="dark"
@@ -197,16 +213,24 @@
     </el-row>
 
     <el-card style="margin-top:10px">
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Judge_Server') }}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Judge_Server') }}</span>
+        </div>
+      </template>
       <div style="margin-bottom: 10px;font-size: 15px;">
       {{ $t('m.Server_Number') }}：
-          <el-tag effect="dark" color="rgb(25, 190, 107)" size="mini">
+          <el-tag effect="dark" color="rgb(25, 190, 107)" size="small">
             {{ judgeInfo.length }}
           </el-tag>
       </div>
-      <vxe-table stripe auto-resize :data="judgeInfo" align="center">
+      <vxe-table
+        stripe
+        auto-resize
+        :min-height="0"
+        :data="judgeInfo"
+        align="center"
+      >
         <vxe-table-column type="seq" width="50"></vxe-table-column>
         <vxe-table-column :title="$t('m.Name')" min-width="150">
           <template v-slot="{ row }">
@@ -274,11 +298,12 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import { mapGetters } from 'vuex';
 import browserDetector from 'browser-detect';
-const InfoCard = () => import('@/components/admin/infoCard.vue');
+const InfoCard = defineAsyncComponent(() => import('@/components/admin/infoCard.vue'));
 import api from '@/common/api';
-import Avatar from 'vue-avatar';
+import Avatar from '@/components/common/Avatar.vue';
 export default {
   name: 'dashboard',
   components: {
@@ -386,10 +411,36 @@ export default {
   margin-bottom: 20px;
 }
 .admin-info-name {
+  display: block;
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 10px;
+  line-height: 30px;
+  margin: 0 0 8px;
+  padding: 0;
   color: #409eff;
+}
+.admin-profile-avatar :deep(.hoj-avatar__image) {
+  object-fit: contain;
+}
+.admin-profile-header {
+  align-items: flex-start;
+}
+.admin-info-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-sizing: border-box;
+  padding-top: 2px;
+}
+.admin-role-tag {
+  height: 26px;
+  line-height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.admin-role-row {
+  margin: 0;
+  line-height: 1;
 }
 .admin-info .last-info-title {
   font-size: 16px;
@@ -408,14 +459,17 @@ export default {
   min-width: 200px;
   margin-bottom: 10px;
 }
-/deep/ .el-tag--dark {
+:deep(.el-tag--dark) {
   border-color: #fff;
 }
-/deep/.el-card__header {
+:deep(.el-card__header) {
   padding-bottom: 0;
 }
+.admin-info :deep(.el-card__header) {
+  padding-bottom: 12px;
+}
 @media screen and (min-width: 1150px) {
-  /deep/ .vxe-table--body-wrapper {
+  :deep(.vxe-table--body-wrapper) {
     overflow-x: hidden !important;
   }
 }

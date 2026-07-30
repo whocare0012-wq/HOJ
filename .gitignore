@@ -1,0 +1,34 @@
+# Local runtime state, copied uploads, generated reports, and disposable browser data.
+/output/
+/.codex-tmp/
+/.playwright-cli/
+**/.playwright-cli/
+/generated-problems/
+/tmp/
+/backups/
+/data/
+/testcase/
+/docs/HOJ_*_20260905.md
+/audit-contest/
+/audit-training/
+/audit-training-user-column/
+/design-qa.md
+/training-audit.md
+/hoj-vue/design-qa.md
+
+# Local secrets must never be committed.
+**/.env
+**/.env.*
+!**/.env.example
+**/*.sql.gz
+**/*.dump
+**/*.bak
+**/*.backup
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+
+# Root-level visual QA captures are generated artifacts.
+/design-qa-*.png
+/design-qa-*.jpg

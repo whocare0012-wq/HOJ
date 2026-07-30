@@ -121,15 +121,7 @@ public class RejudgeManager {
     public boolean checkAndUpdateJudge(Boolean isContestSubmission, Judge judge, Long submitId) throws StatusFailException {
         // 如果是非比赛题目
         boolean resetContestRecordResult = true;
-        if (!isContestSubmission) {
-            // 重判前，需要将该题目对应记录表一并更新
-            // 如果该题已经是AC通过状态，更新该题目的用户ac做题表 user_acproblem
-            if (judge.getStatus().intValue() == Constants.Judge.STATUS_ACCEPTED.getStatus().intValue()) {
-                QueryWrapper<UserAcproblem> userAcproblemQueryWrapper = new QueryWrapper<>();
-                userAcproblemQueryWrapper.eq("submit_id", judge.getSubmitId());
-                userAcproblemEntityService.remove(userAcproblemQueryWrapper);
-            }
-        } else {
+        if (isContestSubmission) {
             // 将对应比赛记录设置成默认值
             UpdateWrapper<ContestRecord> updateWrapper = new UpdateWrapper<>();
             updateWrapper.eq("submit_id", submitId).setSql("status=null,score=null");
@@ -157,6 +149,9 @@ public class RejudgeManager {
 
         if (!resetContestRecordResult || !isUpdateJudgeOk) {
             throw new StatusFailException("重判失败！请重新尝试！");
+        }
+        if (judge.getCid() == 0 && judge.getGid() == null) {
+            refreshUserAcproblem(judge.getUid(), judge.getPid());
         }
         return hasSubmitIdRemoteRejudge;
     }
@@ -210,7 +205,7 @@ public class RejudgeManager {
     public Judge manualJudge(Long submitId, Integer status, Integer score) throws StatusFailException {
         QueryWrapper<Judge> judgeQueryWrapper = new QueryWrapper<>();
         judgeQueryWrapper
-                .select("submit_id", "status", "judger", "cid", "pid", "uid")
+                .select("submit_id", "status", "judger", "cid", "gid", "pid", "uid")
                 .eq("submit_id", submitId);
         Judge judge = judgeEntityService.getOne(judgeQueryWrapper);
         if (judge == null) {
@@ -255,22 +250,12 @@ public class RejudgeManager {
             throw new StatusFailException("错误：该提交正在评测中，无法取消，请稍后再尝试！");
         }
 
-        // 如果原是AC,现在人工评测后不是AC,就移除user_acproblem表对应的记录
-        if (Objects.equals(judge.getStatus(), Constants.Judge.STATUS_ACCEPTED.getStatus())
-                && !Objects.equals(status, Constants.Judge.STATUS_ACCEPTED.getStatus())) {
-            QueryWrapper<UserAcproblem> userAcproblemQueryWrapper = new QueryWrapper<>();
-            userAcproblemQueryWrapper.eq("submit_id", judge.getSubmitId());
-            userAcproblemEntityService.remove(userAcproblemQueryWrapper);
-        } else if (!Objects.equals(judge.getStatus(), Constants.Judge.STATUS_ACCEPTED.getStatus())
-                && Objects.equals(status, Constants.Judge.STATUS_ACCEPTED.getStatus())) {
-            // 如果原先不是AC,现在人工评测后是AC,就更新user_acproblem表
-            if (status.intValue() == Constants.Judge.STATUS_ACCEPTED.getStatus() && judge.getGid() == null) {
-                userAcproblemEntityService.saveOrUpdate(new UserAcproblem()
-                        .setPid(judge.getPid())
-                        .setUid(judge.getUid())
-                        .setSubmitId(submitId)
-                );
-            }
+        if (judge.getCid() == 0
+                && judge.getGid() == null
+                && !Objects.equals(judge.getStatus(), status)
+                && (Objects.equals(judge.getStatus(), Constants.Judge.STATUS_ACCEPTED.getStatus())
+                || Objects.equals(status, Constants.Judge.STATUS_ACCEPTED.getStatus()))) {
+            refreshUserAcproblem(judge.getUid(), judge.getPid());
         }
 
         if (judge.getCid() != 0) {
@@ -300,7 +285,7 @@ public class RejudgeManager {
     public Judge cancelJudge(Long submitId) throws StatusFailException {
         QueryWrapper<Judge> judgeQueryWrapper = new QueryWrapper<>();
         judgeQueryWrapper
-                .select("submit_id", "status", "judger", "cid")
+                .select("submit_id", "status", "judger", "cid", "gid", "pid", "uid")
                 .eq("submit_id", submitId)
                 .last("for update");
         Judge judge = judgeEntityService.getOne(judgeQueryWrapper);
@@ -324,11 +309,10 @@ public class RejudgeManager {
             throw new StatusFailException("错误：该提交正在评测中，无法取消，请稍后再尝试！");
         }
 
-        // 如果该题已经是AC通过状态，更新该题目的用户ac做题表 user_acproblem
-        if (judge.getStatus().intValue() == Constants.Judge.STATUS_ACCEPTED.getStatus().intValue()) {
-            QueryWrapper<UserAcproblem> userAcproblemQueryWrapper = new QueryWrapper<>();
-            userAcproblemQueryWrapper.eq("submit_id", judge.getSubmitId());
-            userAcproblemEntityService.remove(userAcproblemQueryWrapper);
+        if (judge.getCid() == 0
+                && judge.getGid() == null
+                && judge.getStatus().intValue() == Constants.Judge.STATUS_ACCEPTED.getStatus().intValue()) {
+            refreshUserAcproblem(judge.getUid(), judge.getPid());
         }
 
         if (judge.getCid() != 0) {
@@ -344,5 +328,43 @@ public class RejudgeManager {
                 .setJudger(userRolesVo.getUsername())
                 .setStatus(Constants.Judge.STATUS_CANCELLED.getStatus());
         return res;
+    }
+
+    private void refreshUserAcproblem(String uid, Long pid) {
+        QueryWrapper<Judge> acceptedJudgeQueryWrapper = new QueryWrapper<>();
+        acceptedJudgeQueryWrapper
+                .select("submit_id", "uid", "pid", "gmt_create")
+                .eq("uid", uid)
+                .eq("pid", pid)
+                .eq("status", Constants.Judge.STATUS_ACCEPTED.getStatus())
+                .eq("cid", 0)
+                .isNull("gid")
+                .orderByAsc("gmt_create")
+                .orderByAsc("submit_id")
+                .last("LIMIT 1");
+        Judge acceptedJudge = judgeEntityService.getOne(acceptedJudgeQueryWrapper, false);
+
+        QueryWrapper<UserAcproblem> userAcproblemQueryWrapper = new QueryWrapper<>();
+        userAcproblemQueryWrapper.eq("uid", uid).eq("pid", pid);
+        UserAcproblem userAcproblem = userAcproblemEntityService.getOne(userAcproblemQueryWrapper, false);
+
+        if (acceptedJudge == null) {
+            if (userAcproblem != null) {
+                userAcproblemEntityService.removeById(userAcproblem.getId());
+            }
+            return;
+        }
+
+        if (userAcproblem == null) {
+            userAcproblemEntityService.save(new UserAcproblem()
+                    .setPid(pid)
+                    .setUid(uid)
+                    .setSubmitId(acceptedJudge.getSubmitId())
+                    .setGmtCreate(acceptedJudge.getGmtCreate()));
+        } else {
+            userAcproblem.setSubmitId(acceptedJudge.getSubmitId())
+                    .setGmtCreate(acceptedJudge.getGmtCreate());
+            userAcproblemEntityService.updateById(userAcproblem);
+        }
     }
 }

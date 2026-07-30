@@ -1,5 +1,5 @@
 import axios from 'axios'
-import Vue from 'vue'
+import { ElNotification } from 'element-plus'
 import mMessage from '@/common/message'
 import router from '@/router'
 import store from "@/store"
@@ -10,8 +10,6 @@ import i18n from '@/i18n'
 
 // // 配置NProgress进度条选项  —— 动画效果
 // NProgress.configure({ ease: 'ease', speed: 1000,showSpinner: false})
-Vue.prototype.$http = axios
-
 const isMobile = /ipad|iphone|midp|rv:1.2.3.4|ucweb|android|windows ce|windows mobile/.test(navigator.userAgent.toLowerCase());
 
 
@@ -43,14 +41,14 @@ axios.interceptors.request.use(
     // NProgress.done();
     mMessage.error(error.response.data.msg);
     if (!isMobile) {
-      Vue.prototype.$notify.error({
+      ElNotification.error({
         title: i18n.t('m.Error'),
         message: error.response.data.msg,
         duration: 5000,
         offset: 50
       });
     }
-    return Promise.error(error);
+    return Promise.reject(error);
   })
 
 // 响应拦截器
@@ -65,7 +63,7 @@ axios.interceptors.response.use(
     } else {
       mMessage.error(response.data.msg);
       if (!isMobile) {
-        Vue.prototype.$notify.error({
+        ElNotification.error({
           title: i18n.t('m.Error'),
           message: response.data.msg,
           duration: 5000,
@@ -94,7 +92,7 @@ axios.interceptors.response.use(
           if (error.response.data.msg) {
             mMessage.error(error.response.data.msg);
             if (!isMobile) {
-              Vue.prototype.$notify.error({
+              ElNotification.error({
                 title: i18n.t('m.Error'),
                 message: error.response.data.msg,
                 duration: 5000,
@@ -115,7 +113,7 @@ axios.interceptors.response.use(
           if (error.response.data.msg) {
             mMessage.error(error.response.data.msg);
             if (!isMobile) {
-              Vue.prototype.$notify.error({
+              ElNotification.error({
                 title: i18n.t('m.Error'),
                 message: error.response.data.msg,
                 duration: 5000,
@@ -140,7 +138,7 @@ axios.interceptors.response.use(
             if (error.response.data.msg) {
               mMessage.error(error.response.data.msg);
               if (!isMobile) {
-                Vue.prototype.$notify.error({
+                ElNotification.error({
                   title: i18n.t('m.Error'),
                   message: error.response.data.msg,
                   duration: 5000,
@@ -172,6 +170,9 @@ const ojApi = {
   getWebsiteConfig() {
     return ajax('/api/get-website-config', 'get', {
     })
+  },
+  getProblemDifficulties() {
+    return ajax('/api/problem-difficulties', 'get')
   },
   getHomeCarousel() {
     return ajax('/api/home-carousel', 'get', {
@@ -210,6 +211,65 @@ const ojApi = {
   getRecentUpdatedProblemList(){
     return ajax('/api/get-recent-updated-problem', 'get', {
     })
+  },
+
+  getDailyCheckInStatus() {
+    return ajax('/api/daily-check-in', 'get', {
+    })
+  },
+
+  dailyCheckIn() {
+    return ajax('/api/daily-check-in', 'post', {
+    })
+  },
+
+  getAiAssistantStatus(params) {
+    return ajax('/api/ai-assistant/status', 'get', {
+      params
+    })
+  },
+
+  createAiAssistantRequest(data) {
+    return ajax('/api/ai-assistant/requests', 'post', {
+      data
+    })
+  },
+
+  getAiAssistantRequest(requestId) {
+    return ajax(`/api/ai-assistant/requests/${requestId}`, 'get')
+  },
+
+  getLearningResourceFolders() {
+    return ajax('/api/learning-resource/folders', 'get')
+  },
+
+  createLearningResourceFolder(data) {
+    return ajax('/api/learning-resource/folders', 'post', {
+      data
+    })
+  },
+
+  deleteLearningResourceFolder(folderId) {
+    return ajax(`/api/learning-resource/folders/${folderId}`, 'delete')
+  },
+
+  getLearningResourceFiles(folderId, currentPage, limit) {
+    return ajax(`/api/learning-resource/folders/${folderId}/files`, 'get', {
+      params: {
+        currentPage,
+        limit
+      }
+    })
+  },
+
+  uploadLearningResourceFile(folderId, data) {
+    return ajax(`/api/learning-resource/folders/${folderId}/files`, 'post', {
+      data
+    })
+  },
+
+  deleteLearningResourceFile(fileId) {
+    return ajax(`/api/learning-resource/files/${fileId}`, 'delete')
   },
 
   // 用户账户的相关请求
@@ -850,6 +910,12 @@ const ojApi = {
 
   updateGroup(data) {
     return ajax("/api/group", 'put', {
+      data
+    })
+  },
+
+  uploadGroupAvatar(data) {
+    return ajax('/api/file/upload-group-avatar', 'post', {
       data
     })
   },
@@ -1504,6 +1570,86 @@ const adminApi = {
 
   admin_saveSwitchConfig(data) {
     return ajax('/api/admin/switch/update', 'put', {
+      data
+    })
+  },
+
+  admin_getDailyCheckInOverview() {
+    return ajax('/api/admin/daily-check-in/overview', 'get')
+  },
+
+  admin_createDailyFortune(data) {
+    return ajax('/api/admin/daily-check-in/fortunes', 'post', {
+      data
+    })
+  },
+
+  admin_updateDailyFortune(id, data) {
+    return ajax(`/api/admin/daily-check-in/fortunes/${id}`, 'put', {
+      data
+    })
+  },
+
+  admin_deleteDailyFortune(id) {
+    return ajax(`/api/admin/daily-check-in/fortunes/${id}`, 'delete')
+  },
+
+  admin_getDailyFortuneAdvice(fortuneType) {
+    return ajax(`/api/admin/daily-check-in/fortunes/${fortuneType}/advice`, 'get')
+  },
+
+  admin_createDailyFortuneAdvice(fortuneType, adviceType, data) {
+    return ajax(
+      `/api/admin/daily-check-in/fortunes/${fortuneType}/advice/${adviceType}`,
+      'post',
+      { data }
+    )
+  },
+
+  admin_updateDailyFortuneAdvice(id, data) {
+    return ajax(`/api/admin/daily-check-in/advice/${id}`, 'put', {
+      data
+    })
+  },
+
+  admin_deleteDailyFortuneAdvice(id) {
+    return ajax(`/api/admin/daily-check-in/advice/${id}`, 'delete')
+  },
+
+  admin_getAiAssistantOverview(params) {
+    return ajax('/api/admin/ai-assistant/overview', 'get', {
+      params
+    })
+  },
+
+  admin_updateAiAssistantConfig(data) {
+    return ajax('/api/admin/ai-assistant/config', 'put', {
+      data
+    })
+  },
+
+  admin_createAiAssistantApiKey(data) {
+    return ajax('/api/admin/ai-assistant/api-keys', 'post', {
+      data
+    })
+  },
+
+  admin_updateAiAssistantApiKey(id, data) {
+    return ajax(`/api/admin/ai-assistant/api-keys/${id}`, 'put', {
+      data
+    })
+  },
+
+  admin_deleteAiAssistantApiKey(id) {
+    return ajax(`/api/admin/ai-assistant/api-keys/${id}`, 'delete')
+  },
+
+  admin_getProblemDifficulties() {
+    return ajax('/api/admin/problem-difficulties', 'get')
+  },
+
+  admin_updateProblemDifficulties(data) {
+    return ajax('/api/admin/problem-difficulties', 'put', {
       data
     })
   },

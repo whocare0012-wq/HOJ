@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico">
+    <title>Hcode OnlineJudge</title>
+    <script type="module" src="/src/preload-recovery.js"></script>
+    <style>
+      @keyframes enter {
+        0% { opacity: 0; top: -10px; }
+        5%, 50.9% { opacity: 1; top: 0; }
+        55.9%, 100% { opacity: 0; top: 10px; }
+      }
+      body { background: #f8f8f9; }
+      #app-loader {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 55px;
+        margin: -27.5px 0 0 -27.5px;
+      }
+      #app-loader .square {
+        position: relative;
+        float: left;
+        width: 15px;
+        height: 15px;
+        margin: 5px 5px 0 0;
+        background: #2d8cf0;
+        opacity: 0;
+        animation: enter 6s infinite;
+      }
+      #app-loader .square:nth-child(1) { animation-delay: 1.8s; }
+      #app-loader .square:nth-child(2) { animation-delay: 2.1s; }
+      #app-loader .square:nth-child(3) { animation-delay: 2.4s; background: #ff9900; }
+      #app-loader .square:nth-child(4) { animation-delay: .9s; }
+      #app-loader .square:nth-child(5) { animation-delay: 1.2s; }
+      #app-loader .square:nth-child(6) { animation-delay: 1.5s; }
+      #app-loader .square:nth-child(8) { animation-delay: .3s; }
+      #app-loader .square:nth-child(9) { animation-delay: .6s; }
+      #app-loader .clear { clear: both; }
+      #app-loader .last { margin-right: 0; }
+      #app-loader .loader-content {
+        color: #3498db;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <strong>Hcode OnlineJudge requires JavaScript. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <div id="app-loader" aria-label="Loading">
+      <div class="square"></div><div class="square"></div><div class="square last"></div>
+      <div class="square clear"></div><div class="square"></div><div class="square last"></div>
+      <div class="square clear"></div><div class="square"></div><div class="square last"></div>
+      <div class="loader-content"><span>Loading...</span></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

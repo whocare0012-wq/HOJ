@@ -20,6 +20,14 @@ public class RestTemplateConfig {
         return new RestTemplate(factory);
     }
 
+    @Bean("aiAssistantRestTemplate")
+    public RestTemplate aiAssistantRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000);
+        factory.setReadTimeout(120000);
+        return new RestTemplate(factory);
+    }
+
     @Bean
     public ClientHttpRequestFactory simpleClientHttpRequestFactory() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();

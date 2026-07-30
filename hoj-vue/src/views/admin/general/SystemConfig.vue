@@ -1,10 +1,13 @@
 <template>
   <div>
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Website_Config') }}</span>
-      </div>
+    <el-card class="website-config-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Website_Config') }}</span>
+        </div>
+      </template>
       <el-form
+        class="website-config-form"
         label-position="left"
         label-width="110px"
         ref="form"
@@ -69,7 +72,11 @@
             </el-form-item>
           </el-col>
           <el-col :md="24" :xs="24">
-            <el-form-item :label="$t('m.Web_Desc')" required>
+            <el-form-item
+              class="website-description-item"
+              :label="$t('m.Web_Desc')"
+              required
+            >
               <el-input
                 type="textarea"
                 :placeholder="$t('m.Web_Desc')"
@@ -81,8 +88,13 @@
             </el-form-item>
           </el-col>
           <el-col :md="24" :xs="24">
-            <el-form-item :label="$t('m.Allow_Register')" label-width="120px">
+            <el-form-item
+              class="website-register-item"
+              :label="$t('m.Allow_Register')"
+              label-width="120px"
+            >
               <el-switch
+                class="website-register-switch"
                 v-model="websiteConfig.register"
                 active-color="#13ce66"
                 inactive-color="#ff4949"
@@ -93,82 +105,88 @@
         </el-row>
       </el-form>
       <el-button
+        class="website-config-save"
         type="primary"
-        @click.native="saveWebsiteConfig"
-        size="small"
+        @click="saveWebsiteConfig"
         >{{ $t('m.Save') }}</el-button
       >
     </el-card>
 
     <el-card style="margin-top:15px">
-      <div slot="header">
-        <span class="panel-title home-title">{{
-          $t('m.Home_Rotation_Chart')
-        }}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{
+            $t('m.Home_Rotation_Chart')
+          }}</span>
+        </div>
+      </template>
 
-      <ul class="el-upload-list el-upload-list--picture-card">
-        <li
-          tabindex="0"
-          class="el-upload-list__item is-ready"
-          v-for="(img, index) in carouselImgList"
-          :key="index"
+      <div class="carousel-upload-list">
+        <ul class="el-upload-list el-upload-list--picture-card">
+          <li
+            tabindex="0"
+            class="el-upload-list__item is-ready"
+            v-for="(img, index) in carouselImgList"
+            :key="img.id || img.url"
+          >
+            <div>
+              <img
+                :src="img.url"
+                alt="load failed"
+                class="el-upload-list__item-thumbnail"
+              /><span class="el-upload-list__item-actions">
+                <span
+                  class="el-upload-list__item-preview"
+                  @click="handlePictureCardPreview(img)"
+                >
+                  <i class="el-icon-zoom-in"></i>
+                </span>
+                <span
+                  v-if="!disabled"
+                  class="el-upload-list__item-delete"
+                  @click="handleDownload(img)"
+                >
+                  <i class="el-icon-download"></i>
+                </span>
+                <span
+                  v-if="!disabled"
+                  class="el-upload-list__item-delete"
+                  @click="handleRemove(img, index)"
+                >
+                  <i class="el-icon-delete"></i>
+                </span>
+              </span>
+            </div>
+          </li>
+        </ul>
+
+        <el-upload
+          action="/api/file/upload-carouse-img"
+          list-type="picture-card"
+          accept="image/gif,image/jpeg,image/jpg,image/png,image/svg,image/jfif,image/webp"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
         >
-          <div>
-            <img
-              :src="img.url"
-              alt="load faild"
-              style="height:146px;width:146x"
-              class="el-upload-list__item-thumbnail"
-            /><span class="el-upload-list__item-actions">
-              <span
-                class="el-upload-list__item-preview"
-                @click="handlePictureCardPreview(img)"
-              >
-                <i class="el-icon-zoom-in"></i>
-              </span>
-              <span
-                v-if="!disabled"
-                class="el-upload-list__item-delete"
-                @click="handleDownload(img)"
-              >
-                <i class="el-icon-download"></i>
-              </span>
-              <span
-                v-if="!disabled"
-                class="el-upload-list__item-delete"
-                @click="handleRemove(img, index)"
-              >
-                <i class="el-icon-delete"></i>
-              </span>
-            </span>
-          </div>
-        </li>
-      </ul>
-
-      <el-upload
-        action="/api/file/upload-carouse-img"
-        list-type="picture-card"
-        accept="image/gif,image/jpeg,image/jpg,image/png,image/svg,image/jfif,image/webp"
-        :on-preview="handlePictureCardPreview"
-        :on-remove="handleRemove"
-        style="display: inline;"
-      >
-        <i class="el-icon-plus"></i>
-      </el-upload>
-      <el-dialog :visible.sync="dialogVisible">
-        <img width="100%" :src="dialogImageUrl" alt="" />
-      </el-dialog>
-      <el-dialog :visible.sync="dialogVisible">
+          <i class="el-icon-plus"></i>
+        </el-upload>
+      </div>
+      <el-dialog v-model="dialogVisible">
         <img width="100%" :src="dialogImageUrl" alt="" />
       </el-dialog>
     </el-card>
 
     <el-card style="margin-top:15px">
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.SMTP_Config') }}</span>
-      </div>
-      <el-form label-position="left" label-width="80px" :model="smtp">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.SMTP_Config') }}</span>
+        </div>
+      </template>
+      <el-form
+        class="smtp-config-form"
+        label-position="left"
+        label-width="80px"
+        :model="smtp"
+      >
         <el-row :gutter="20">
           <el-col :md="24" :xs="24">
             <el-form-item :label="$t('m.Host')" required label-width="80px">
@@ -219,12 +237,16 @@
           </el-col>
         </el-row>
       </el-form>
-      <el-button type="primary" @click.native="saveSMTPConfig" size="small">{{
-        $t('m.Save')
-      }}</el-button>
+      <el-button
+        class="system-config-save"
+        type="primary"
+        @click="saveSMTPConfig"
+        size="small"
+        >{{ $t('m.Save') }}</el-button
+      >
       <el-button
         type="warning"
-        @click.native="testSMTPConfig"
+        @click="testSMTPConfig"
         v-if="saved"
         :loading="loadingBtnTest"
         size="small"
@@ -233,12 +255,18 @@
     </el-card>
 
     <el-card style="margin-top:15px">
-      <div slot="header">
-        <span class="panel-title home-title">{{
-          $t('m.DataSource_Config')
-        }}</span>
-      </div>
-      <el-form label-position="top" :model="databaseConfig">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{
+            $t('m.DataSource_Config')
+          }}</span>
+        </div>
+      </template>
+      <el-form
+        class="database-config-form"
+        label-position="top"
+        :model="databaseConfig"
+      >
         <el-row :gutter="20">
           <el-col :md="12" :xs="24">
             <el-form-item
@@ -331,8 +359,9 @@
         </el-row>
       </el-form>
       <el-button
+        class="system-config-save"
         type="primary"
-        @click.native="saveDataBaseConfig"
+        @click="saveDataBaseConfig"
         size="small"
         >{{ $t('m.Save') }}</el-button
       >
@@ -395,15 +424,17 @@ export default {
         .catch(() => {});
   },
   methods: {
-    handleRemove(file, index = undefined) {
+    handleRemove(file, indexOrFileList = undefined) {
       let id = file.id;
       if (file.response != null) {
         id = file.response.data.id;
       }
       api.admin_deleteHomeCarousel(id).then((res) => {
-        myMessage.success(this.$i18n.t('m.Delete_successfully'));
-        if (index != undefined) {
-          this.carouselImgList.splice(index, 1);
+        myMessage.success(this.$t('m.Delete_successfully'));
+        // el-upload passes its file list as the second argument, while the
+        // existing carousel cards pass a numeric index.
+        if (Number.isInteger(indexOrFileList)) {
+          this.carouselImgList.splice(indexOrFileList, 1);
         }
       });
     },
@@ -417,7 +448,7 @@ export default {
     saveSMTPConfig() {
       api.admin_editSMTPConfig(this.smtp).then(
         (res) => {
-          myMessage.success(this.$i18n.t('m.Update_Successfully'));
+          myMessage.success(this.$t('m.Update_Successfully'));
           this.saved = true;
         },
         () => {
@@ -426,15 +457,15 @@ export default {
       );
     },
     testSMTPConfig() {
-      this.$prompt(this.$i18n.t('m.Please_input_your_email'), '', {
+      this.$prompt(this.$t('m.Please_input_your_email'), '', {
         inputPattern: /[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\w](?:[\w-]*[\w])?\.)+[\w](?:[\w-]*[\w])?/,
-        inputErrorMessage: this.$i18n.t('m.Email_Check_Format'),
+        inputErrorMessage: this.$t('m.Email_Check_Format'),
       })
         .then(({ value }) => {
           this.loadingBtnTest = true;
           api.admin_testSMTPConfig(value).then(
             (res) => {
-              myMessage.success(this.$i18n.t('m.Send_successfully'));
+              myMessage.success(this.$t('m.Send_successfully'));
               this.loadingBtnTest = false;
             },
             () => {
@@ -457,7 +488,7 @@ export default {
       api
         .admin_editWebsiteConfig(this.websiteConfig)
         .then((res) => {
-          myMessage.success(this.$i18n.t('m.Update_Successfully'));
+          myMessage.success(this.$t('m.Update_Successfully'));
         })
         .catch(() => {});
     },
@@ -465,10 +496,111 @@ export default {
       api
         .admin_editDataBaseConfig(this.databaseConfig)
         .then((res) => {
-          myMessage.success(this.$i18n.t('m.Update_Successfully'));
+          myMessage.success(this.$t('m.Update_Successfully'));
         })
         .catch(() => {});
     },
   },
 };
 </script>
+
+<style scoped>
+.website-config-form :deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+.website-config-form :deep(.el-form-item__label),
+.website-config-form :deep(.el-form-item__content) {
+  line-height: 40px;
+}
+
+.website-config-form :deep(.el-input__wrapper) {
+  min-height: 40px;
+  padding: 1px 15px;
+}
+
+.website-config-form :deep(.el-textarea__inner) {
+  height: 54px;
+  min-height: 54px !important;
+  padding: 10px 15px;
+}
+
+.website-config-form :deep(.website-description-item) {
+  margin-bottom: 26px;
+}
+
+.website-config-form :deep(.website-register-item) {
+  margin-bottom: 26px;
+}
+
+.website-config-form :deep(.website-register-item .el-form-item__label),
+.website-config-form :deep(.website-register-item .el-form-item__content) {
+  line-height: 32px;
+}
+
+.website-register-switch {
+  --el-switch-off-color: #ff4949;
+}
+
+.website-config-save {
+  width: 56px;
+  height: 32px;
+  padding: 0;
+}
+
+.smtp-config-form :deep(.el-form-item),
+.database-config-form :deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+.smtp-config-form :deep(.el-form-item__label),
+.smtp-config-form :deep(.el-form-item__content) {
+  line-height: 40px;
+}
+
+.database-config-form :deep(.el-form-item__label) {
+  line-height: 40px;
+  margin-bottom: 10px;
+}
+
+.smtp-config-form :deep(.el-input__wrapper),
+.database-config-form :deep(.el-input__wrapper) {
+  min-height: 40px;
+  padding: 1px 15px;
+}
+
+.system-config-save {
+  width: 56px;
+  height: 32px;
+  padding: 0;
+}
+
+.carousel-upload-list {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.carousel-upload-list > .el-upload-list {
+  display: contents;
+}
+
+.carousel-upload-list .el-upload-list__item {
+  width: 148px;
+  height: 148px;
+  margin: 0;
+}
+
+.carousel-upload-list .el-upload-list__item-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.carousel-upload-list :deep(.el-upload--picture-card) {
+  flex: 0 0 148px;
+  width: 148px;
+  height: 148px;
+}
+</style>

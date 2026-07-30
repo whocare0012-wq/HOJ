@@ -1,27 +1,29 @@
 <template>
   <el-card shadow="always">
-    <div slot="header">
-      <span class="panel-title">{{ $t('m.Admin_Helper') }}</span>
-      <div class="filter-row">
-        <span>
-          {{ $t('m.Auto_Refresh') }}(10s)
-          <el-switch
-            @change="handleAutoRefresh"
-            v-model="autoRefresh"
-          ></el-switch>
-        </span>
-        <span>
-          <el-button
-            type="primary"
-            @click="getACInfo(1)"
-            size="small"
-            icon="el-icon-refresh"
-            :loading="btnLoading"
-            >{{ $t('m.Refresh') }}</el-button
-          >
-        </span>
+    <template #header>
+      <div>
+        <span class="panel-title">{{ $t('m.Admin_Helper') }}</span>
+        <div class="filter-row">
+          <span>
+            {{ $t('m.Auto_Refresh') }}(10s)
+            <el-switch
+              @change="handleAutoRefresh"
+              v-model="autoRefresh"
+            ></el-switch>
+          </span>
+          <span>
+            <el-button
+              type="primary"
+              @click="getACInfo(1)"
+              size="small"
+              :icon="legacyElementIcons['el-icon-refresh']"
+              :loading="btnLoading"
+              >{{ $t('m.Refresh') }}</el-button
+            >
+          </span>
+        </div>
       </div>
-    </div>
+    </template>
     <vxe-table
       border="inner"
       stripe
@@ -35,7 +37,7 @@
         :title="$t('m.AC_Time')"
       >
         <template v-slot="{ row }">
-          <span>{{ row.submitTime | localtime }}</span>
+          <span>{{ $filters.localtime(row.submitTime) }}</span>
         </template>
       </vxe-table-column>
       <vxe-table-column
@@ -117,7 +119,7 @@
           <el-button
             type="primary"
             size="small"
-            icon="el-icon-circle-check"
+            :icon="legacyElementIcons['el-icon-circle-check']"
             @click="updateCheckedStatus(row)"
             round
             >{{ $t('m.Check_It') }}</el-button
@@ -127,17 +129,18 @@
     </vxe-table>
     <Pagination
       :total="total"
-      :page-size.sync="limit"
-      :current.sync="page"
+      v-model:page-size="limit"
+      v-model:current="page"
       @on-change="getACInfo"
     ></Pagination>
   </el-card>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import { mapState } from 'vuex';
-const Pagination = () => import('@/components/oj/common/Pagination');
+const Pagination = defineAsyncComponent(() => import('@/components/oj/common/Pagination'));
 export default {
   name: 'ACM-Info-Admin',
   components: {
@@ -200,7 +203,7 @@ export default {
       api
         .updateACInfoCheckedStatus(data)
         .then((res) => {
-          myMessage.success(this.$i18n.t('m.Update_Successfully'));
+          myMessage.success(this.$t('m.Update_Successfully'));
           this.getACInfo();
         })
         .catch(() => {});
@@ -216,7 +219,7 @@ export default {
       }
     },
   },
-  beforeDestroy() {
+  beforeUnmount() {
     clearInterval(this.refreshFunc);
   },
 };
@@ -235,7 +238,7 @@ export default {
     margin-right: 20px;
   }
 }
-/deep/ .el-tag--dark {
+:deep(.el-tag--dark) {
   border-color: #fff;
 }
 </style>

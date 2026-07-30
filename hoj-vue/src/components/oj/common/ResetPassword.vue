@@ -1,10 +1,10 @@
 <template>
-  <div>
+  <div class="reset-password-panel">
     <el-form :model="formResetPassword" :rules="rules" ref="formResetPassword">
       <el-form-item prop="email">
         <el-input
           v-model="formResetPassword.email"
-          prefix-icon="el-icon-message"
+          :prefix-icon="legacyElementIcons['el-icon-message']"
           :placeholder="$t('m.Reset_Password_Email')"
         >
         </el-input>
@@ -14,7 +14,7 @@
           <div id="captchaCode">
             <el-input
               v-model="formResetPassword.captcha"
-              prefix-icon="el-icon-s-check"
+              :prefix-icon="legacyElementIcons['el-icon-s-check']"
               :placeholder="$t('m.Reset_Password_Captcha')"
             ></el-input>
           </div>
@@ -51,7 +51,7 @@ export default {
       api.checkUsernameOrEmail(undefined, value).then(
         (res) => {
           if (res.data.data.email === false) {
-            callback(new Error(this.$i18n.t('m.The_email_does_not_exists')));
+            callback(new Error(this.$t('m.The_email_does_not_exists')));
           } else {
             callback();
           }
@@ -73,7 +73,7 @@ export default {
         captcha: [
           {
             required: true,
-            message: this.$i18n.t('m.Code_Check_Required'),
+            message: this.$t('m.Code_Check_Required'),
             trigger: 'blur',
             min: 1,
             max: 8,
@@ -82,7 +82,7 @@ export default {
         email: [
           {
             required: true,
-            message: this.$i18n.t('m.Email_Check_Required'),
+            message: this.$t('m.Email_Check_Required'),
             type: 'email',
             trigger: 'blur',
           },
@@ -92,7 +92,7 @@ export default {
     };
   },
   mounted() {
-    this.resetText = this.$i18n.t('m.Send_Password_Reset_Email');
+    this.resetText = this.$t('m.Send_Password_Reset_Email');
     this.getCaptcha();
   },
   methods: {
@@ -111,10 +111,10 @@ export default {
     },
     countDown() {
       let i = this.time;
-      this.resetText = i + 's, ' + this.$i18n.t('m.Waiting_Can_Resend_Email');
+      this.resetText = i + 's, ' + this.$t('m.Waiting_Can_Resend_Email');
       if (i == 0) {
         this.btnResetPwdDisabled = false;
-        this.resetText = this.$i18n.t('m.Send_Password_Reset_Email');
+        this.resetText = this.$t('m.Send_Password_Reset_Email');
         return;
       }
       setTimeout(() => {
@@ -125,14 +125,14 @@ export default {
       this.$refs['formResetPassword'].validate((valid) => {
         if (valid) {
           this.resetText = 'Waiting...';
-          mMessage.info(this.$i18n.t('m.The_system_is_processing'));
+          mMessage.info(this.$t('m.The_system_is_processing'));
           this.btnResetPwdLoading = true;
           this.btnResetPwdDisabled = true;
           api.applyResetPassword(this.formResetPassword).then(
             (res) => {
               mMessage.message(
                 'success',
-                this.$i18n.t('m.ResetPwd_Send_Email_Msg'),
+                this.$t('m.ResetPwd_Send_Email_Msg'),
                 10000
               );
               this.countDown();
@@ -147,7 +147,7 @@ export default {
               this.formResetPassword.captchaKey = '';
               this.btnResetPwdLoading = false;
               this.btnResetPwdDisabled = false;
-              this.resetText = this.$i18n.t('m.Send_Password_Reset_Email');
+              this.resetText = this.$t('m.Send_Password_Reset_Email');
               this.getCaptcha();
             }
           );
@@ -176,33 +176,53 @@ export default {
 </script>
 <style scoped>
 #captcha {
+  align-items: center;
   display: flex;
   flex-wrap: nowrap;
   justify-content: space-between;
   width: 100%;
-  height: 36px;
+  height: 40px;
 }
 #captchaCode {
-  flex: auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 #captchaImg {
+  align-items: center;
+  display: flex;
+  flex: 0 0 96px;
+  height: 40px;
+  justify-content: center;
   margin-left: 10px;
-  padding: 3px;
-  flex: initial;
+  padding: 0;
+}
+#captchaImg img {
+  cursor: pointer;
+  display: block;
+  max-height: 40px;
+  max-width: 96px;
 }
 
 .footer {
   overflow: auto;
-  margin-top: 20px;
-  margin-bottom: -15px;
+  margin-top: 22px;
+  margin-bottom: 0;
   text-align: center;
 }
-/deep/.el-button--primary {
-  margin: 0 0 15px 0;
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+:deep(.el-input__wrapper) {
+  min-height: 40px;
+}
+:deep(.footer .el-button--primary) {
+  height: 40px;
+  margin: 0 0 20px 0;
+  padding: 0 20px;
   width: 100%;
 }
 
-/deep/ .el-form-item__content {
+:deep(.el-form-item__content) {
   margin-left: 0px !important;
 }
 </style>

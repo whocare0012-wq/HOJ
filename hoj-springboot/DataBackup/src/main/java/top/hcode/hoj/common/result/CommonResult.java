@@ -1,9 +1,20 @@
 package top.hcode.hoj.common.result;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class CommonResult<T> {
+
+    @JsonCreator
+    public CommonResult(@JsonProperty("status") Integer status,
+                        @JsonProperty("data") T data,
+                        @JsonProperty("msg") String msg) {
+        this.status = status;
+        this.data = data;
+        this.msg = msg;
+    }
 
     private final Integer status;   // 状态码
 

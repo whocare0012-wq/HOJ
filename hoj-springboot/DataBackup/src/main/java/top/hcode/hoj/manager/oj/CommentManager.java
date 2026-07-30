@@ -32,6 +32,7 @@ import top.hcode.hoj.pojo.vo.CommentListVO;
 import top.hcode.hoj.pojo.vo.CommentVO;
 import top.hcode.hoj.pojo.vo.ReplyVO;
 import top.hcode.hoj.shiro.AccountProfile;
+import top.hcode.hoj.utils.RedisUtils;
 import top.hcode.hoj.validator.AccessValidator;
 import top.hcode.hoj.validator.CommonValidator;
 import top.hcode.hoj.validator.ContestValidator;
@@ -40,6 +41,8 @@ import top.hcode.hoj.validator.GroupValidator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -84,6 +87,9 @@ public class CommentManager {
     @Autowired
     private NacosSwitchConfig nacosSwitchConfig;
 
+    @Autowired
+    private RedisUtils redisUtils;
+
     private final static Pattern pattern = Pattern.compile("<.*?([a,A][u,U][t,T][o,O][p,P][l,L][a,A][y,Y]).*?>");
 
     public CommentListVO getComments(Long cid, Integer did, Integer limit, Integer currentPage) throws StatusForbiddenException, AccessException {
@@ -125,7 +131,9 @@ public class CommentManager {
             if (commentIdList.size() > 0) {
 
                 QueryWrapper<CommentLike> commentLikeQueryWrapper = new QueryWrapper<>();
-                commentLikeQueryWrapper.in("cid", commentIdList);
+                commentLikeQueryWrapper
+                        .eq("uid", userRolesVo.getUid())
+                        .in("cid", commentIdList);
 
                 List<CommentLike> commentLikeList = commentLikeEntityService.list(commentLikeQueryWrapper);
 
@@ -231,8 +239,10 @@ public class CommentManager {
             if (comment.getDid() != null) {
                 Discussion discussion = discussionEntityService.getById(comment.getDid());
                 if (discussion != null) {
-                    discussion.setCommentNum(discussion.getCommentNum() + 1);
-                    discussionEntityService.updateById(discussion);
+                    UpdateWrapper<Discussion> discussionUpdateWrapper = new UpdateWrapper<>();
+                    discussionUpdateWrapper.eq("id", discussion.getId())
+                            .setSql("comment_num=comment_num+1");
+                    discussionEntityService.update(discussionUpdateWrapper);
                     // 更新消息
                     commentEntityService.updateCommentMsg(discussion.getUid(),
                             userRolesVo.getUid(),
@@ -295,7 +305,9 @@ public class CommentManager {
             }
         }
         // 获取需要删除该评论的回复数
-        int replyNum = replyEntityService.count(new QueryWrapper<Reply>().eq("comment_id", comment.getId()));
+        int replyNum = replyEntityService.count(new QueryWrapper<Reply>()
+                .eq("comment_id", comment.getId())
+                .eq("status", 0));
 
         // 删除该数据 包括关联外键的reply表数据
         boolean isDeleteComment = commentEntityService.removeById(comment.getId());
@@ -305,10 +317,10 @@ public class CommentManager {
 
         if (isDeleteComment) {
             // 如果是讨论区的回复，删除成功需要减少统计该讨论的回复数
-            if (comment.getDid() != null) {
+            if (comment.getDid() != null && Objects.equals(comment.getStatus(), 0)) {
                 UpdateWrapper<Discussion> discussionUpdateWrapper = new UpdateWrapper<>();
                 discussionUpdateWrapper.eq("id", comment.getDid())
-                        .setSql("comment_num=comment_num-" + (replyNum + 1));
+                        .setSql("comment_num=GREATEST(comment_num-" + (replyNum + 1) + ",0)");
                 discussionEntityService.update(discussionUpdateWrapper);
             }
         } else {
@@ -322,41 +334,62 @@ public class CommentManager {
         // 获取当前登录的用户
         AccountProfile userRolesVo = (AccountProfile) SecurityUtils.getSubject().getPrincipal();
 
-        QueryWrapper<CommentLike> commentLikeQueryWrapper = new QueryWrapper<>();
-        commentLikeQueryWrapper.eq("cid", cid).eq("uid", userRolesVo.getUid());
+        Comment comment = commentEntityService.getById(cid);
+        if (comment == null) {
+            throw new StatusFailException("点赞失败，该评论不存在！");
+        }
 
-        CommentLike commentLike = commentLikeEntityService.getOne(commentLikeQueryWrapper, false);
+        String key = "lock:comment:like:" + userRolesVo.getUid() + "_" + cid;
+        String requestId = UUID.randomUUID().toString();
+        boolean locked = redisUtils.getLock(key, 5, requestId);
+        if (!locked) {
+            throw new StatusFailException("请不要频繁操作点赞！");
+        }
 
-        if (toLike) { // 添加点赞
-            if (commentLike == null) { // 如果不存在就添加
-                boolean isSave = commentLikeEntityService.saveOrUpdate(new CommentLike()
-                        .setUid(userRolesVo.getUid())
-                        .setCid(cid));
-                if (!isSave) {
-                    throw new StatusFailException("点赞失败，请重试尝试！");
+        try {
+            QueryWrapper<CommentLike> commentLikeQueryWrapper = new QueryWrapper<>();
+            commentLikeQueryWrapper.eq("cid", cid).eq("uid", userRolesVo.getUid());
+
+            CommentLike commentLike = commentLikeEntityService.getOne(commentLikeQueryWrapper, false);
+
+            if (toLike) { // 添加点赞
+                if (commentLike == null) { // 如果不存在就添加
+                    boolean isSave = commentLikeEntityService.save(new CommentLike()
+                            .setUid(userRolesVo.getUid())
+                            .setCid(cid));
+                    if (!isSave) {
+                        throw new StatusFailException("点赞失败，请重试尝试！");
+                    }
+
+                    UpdateWrapper<Comment> commentUpdateWrapper = new UpdateWrapper<>();
+                    commentUpdateWrapper.eq("id", cid)
+                            .setSql("like_num=like_num+1");
+                    commentEntityService.update(commentUpdateWrapper);
+
+                    // 当前的评论要不是点赞者的 才发送点赞消息
+                    if (!userRolesVo.getUsername().equals(comment.getFromName())) {
+                        commentEntityService.updateCommentLikeMsg(
+                                comment.getFromUid(),
+                                userRolesVo.getUid(),
+                                sourceId,
+                                sourceType);
+                    }
+                }
+            } else { // 取消点赞
+                if (commentLike != null) { // 如果存在就删除
+                    boolean isDelete = commentLikeEntityService.removeById(commentLike.getId());
+                    if (!isDelete) {
+                        throw new StatusFailException("取消点赞失败，请重试尝试！");
+                    }
+
+                    UpdateWrapper<Comment> commentUpdateWrapper = new UpdateWrapper<>();
+                    commentUpdateWrapper.eq("id", cid)
+                            .setSql("like_num=GREATEST(like_num-1,0)");
+                    commentEntityService.update(commentUpdateWrapper);
                 }
             }
-            // 点赞+1
-            Comment comment = commentEntityService.getById(cid);
-            if (comment != null) {
-                comment.setLikeNum(comment.getLikeNum() + 1);
-                commentEntityService.updateById(comment);
-                // 当前的评论要不是点赞者的 才发送点赞消息
-                if (!userRolesVo.getUsername().equals(comment.getFromName())) {
-                    commentEntityService.updateCommentLikeMsg(comment.getFromUid(), userRolesVo.getUid(), sourceId, sourceType);
-                }
-            }
-        } else { // 取消点赞
-            if (commentLike != null) { // 如果存在就删除
-                boolean isDelete = commentLikeEntityService.removeById(commentLike.getId());
-                if (!isDelete) {
-                    throw new StatusFailException("取消点赞失败，请重试尝试！");
-                }
-            }
-            // 点赞-1
-            UpdateWrapper<Comment> commentUpdateWrapper = new UpdateWrapper<>();
-            commentUpdateWrapper.setSql("like_num=like_num-1").eq("id", cid);
-            commentEntityService.update(commentUpdateWrapper);
+        } finally {
+            redisUtils.releaseLock(key, requestId);
         }
 
     }
@@ -558,10 +591,10 @@ public class CommentManager {
         boolean isOk = replyEntityService.removeById(reply.getId());
         if (isOk) {
             // 如果是讨论区的回复，删除成功需要减少统计该讨论的回复数
-            if (replyDto.getDid() != null) {
+            if (replyDto.getDid() != null && Objects.equals(reply.getStatus(), 0)) {
                 UpdateWrapper<Discussion> discussionUpdateWrapper = new UpdateWrapper<>();
                 discussionUpdateWrapper.eq("id", replyDto.getDid())
-                        .setSql("comment_num=comment_num-1");
+                        .setSql("comment_num=GREATEST(comment_num-1,0)");
                 discussionEntityService.update(discussionUpdateWrapper);
             }
         } else {

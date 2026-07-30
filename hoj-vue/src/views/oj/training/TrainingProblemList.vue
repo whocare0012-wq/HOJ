@@ -18,22 +18,14 @@
         <template v-slot="{ row }">
           <template v-if="isGetStatusOk">
             <el-tooltip
+              v-if="row.myStatus != -10"
               :content="JUDGE_STATUS[row.myStatus]['name']"
               placement="top"
             >
-              <template v-if="row.myStatus == 0">
-                <i
-                  class="el-icon-check"
-                  :style="getIconColor(row.myStatus)"
-                ></i>
-              </template>
-
-              <template v-else-if="row.myStatus != -10">
-                <i
-                  class="el-icon-minus"
-                  :style="getIconColor(row.myStatus)"
-                ></i>
-              </template>
+              <i
+                :class="row.myStatus == 0 ? 'el-icon-check' : 'el-icon-minus'"
+                :style="getIconColor(row.myStatus)"
+              ></i>
             </el-tooltip>
           </template>
         </template>
@@ -71,7 +63,7 @@
           ><el-link
             type="primary"
             v-if="!showTags"
-            :underline="false"
+            underline="never"
             @click="showTags = !showTags"
             >{{ $t('m.Show_Tags') }}</el-link
           >
@@ -79,7 +71,7 @@
             type="danger"
             v-else
             @click="showTags = !showTags"
-            :underline="false"
+            underline="never"
             >{{ $t('m.Hide_Tags') }}</el-link
           >
         </template>
@@ -221,7 +213,7 @@ export default {
 
 <style scoped>
 @media screen and (min-width: 1050px) {
-  /deep/ .vxe-table--body-wrapper {
+  :deep(.vxe-table--body-wrapper) {
     overflow-x: hidden !important;
   }
 }

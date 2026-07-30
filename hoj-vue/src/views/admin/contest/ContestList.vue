@@ -1,22 +1,25 @@
 <template>
-  <div>
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Contest_List') }}</span>
-        <div class="filter-row">
-          <span>
-            <vxe-input
-              v-model="keyword"
-              :placeholder="$t('m.Enter_keyword')"
-              type="search"
-              size="medium"
-              @search-click="filterByKeyword"
-              @keyup.enter.native="filterByKeyword"
-            ></vxe-input>
-          </span>
+  <div class="contest-list-page">
+    <el-card class="contest-list-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Contest_List') }}</span>
+          <div class="filter-row">
+            <span>
+              <vxe-input
+                v-model="keyword"
+                :placeholder="$t('m.Enter_keyword')"
+                type="search"
+                size="medium"
+                @search-click="filterByKeyword"
+                @keyup.enter="filterByKeyword"
+              ></vxe-input>
+            </span>
+          </div>
         </div>
-      </div>
+      </template>
       <vxe-table
+        class="contest-list-table"
         :loading="loading"
         ref="xTable"
         :data="contestList"
@@ -34,7 +37,7 @@
         </vxe-table-column>
         <vxe-table-column :title="$t('m.Type')" width="100">
           <template v-slot="{ row }">
-            <el-tag type="gray">{{ row.type | parseContestType }}</el-tag>
+            <el-tag type="gray">{{ $filters.parseContestType(row.type) }}</el-tag>
           </template>
         </vxe-table-column>
         <vxe-table-column :title="$t('m.Auth')" width="100">
@@ -58,7 +61,7 @@
             <el-tag
               effect="dark"
               :color="CONTEST_STATUS_REVERSE[row.status].color"
-              size="medium"
+              size="default"
             >
               {{ CONTEST_STATUS_REVERSE[row.status].name }}
             </el-tag>
@@ -69,20 +72,24 @@
             <el-switch
               v-model="row.visible"
               :disabled="!isSuperAdmin && userInfo.uid != row.uid"
-              @change="changeContestVisible(row.id, row.visible, row.uid)"
+              @change="changeContestVisible(row)"
             >
             </el-switch>
           </template>
         </vxe-table-column>
         <vxe-table-column min-width="210" :title="$t('m.Info')">
           <template v-slot="{ row }">
-            <p>Start Time: {{ row.startTime | localtime }}</p>
-            <p>End Time: {{ row.endTime | localtime }}</p>
-            <p>Created Time: {{ row.gmtCreate | localtime }}</p>
+            <p>Start Time: {{ $filters.localtime(row.startTime) }}</p>
+            <p>End Time: {{ $filters.localtime(row.endTime) }}</p>
+            <p>Created Time: {{ $filters.localtime(row.gmtCreate) }}</p>
             <p>Creator: {{ row.author }}</p>
           </template>
         </vxe-table-column>
-        <vxe-table-column min-width="150" :title="$t('m.Option')">
+        <vxe-table-column
+          min-width="150"
+          :title="$t('m.Option')"
+          fixed="right"
+        >
           <template v-slot="{ row }">
             <template v-if="isSuperAdmin || userInfo.uid == row.uid">
               <div style="margin-bottom:10px">
@@ -92,9 +99,9 @@
                   placement="top"
                 >
                   <el-button
-                    icon="el-icon-edit"
-                    size="mini"
-                    @click.native="goEdit(row.id)"
+                    :icon="legacyElementIcons['el-icon-edit']"
+                    size="small"
+                    @click="goEdit(row.id)"
                     type="primary"
                   >
                   </el-button>
@@ -105,9 +112,9 @@
                   placement="top"
                 >
                   <el-button
-                    icon="el-icon-tickets"
-                    size="mini"
-                    @click.native="goContestProblemList(row.id)"
+                    :icon="legacyElementIcons['el-icon-tickets']"
+                    size="small"
+                    @click="goContestProblemList(row.id)"
                     type="success"
                   >
                   </el-button>
@@ -120,9 +127,9 @@
                   placement="top"
                 >
                   <el-button
-                    icon="el-icon-info"
-                    size="mini"
-                    @click.native="goContestAnnouncement(row.id)"
+                    :icon="legacyElementIcons['el-icon-info']"
+                    size="small"
+                    @click="goContestAnnouncement(row.id)"
                     type="info"
                   >
                   </el-button>
@@ -134,9 +141,9 @@
                   placement="top"
                 >
                   <el-button
-                    icon="el-icon-download"
-                    size="mini"
-                    @click.native="openDownloadOptions(row.id)"
+                    :icon="legacyElementIcons['el-icon-download']"
+                    size="small"
+                    @click="openDownloadOptions(row.id)"
                     type="warning"
                   >
                   </el-button>
@@ -150,9 +157,9 @@
               v-if="isSuperAdmin"
             >
               <el-button
-                icon="el-icon-delete"
-                size="mini"
-                @click.native="deleteContest(row.id)"
+                :icon="legacyElementIcons['el-icon-delete']"
+                size="small"
+                @click="deleteContest(row.id)"
                 type="danger"
               >
               </el-button>
@@ -160,36 +167,39 @@
           </template>
         </vxe-table-column>
       </vxe-table>
-      <div class="panel-options">
+      <div class="panel-options contest-list-pagination">
         <el-pagination
           class="page"
           layout="prev, pager, next"
           @current-change="currentChange"
           :page-size="pageSize"
-          :current-page.sync="currentPage"
+          v-model:current-page="currentPage"
           :total="total"
         >
         </el-pagination>
       </div>
     </el-card>
     <el-dialog
+      class="contest-download-dialog"
       :title="$t('m.Download_Contest_AC_Submission')"
       width="320px"
-      :visible.sync="downloadDialogVisible"
+      v-model="downloadDialogVisible"
     >
       <el-switch
         v-model="excludeAdmin"
         :active-text="$t('m.Exclude_admin_submissions')"
       ></el-switch>
       <el-radio-group v-model="splitType" style="margin-top:10px">
-        <el-radio label="user">{{ $t('m.SplitType_User') }}</el-radio>
-        <el-radio label="problem">{{ $t('m.SplitType_Problem') }}</el-radio>
+        <el-radio value="user">{{ $t('m.SplitType_User') }}</el-radio>
+        <el-radio value="problem">{{ $t('m.SplitType_Problem') }}</el-radio>
       </el-radio-group>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="downloadSubmissions">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="downloadSubmissions">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -243,6 +253,7 @@ export default {
       this.getContestList(page);
     },
     getContestList(page) {
+      this.currentPage = page;
       this.loading = true;
       api.admin_getContestList(page, this.pageSize, this.keyword).then(
         (res) => {
@@ -280,21 +291,26 @@ export default {
       });
     },
     deleteContest(contestId) {
-      this.$confirm(this.$i18n.t('m.Delete_Contest_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Contest_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       }).then(() => {
         api.admin_deleteContest(contestId).then((res) => {
-          myMessage.success(this.$i18n.t('m.Delete_successfully'));
+          myMessage.success(this.$t('m.Delete_successfully'));
           this.currentChange(1);
         });
       });
     },
-    changeContestVisible(contestId, visible, uid) {
-      api.admin_changeContestVisible(contestId, visible, uid).then((res) => {
-        myMessage.success(this.$i18n.t('m.Update_Successfully'));
-      });
+    changeContestVisible(row) {
+      api
+        .admin_changeContestVisible(row.id, row.visible, row.uid)
+        .then(() => {
+          myMessage.success(this.$t('m.Update_Successfully'));
+        })
+        .catch(() => {
+          row.visible = !row.visible;
+        });
     },
     filterByKeyword() {
       this.currentChange(1);
@@ -305,6 +321,92 @@ export default {
 <style scoped>
 .filter-row {
   margin-top: 10px;
+}
+.contest-list-table {
+  --vxe-ui-table-header-background-color: #f8f8f9;
+}
+.contest-list-table :deep(.el-button--small) {
+  width: 44px;
+  height: 29px;
+  min-height: 29px;
+  padding: 7px 15px;
+}
+.contest-list-table :deep(.el-button + .el-button) {
+  margin-left: 10px;
+}
+.contest-list-table :deep(.el-tag) {
+  height: 32px;
+  line-height: 30px;
+}
+.contest-list-table :deep(.el-switch) {
+  height: 20px;
+  line-height: 20px;
+}
+.contest-list-pagination {
+  min-height: 32px;
+}
+.contest-list-pagination :deep(.el-pagination.page) {
+  display: block;
+  width: 100%;
+  height: 32px;
+  padding: 2px 5px;
+  text-align: center;
+  box-sizing: border-box;
+  --el-pagination-button-width: 35.5px;
+  --el-pagination-button-height: 28px;
+}
+.contest-list-pagination :deep(.btn-prev),
+.contest-list-pagination :deep(.btn-next),
+.contest-list-pagination :deep(.el-pager) {
+  display: inline-block;
+  vertical-align: top;
+}
+.contest-list-pagination :deep(.el-pager) {
+  width: auto;
+}
+.contest-list-pagination :deep(.el-pager li) {
+  display: inline-block;
+  vertical-align: top;
+  width: 36px;
+  min-width: 36px;
+  height: 28px;
+  line-height: 28px;
+}
+:global(.contest-download-dialog) {
+  padding: 0;
+}
+:global(.contest-download-dialog .el-dialog__header) {
+  box-sizing: border-box;
+  height: 54px;
+  padding: 20px 20px 10px;
+}
+:global(.contest-download-dialog .el-dialog__body) {
+  box-sizing: border-box;
+  padding: 31px 20px 30px;
+}
+:global(.contest-download-dialog .el-dialog__footer) {
+  box-sizing: border-box;
+  padding: 10px 20px 20px;
+}
+:global(.contest-download-dialog .el-switch) {
+  height: 20px;
+  line-height: 20px;
+}
+:global(.contest-download-dialog .el-radio-group) {
+  display: block;
+  line-height: 16.375px;
+}
+:global(.contest-download-dialog .el-radio) {
+  display: inline-block;
+  vertical-align: top;
+  width: 150px;
+  height: 16.375px;
+  line-height: 16.375px;
+}
+:global(.contest-download-dialog .el-dialog__footer .el-button) {
+  height: 40px;
+  min-height: 40px;
+  padding: 12px 20px;
 }
 @media screen and (max-width: 768px) {
   .filter-row span {

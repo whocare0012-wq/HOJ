@@ -1,25 +1,26 @@
 <template>
   <el-card class="box-card">
-    <div
-      slot="header"
-      class="clearfix"
-    >
-      <span class="panel-title">{{$t('m.ScrollBoard_Parameter_Config')}}</span>
-    </div>
+    <template #header>
+      <div
+          class="clearfix"
+      >
+        <span class="panel-title">{{$t('m.ScrollBoard_Parameter_Config')}}</span>
+      </div>
+    </template>
     <el-alert
       :title="$t('m.Formula_for_calculating_the_number_of_medals')"
       type="success"
       show-icon
     >
-      <template slot>
+      <template #default>
         <p>
-          {{ $i18n.t('m.Number_of_gold_medals') }} : {{this.total}} × 10% = {{this.goldMedal}}
+          {{ $t('m.Number_of_gold_medals') }} : {{this.total}} × 10% = {{this.goldMedal}}
         </p>
         <p>
-          {{ $i18n.t('m.Number_of_silver_medals') }} : {{this.total}} × 20% = {{this.silverMedal}}
+          {{ $t('m.Number_of_silver_medals') }} : {{this.total}} × 20% = {{this.silverMedal}}
         </p>
         <p>
-          {{ $i18n.t('m.Number_of_bronze_medals') }} : {{this.total}} × 30% = {{this.bronzeMedal}}
+          {{ $t('m.Number_of_bronze_medals') }} : {{this.total}} × 30% = {{this.bronzeMedal}}
         </p>
       </template>
     </el-alert>
@@ -59,11 +60,12 @@
           :title="$t('m.Contest_Non_Ended_But_Want_to_Scroll_Board')"
           @confirm="goScrollBoard"
         >
-          <el-button
-            style="padding: 3px 0; font-size: 16px;"
-            type="text"
-            slot="reference"
-          >{{$t('m.Start_Rolling')}}</el-button>
+          <template #reference>
+            <el-button
+              style="padding: 3px 0; font-size: 16px;"
+              type="text"
+              >{{$t('m.Start_Rolling')}}</el-button>
+          </template>
         </el-popconfirm>
       </template>
       <template v-else>

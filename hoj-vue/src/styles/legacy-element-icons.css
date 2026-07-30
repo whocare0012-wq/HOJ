@@ -1,0 +1,108 @@
+/*
+ * Element UI 2 exposed icons through an icon font. Element Plus uses SVG
+ * components instead, so legacy <i class="el-icon-*"> markup would otherwise
+ * render as an empty box. Keep those existing templates working through the
+ * Font Awesome icon set that HOJ already ships.
+ */
+[class^="el-icon-"],
+[class*=" el-icon-"] {
+  font-style: normal;
+}
+
+[class^="el-icon-"]::before,
+[class*=" el-icon-"]::before {
+  display: inline-block;
+  font-family: FontAwesome;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  line-height: 1;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.el-icon-arrow-down::before { content: "\f107"; }
+.el-icon-arrow-left::before { content: "\f104"; }
+.el-icon-arrow-right::before { content: "\f105"; }
+.el-icon-arrow-up::before { content: "\f106"; }
+.el-icon-back::before { content: "\f060"; }
+.el-icon-bell::before { content: "\f0f3"; }
+.el-icon-caret-bottom::before { content: "\f0d7"; }
+.el-icon-caret-left::before { content: "\f0d9"; }
+.el-icon-caret-right::before { content: "\f0da"; }
+.el-icon-caret-top::before { content: "\f0d8"; }
+.el-icon-chat-round::before,
+.el-icon-chat-square::before,
+.el-icon-s-comment::before { content: "\f075"; }
+.el-icon-check::before { content: "\f00c"; }
+.el-icon-circle-check::before,
+.el-icon-s-check::before,
+.el-icon-success::before { content: "\f058"; }
+.el-icon-circle-close::before,
+.el-icon-error::before { content: "\f057"; }
+.el-icon-close::before { content: "\f00d"; }
+.el-icon-collection-tag::before { content: "\f02b"; }
+.el-icon-cpu::before { content: "\f2db"; }
+.el-icon-data-analysis::before,
+.el-icon-data-line::before,
+.el-icon-s-marketing::before { content: "\f201"; }
+.el-icon-data-board::before,
+.el-icon-s-data::before { content: "\f080"; }
+.el-icon-delete::before,
+.el-icon-delete-solid::before { content: "\f1f8"; }
+.el-icon-document::before { content: "\f15c"; }
+.el-icon-document-copy::before { content: "\f0c5"; }
+.el-icon-download::before { content: "\f019"; }
+.el-icon-edit::before,
+.el-icon-edit-outline::before { content: "\f044"; }
+.el-icon-folder-checked::before,
+.el-icon-folder-opened::before { content: "\f07c"; }
+.el-icon-full-screen::before { content: "\f065"; }
+.el-icon-info::before { content: "\f05a"; }
+.el-icon-loading::before,
+.el-icon-refresh::before,
+.el-icon-refresh-left::before,
+.el-icon-refresh-right::before { content: "\f021"; }
+.el-icon-lock::before { content: "\f023"; }
+.el-icon-magic-stick::before { content: "\f0d0"; }
+.el-icon-medal-1::before,
+.el-icon-trophy::before { content: "\f091"; }
+.el-icon-menu::before { content: "\f00a"; }
+.el-icon-s-unfold::before { content: "\f0c9"; }
+.el-icon-message::before,
+.el-icon-message-solid::before { content: "\f0e0"; }
+.el-icon-minus::before { content: "\f068"; }
+.el-icon-monitor::before { content: "\f108"; }
+.el-icon-more::before { content: "\f141"; }
+.el-icon-picture-outline::before { content: "\f03e"; }
+.el-icon-plus::before { content: "\f067"; }
+.el-icon-printer::before { content: "\f02f"; }
+.el-icon-question::before,
+.el-icon-s-help::before { content: "\f059"; }
+.el-icon-remove::before { content: "\f056"; }
+.el-icon-s-claim::before { content: "\f03a"; }
+.el-icon-search::before { content: "\f002"; }
+.el-icon-set-up::before { content: "\f013"; }
+.el-icon-s-flag::before { content: "\f024"; }
+.el-icon-s-grid::before { content: "\f00a"; }
+.el-icon-share::before { content: "\f064"; }
+.el-icon-s-home::before { content: "\f015"; }
+.el-icon-s-opportunity::before { content: "\f0eb"; }
+.el-icon-s-promotion::before { content: "\f1d8"; }
+.el-icon-star-off::before { content: "\f006"; }
+.el-icon-s-tools::before { content: "\f0ad"; }
+.el-icon-tickets::before { content: "\f145"; }
+.el-icon-time::before { content: "\f017"; }
+.el-icon-upload::before,
+.el-icon-upload2::before { content: "\f093"; }
+.el-icon-user::before,
+.el-icon-user-solid::before { content: "\f007"; }
+.el-icon-video-camera-solid::before { content: "\f03d"; }
+.el-icon-video-play::before { content: "\f144"; }
+.el-icon-warning::before { content: "\f071"; }
+.el-icon-zoom-in::before { content: "\f00e"; }
+
+.el-icon-loading::before {
+  animation: fa-spin 2s infinite linear;
+}

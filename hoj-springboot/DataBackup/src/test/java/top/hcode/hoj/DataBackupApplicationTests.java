@@ -11,6 +11,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.jsoup.Connection;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.StringUtils;
@@ -37,6 +38,7 @@ import java.util.regex.Pattern;
  * @Date: 2020/10/24 17:24
  * @Description:
  */
+@Tag("integration")
 @SpringBootTest
 public class DataBackupApplicationTests {
 

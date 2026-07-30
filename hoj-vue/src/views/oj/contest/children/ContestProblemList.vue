@@ -18,9 +18,12 @@
       >
         <template v-slot="{ row }">
           <template v-if="isGetStatusOk">
-            <span :class="getScoreColor(row.score)" v-if="row.score != null">{{
-              row.score
-            }}</span>
+            <span
+              :class="getScoreColor(row.score, row.myStatus)"
+              v-if="row.score != null"
+            >
+              {{ row.score }}
+            </span>
             <el-tooltip
               :content="JUDGE_STATUS[row.myStatus]['name']"
               placement="top"
@@ -29,14 +32,13 @@
               <i class="fa fa-question" :style="getIconColor(row.myStatus)"></i>
             </el-tooltip>
             <el-tooltip
+              v-else-if="row.myStatus != -10"
               :content="JUDGE_STATUS[row.myStatus]['name']"
               placement="top"
-              v-else
             >
               <i
                 class="el-icon-minus"
                 :style="getIconColor(row.myStatus)"
-                v-if="row.myStatus != -10"
               ></i>
             </el-tooltip>
           </template>
@@ -53,18 +55,13 @@
         <template v-slot="{ row }">
           <template v-if="isGetStatusOk">
             <el-tooltip
+              v-if="row.myStatus != -10"
               :content="JUDGE_STATUS[row.myStatus]['name']"
               placement="top"
             >
               <i
-                class="el-icon-check"
+                :class="row.myStatus == 0 ? 'el-icon-check' : 'el-icon-minus'"
                 :style="getIconColor(row.myStatus)"
-                v-if="row.myStatus == 0"
-              ></i>
-              <i
-                class="el-icon-minus"
-                :style="getIconColor(row.myStatus)"
-                v-else-if="row.myStatus != -10"
               ></i>
             </el-tooltip>
           </template>
@@ -220,13 +217,13 @@ export default {
         'font-weight: 600;font-size: 16px;color:' + JUDGE_STATUS[status].rgb
       );
     },
-    getScoreColor(score) {
-      if (score == 0) {
+    getScoreColor(score, status) {
+      if (status == 0 || score == 100) {
+        return 'el-tag el-tag--small oi-100';
+      } else if (score == 0) {
         return 'el-tag el-tag--small oi-0';
       } else if (score > 0 && score < 100) {
         return 'el-tag el-tag--small oi-between';
-      } else if (score == 100) {
-        return 'el-tag el-tag--small oi-100';
       }
     },
   },
@@ -251,8 +248,14 @@ export default {
 
 <style scoped>
 @media screen and (min-width: 1050px) {
-  /deep/ .vxe-table--body-wrapper {
+  :deep(.vxe-table--body-wrapper) {
     overflow-x: hidden !important;
   }
+}
+
+:deep(.el-tag.oi-100) {
+  color: #fff !important;
+  background-color: #19be6b !important;
+  border-color: #19be6b !important;
 }
 </style>

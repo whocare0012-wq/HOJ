@@ -10,7 +10,7 @@
             type="primary"
             size="small"
             @click="handleCreatePage"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             >{{ $t('m.Create') }}</el-button
           >
         </el-col>

@@ -11,7 +11,7 @@
             :type="createPage ? 'primary' : 'primary'"
             size="small"
             @click="handleCreatePage"
-            :icon="createPage ? 'el-icon-back' : 'el-icon-plus'"
+            :icon="legacyElementIcons[createPage ? 'el-icon-back' : 'el-icon-plus']"
             >{{ createPage ? $t('m.Back_To_Problem_List') : $t('m.Create') }}</el-button
           >
           <el-button
@@ -19,14 +19,14 @@
             type="primary"
             size="small"
             @click="handleEditPage"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_To_Admin_Problem_List') }}</el-button
           >`
           <el-button
             :type="adminPage ? 'danger' : 'success'"
             size="small"
             @click="handleAdminPage"
-            :icon="adminPage ? 'el-icon-circle-close' : 'el-icon-s-opportunity'"
+            :icon="legacyElementIcons[adminPage ? 'el-icon-circle-close' : 'el-icon-s-opportunity']"
             >{{ adminPage ? $t('m.Cancel_Admin') : $t('m.Problem_Admin') }}</el-button
           >
         </el-col>
@@ -52,22 +52,14 @@
           <template v-slot="{ row }">
             <template v-if="isGetStatusOk">
               <el-tooltip
+                v-if="row.myStatus != -10"
                 :content="JUDGE_STATUS[row['myStatus']]['name']"
                 placement="top"
               >
-                <template v-if="row.myStatus == 0">
-                  <i
-                    class="el-icon-check"
-                    :style="getIconColor(row.myStatus)"
-                  ></i>
-                </template>
-
-                <template v-else-if="row.myStatus != -10">
-                  <i
-                    class="el-icon-minus"
-                    :style="getIconColor(row.myStatus)"
-                  ></i>
-                </template>
+                <i
+                  :class="row.myStatus == 0 ? 'el-icon-check' : 'el-icon-minus'"
+                  :style="getIconColor(row.myStatus)"
+                ></i>
               </el-tooltip>
             </template>
           </template>
@@ -104,7 +96,7 @@
             ><el-link
               type="primary"
               v-if="!showTags"
-              :underline="false"
+              underline="never"
               @click="showTags = !showTags"
               >{{ $t('m.Show_Tags') }}</el-link
             >
@@ -112,7 +104,7 @@
               type="danger"
               v-else
               @click="showTags = !showTags"
-              :underline="false"
+              underline="never"
               >{{ $t('m.Hide_Tags') }}</el-link
             >
           </template>
@@ -153,7 +145,7 @@
         :total="total"
         :page-size="limit"
         @on-change="currentChange"
-        :current.sync="currentPage"
+        v-model:current="currentPage"
         @on-page-size-change="onPageSizeChange"
         :layout="'prev, pager, next, sizes'"
       ></Pagination>

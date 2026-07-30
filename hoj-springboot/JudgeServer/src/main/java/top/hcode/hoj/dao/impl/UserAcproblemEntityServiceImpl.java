@@ -18,4 +18,8 @@ import top.hcode.hoj.dao.UserAcproblemEntityService;
 @Service
 public class UserAcproblemEntityServiceImpl extends ServiceImpl<UserAcproblemMapper, UserAcproblem> implements UserAcproblemEntityService {
 
+    @Override
+    public boolean saveIfAbsent(String uid, Long pid, Long submitId) {
+        return baseMapper.insertIfAbsent(uid, pid, submitId) > 0;
+    }
 }

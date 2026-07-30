@@ -7,7 +7,7 @@
       class="msg-title"
       effect="dark"
     >
-      <template slot="title">
+      <template #title>
         <span
           ><i class="el-icon-s-promotion">
             {{ $t('m.Message_Center') }}</i
@@ -23,59 +23,79 @@
       @tab-click="handleRouter"
     >
       <el-tab-pane name="DiscussMsg">
-        <span slot="label">
-          <span>{{ $t('m.DiscussMsg') }}</span>
-          <span style=" margin-left: 2px;" v-if="unreadMessage.comment > 0">
-            <MsgSvg :total="unreadMessage.comment"></MsgSvg>
+        <template #label>
+          <span>
+            <span>{{ $t('m.DiscussMsg') }}</span>
+            <span style=" margin-left: 2px;" v-if="unreadMessage.comment > 0">
+              <MsgSvg :total="unreadMessage.comment"></MsgSvg>
+            </span>
           </span>
-        </span>
-        <transition name="fadeInUp" mode="out-in">
-          <router-view v-if="route_name === 'DiscussMsg'"></router-view>
-        </transition>
+        </template>
+        <router-view v-if="route_name === 'DiscussMsg'" v-slot="{ Component }">
+          <transition name="fadeInUp" mode="out-in">
+            <component :is="Component" :key="$route.name"></component>
+          </transition>
+        </router-view>
       </el-tab-pane>
       <el-tab-pane name="ReplyMsg">
-        <span slot="label">
-          <span>{{ $t('m.ReplyMsg') }}</span>
-          <span style=" margin-left: 2px;" v-if="unreadMessage.reply > 0">
-            <MsgSvg :total="unreadMessage.reply"></MsgSvg>
+        <template #label>
+          <span>
+            <span>{{ $t('m.ReplyMsg') }}</span>
+            <span style=" margin-left: 2px;" v-if="unreadMessage.reply > 0">
+              <MsgSvg :total="unreadMessage.reply"></MsgSvg>
+            </span>
           </span>
-        </span>
-        <transition name="fadeInUp" mode="out-in">
-          <router-view v-if="route_name === 'ReplyMsg'"></router-view>
-        </transition>
+        </template>
+        <router-view v-if="route_name === 'ReplyMsg'" v-slot="{ Component }">
+          <transition name="fadeInUp" mode="out-in">
+            <component :is="Component" :key="$route.name"></component>
+          </transition>
+        </router-view>
       </el-tab-pane>
       <el-tab-pane name="LikeMsg">
-        <span slot="label">
-          <span>{{ $t('m.LikeMsg') }}</span>
-          <span style=" margin-left: 2px;" v-if="unreadMessage.like > 0">
-            <MsgSvg :total="unreadMessage.like"></MsgSvg>
+        <template #label>
+          <span>
+            <span>{{ $t('m.LikeMsg') }}</span>
+            <span style=" margin-left: 2px;" v-if="unreadMessage.like > 0">
+              <MsgSvg :total="unreadMessage.like"></MsgSvg>
+            </span>
           </span>
-        </span>
-        <transition name="fadeInUp" mode="out-in">
-          <router-view v-if="route_name === 'LikeMsg'"></router-view>
-        </transition>
+        </template>
+        <router-view v-if="route_name === 'LikeMsg'" v-slot="{ Component }">
+          <transition name="fadeInUp" mode="out-in">
+            <component :is="Component" :key="$route.name"></component>
+          </transition>
+        </router-view>
       </el-tab-pane>
       <el-tab-pane name="SysMsg">
-        <span slot="label">
-          <span>{{ $t('m.SysMsg') }}</span>
-          <span style=" margin-left: 2px;" v-if="unreadMessage.sys > 0">
-            <MsgSvg :total="unreadMessage.sys"></MsgSvg>
+        <template #label>
+          <span>
+            <span>{{ $t('m.SysMsg') }}</span>
+            <span style=" margin-left: 2px;" v-if="unreadMessage.sys > 0">
+              <MsgSvg :total="unreadMessage.sys"></MsgSvg>
+            </span>
           </span>
-        </span>
-        <transition name="fadeInUp" mode="out-in">
-          <router-view v-if="route_name === 'SysMsg'"></router-view>
-        </transition>
+        </template>
+        <router-view v-if="route_name === 'SysMsg'" v-slot="{ Component }">
+          <transition name="fadeInUp" mode="out-in">
+            <component :is="Component" :key="$route.name"></component>
+          </transition>
+        </router-view>
       </el-tab-pane>
       <el-tab-pane name="MineMsg">
-        <span slot="label">
-          <span>{{ $t('m.MineMsg') }}</span>
-          <span style=" margin-left: 2px;" v-if="unreadMessage.mine > 0">
-            <MsgSvg :total="unreadMessage.mine"></MsgSvg>
+        <template #label>
+          <span>
+            <span>{{ $t('m.MineMsg') }}</span>
+            <span style=" margin-left: 2px;" v-if="unreadMessage.mine > 0">
+              <MsgSvg :total="unreadMessage.mine"></MsgSvg>
+            </span>
           </span>
-        </span>
-        <transition name="fadeInUp" mode="out-in">
-          <router-view v-if="route_name === 'MineMsg'"></router-view>
-        </transition>
+        </template>
+        <router-view v-if="route_name === 'MineMsg'" v-slot="{ Component }">
+          <transition name="fadeInUp" mode="out-in">
+            <component :is="Component" :key="$route.name"></component>
+          </transition>
+        </router-view>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -102,8 +122,8 @@ export default {
   },
   methods: {
     handleRouter(tab) {
-      let name = tab.name;
-      if (name !== this.$route.name) {
+      const name = tab?.paneName || tab?.props?.name || tab?.name;
+      if (name && name !== this.$route.name) {
         this.$router.push({ name: name });
       }
     },
@@ -118,28 +138,28 @@ export default {
 .msg-title {
   background-image: linear-gradient(135deg, #2afadf 10%, #4c83ff 100%);
 }
-/deep/.el-alert__title {
+:deep(.el-alert__title) {
   font-size: 18px !important;
   line-height: 18px !important;
 }
-/deep/.el-tabs__item {
+:deep(.el-tabs__item) {
   text-align: center !important;
 }
-/deep/.el-tabs__item {
+:deep(.el-tabs__item) {
   padding: 0 40px;
   line-height: 53px;
   height: 53px;
   font-weight: 700;
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 15px;
   padding-bottom: 10px;
 }
 @media only screen and (max-width: 767px) {
-  /deep/.el-tabs__item {
+  :deep(.el-tabs__item) {
     padding: 0 10px;
   }
-  /deep/.el-tabs__content {
+  :deep(.el-tabs__content) {
     padding: 12px;
     padding-left: 0px !important;
   }

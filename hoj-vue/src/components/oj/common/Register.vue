@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <div class="register-panel">
     <el-form :model="registerForm" :rules="rules" ref="registerForm">
       <el-form-item prop="username">
         <el-input
           v-model="registerForm.username"
-          prefix-icon="el-icon-user-solid"
+          :prefix-icon="legacyElementIcons['el-icon-user-solid']"
           :placeholder="$t('m.Register_Username')"
-          @keyup.enter.native="handleRegister"
+          @keyup.enter="handleRegister"
           width="100%"
         ></el-input>
       </el-form-item>
@@ -14,45 +14,46 @@
       <el-form-item prop="password">
         <el-input
           v-model="registerForm.password"
-          prefix-icon="el-icon-lock"
+          :prefix-icon="legacyElementIcons['el-icon-lock']"
           :placeholder="$t('m.Register_Password')"
-          @keyup.enter.native="handleRegister"
+          @keyup.enter="handleRegister"
           type="password"
         ></el-input>
       </el-form-item>
       <el-form-item prop="passwordAgain">
         <el-input
           v-model="registerForm.passwordAgain"
-          prefix-icon="el-icon-lock"
+          :prefix-icon="legacyElementIcons['el-icon-lock']"
           :placeholder="$t('m.Register_Password_Again')"
-          @keyup.enter.native="handleRegister"
+          @keyup.enter="handleRegister"
           type="password"
         ></el-input>
       </el-form-item>
       <el-form-item prop="email">
         <el-input
           v-model="registerForm.email"
-          prefix-icon="el-icon-message"
+          :prefix-icon="legacyElementIcons['el-icon-message']"
           :placeholder="$t('m.Register_Email')"
-          @keyup.enter.native="handleRegister"
+          @keyup.enter="handleRegister"
         >
-          <el-button
-            slot="append"
-            icon="el-icon-message"
-            type="primary"
-            @click.native="sendRegisterEmail"
-            :loading="btnEmailLoading"
-          >
-            <span v-show="btnEmailLoading">{{ countdownNum }}</span>
-          </el-button>
+          <template #append>
+            <el-button
+                :icon="legacyElementIcons['el-icon-message']"
+              type="primary"
+              @click="sendRegisterEmail"
+              :loading="btnEmailLoading"
+            >
+              <span v-show="btnEmailLoading">{{ countdownNum }}</span>
+            </el-button>
+          </template>
         </el-input>
       </el-form-item>
       <el-form-item prop="code">
         <el-input
           v-model="registerForm.code"
-          prefix-icon="el-icon-s-check"
+          :prefix-icon="legacyElementIcons['el-icon-s-check']"
           :placeholder="$t('m.Register_Email_Captcha')"
-          @keyup.enter.native="handleRegister"
+          @keyup.enter="handleRegister"
         ></el-input>
       </el-form-item>
     </el-form>
@@ -80,7 +81,7 @@ export default {
       api.checkUsernameOrEmail(value, undefined).then(
         (res) => {
           if (res.data.data.username === true) {
-            callback(new Error(this.$i18n.t('m.The_username_already_exists')));
+            callback(new Error(this.$t('m.The_username_already_exists')));
           } else {
             callback();
           }
@@ -92,7 +93,7 @@ export default {
       api.checkUsernameOrEmail(undefined, value).then(
         (res) => {
           if (res.data.data.email === true) {
-            callback(new Error(this.$i18n.t('m.The_email_already_exists')));
+            callback(new Error(this.$t('m.The_email_already_exists')));
           } else {
             callback();
           }
@@ -110,7 +111,7 @@ export default {
 
     const CheckAgainPassword = (rule, value, callback) => {
       if (value !== this.registerForm.password) {
-        callback(new Error(this.$i18n.t('m.Password_does_not_match')));
+        callback(new Error(this.$t('m.Password_does_not_match')));
       }
       callback();
     };
@@ -130,17 +131,17 @@ export default {
         username: [
           {
             required: true,
-            message: this.$i18n.t('m.Username_Check_Required'),
+            message: this.$t('m.Username_Check_Required'),
             trigger: 'blur',
           },
           {
             validator: CheckUsernameNotExist,
             trigger: 'blur',
-            message: this.$i18n.t('m.The_username_already_exists'),
+            message: this.$t('m.The_username_already_exists'),
           },
           {
             max: 20,
-            message: this.$i18n.t('m.Username_Check_Max'),
+            message: this.$t('m.Username_Check_Max'),
             trigger: 'blur',
           },
         ],
@@ -148,30 +149,30 @@ export default {
         email: [
           {
             required: true,
-            message: this.$i18n.t('m.Email_Check_Required'),
+            message: this.$t('m.Email_Check_Required'),
             trigger: 'blur',
           },
           {
             type: 'email',
-            message: this.$i18n.t('m.Email_Check_Format'),
+            message: this.$t('m.Email_Check_Format'),
             trigger: 'blur',
           },
           {
             validator: CheckEmailNotExist,
-            message: this.$i18n.t('m.The_email_already_exists'),
+            message: this.$t('m.The_email_already_exists'),
             trigger: 'blur',
           },
         ],
         password: [
           {
             required: true,
-            message: this.$i18n.t('m.Password_Check_Required'),
+            message: this.$t('m.Password_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 6,
             max: 20,
-            message: this.$i18n.t('m.Password_Check_Between'),
+            message: this.$t('m.Password_Check_Between'),
             trigger: 'blur',
           },
           { validator: CheckPassword, trigger: 'blur' },
@@ -179,7 +180,7 @@ export default {
         passwordAgain: [
           {
             required: true,
-            message: this.$i18n.t('m.Password_Again_Check_Required'),
+            message: this.$t('m.Password_Again_Check_Required'),
             trigger: 'blur',
           },
           { validator: CheckAgainPassword, trigger: 'change' },
@@ -187,13 +188,13 @@ export default {
         code: [
           {
             required: true,
-            message: this.$i18n.t('m.Code_Check_Required'),
+            message: this.$t('m.Code_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 6,
             max: 6,
-            message: this.$i18n.t('m.Code_Check_Length'),
+            message: this.$t('m.Code_Check_Length'),
             trigger: 'blur',
           },
         ],
@@ -226,24 +227,24 @@ export default {
     sendRegisterEmail() {
       var emailReg = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
       if (!emailReg.test(this.registerForm.email)) {
-        mMessage.error(this.$i18n.t('m.Email_Check_Format'));
+        mMessage.error(this.$t('m.Email_Check_Format'));
         return;
       }
       this.btnEmailLoading = true;
       this.countdownNum = 'Waiting...';
       if (this.registerForm.email) {
-        mMessage.info(this.$i18n.t('m.The_system_is_processing'));
+        mMessage.info(this.$t('m.The_system_is_processing'));
         api.getRegisterEmail(this.registerForm.email).then(
           (res) => {
             if (res.data.msg != null) {
               mMessage.message(
                 'success',
-                this.$i18n.t('m.Register_Send_Email_Msg'),
+                this.$t('m.Register_Send_Email_Msg'),
                 5000
               );
               this.$notify.success({
-                title: this.$i18n.t('m.Success'),
-                message: this.$i18n.t('m.Register_Send_Email_Msg'),
+                title: this.$t('m.Success'),
+                message: this.$t('m.Register_Send_Email_Msg'),
                 duration: 5000,
                 offset: 50
               });
@@ -267,7 +268,7 @@ export default {
           this.btnRegisterLoading = true;
           api.register(formData).then(
             (res) => {
-              mMessage.success(this.$i18n.t('m.Thanks_for_registering'));
+              mMessage.success(this.$t('m.Thanks_for_registering'));
               this.switchMode('Login');
               this.btnRegisterLoading = false;
             },
@@ -302,20 +303,37 @@ export default {
 <style scoped>
 .footer {
   overflow: auto;
-  margin-top: 20px;
-  margin-bottom: -15px;
+  margin-top: 22px;
+  margin-bottom: 0;
   text-align: center;
 }
-/deep/ .el-input-group__append {
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+:deep(.el-input__wrapper) {
+  min-height: 40px;
+}
+:deep(.el-input-group__append) {
+  box-sizing: border-box;
   color: #fff;
   background: #25bb9b;
+  padding: 0;
+  width: 50px;
 }
-/deep/.footer .el-button--primary {
-  margin: 0 0 15px 0;
+:deep(.el-input-group__append .el-button) {
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  width: 50px;
+}
+:deep(.footer .el-button--primary) {
+  height: 40px;
+  margin: 0 0 20px 0;
+  padding: 0 20px;
   width: 100%;
 }
 
-/deep/ .el-form-item__content {
+:deep(.el-form-item__content) {
   margin-left: 0px !important;
 }
 </style>

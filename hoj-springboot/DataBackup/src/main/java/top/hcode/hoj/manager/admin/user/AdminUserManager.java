@@ -4,7 +4,6 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -27,6 +26,7 @@ import top.hcode.hoj.pojo.vo.UserRolesVO;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
 import top.hcode.hoj.utils.RedisUtils;
+import top.hcode.hoj.utils.UserPasswordService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,6 +54,9 @@ public class AdminUserManager {
 
     @Autowired
     private RedisUtils redisUtils;
+
+    @Autowired
+    private UserPasswordService userPasswordService;
 
     public IPage<UserRolesVO> getUserList(Integer limit, Integer currentPage, Boolean onlyAdmin, String keyword) {
         if (currentPage == null || currentPage < 1) currentPage = 1;
@@ -111,10 +114,12 @@ public class AdminUserManager {
                 .set("username", username)
                 .set("realname", realname)
                 .set("email", email)
-                .set(setNewPwd, "password", SecureUtil.md5(password))
                 .set("title_name", titleName)
                 .set("title_color", titleColor)
                 .set("status", status);
+        if (setNewPwd) {
+            userInfoUpdateWrapper.set("password", userPasswordService.encode(password));
+        }
         boolean updateUserInfo = userInfoEntityService.update(userInfoUpdateWrapper);
 
         QueryWrapper<UserRole> userRoleQueryWrapper = new QueryWrapper<>();
@@ -197,7 +202,7 @@ public class AdminUserManager {
         UserInfo userInfo = new UserInfo()
                 .setUuid(uuid)
                 .setUsername(user.get(0))
-                .setPassword(SecureUtil.md5(user.get(1)))
+                .setPassword(userPasswordService.encode(user.get(1)))
                 .setEmail(user.size() <= 2 || StringUtils.isEmpty(user.get(2)) ? null : user.get(2));
 
         if (user.size() >= 4) {
@@ -265,7 +270,7 @@ public class AdminUserManager {
             userInfoList.add(new UserInfo()
                     .setUuid(uuid)
                     .setUsername(username)
-                    .setPassword(SecureUtil.md5(password)));
+                    .setPassword(userPasswordService.encode(password)));
             userInfo.put(username, password);
             userRoleList.add(new UserRole()
                     .setRoleId(1002L)

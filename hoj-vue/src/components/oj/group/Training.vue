@@ -2,9 +2,11 @@
   <el-row>
     <el-col :span="24">
       <el-card shadow="never">
-        <div slot="header">
-          <span class="panel-title home-title">{{ title }}</span>
-        </div>
+        <template #header>
+          <div>
+            <span class="panel-title home-title">{{ title }}</span>
+          </div>
+        </template>
         <el-form label-position="top" :model="training">
           <el-row :gutter="20">
             <el-col :span="24">
@@ -27,7 +29,7 @@
             </el-col>
             <el-col :span="24">
               <el-form-item :label="$t('m.Training_Description')" required>
-                <Editor :value.sync="training.description"></Editor>
+                <Editor v-model:value="training.description"></Editor>
               </el-form-item>
             </el-col>
             <el-col :span="24">
@@ -70,7 +72,7 @@
             </el-col>
           </el-row>
         </el-form>
-        <el-button type="primary" @click.native="submit">{{
+        <el-button type="primary" @click="submit">{{
           $t('m.Save')
         }}</el-button>
       </el-card>
@@ -146,10 +148,10 @@ export default {
         let data = res.data.data;
         if (!data || !data.length) {
           this.$alert(
-            this.$i18n.t('m.Redirect_To_Category'),
-            this.$i18n.t('m.Redirect'),
+            this.$t('m.Redirect_To_Category'),
+            this.$t('m.Redirect'),
             {
-              confirmButtonText: this.$i18n.t('m.OK'),
+              confirmButtonText: this.$t('m.OK'),
               showClose: false,
               callback: (action) => {
                 this.$router.push({
@@ -176,40 +178,40 @@ export default {
     submit() {
       if (!this.training.rank && this.training.rank != 0) {
         mMessage.error(
-          this.$i18n.t('m.Training_rank') + ' ' + this.$i18n.t('m.is_required')
+          this.$t('m.Training_rank') + ' ' + this.$t('m.is_required')
         );
         return;
       }
 
       if (!this.training.title) {
         mMessage.error(
-          this.$i18n.t('m.Training_Title') + ' ' + this.$i18n.t('m.is_required')
+          this.$t('m.Training_Title') + ' ' + this.$t('m.is_required')
         );
         return;
       }
       if (!this.training.description) {
         mMessage.error(
-          this.$i18n.t('m.Training_Description') +
+          this.$t('m.Training_Description') +
             ' ' +
-            this.$i18n.t('m.is_required')
+            this.$t('m.is_required')
         );
         return;
       }
 
       if (!this.trainingCategoryId) {
         mMessage.error(
-          this.$i18n.t('m.Training_Category') +
+          this.$t('m.Training_Category') +
             ' ' +
-            this.$i18n.t('m.is_required')
+            this.$t('m.is_required')
         );
         return;
       }
 
       if (this.training.auth != 'Public' && !this.training.privatePwd) {
         mMessage.error(
-          this.$i18n.t('m.Training_Password') +
+          this.$t('m.Training_Password') +
             ' ' +
-            this.$i18n.t('m.is_required')
+            this.$t('m.is_required')
         );
         return;
       }
@@ -245,7 +247,7 @@ export default {
 </script>
 
 <style scoped>
-/deep/.el-form-item__label {
+:deep(.el-form-item__label) {
   padding: 0 !important;
 }
 .el-form-item {

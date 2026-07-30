@@ -119,6 +119,7 @@ CREATE TABLE `comment_like` (
   `gmt_create` datetime DEFAULT CURRENT_TIMESTAMP,
   `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_comment_like_uid_cid` (`uid`,`cid`),
   KEY `uid` (`uid`),
   KEY `cid` (`cid`),
   CONSTRAINT `comment_like_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `user_info` (`uuid`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -360,6 +361,7 @@ CREATE TABLE `discussion_like` (
   `gmt_create` datetime DEFAULT CURRENT_TIMESTAMP,
   `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_discussion_like_uid_did` (`uid`,`did`),
   KEY `did` (`did`),
   KEY `uid` (`uid`),
   CONSTRAINT `discussion_like_ibfk_1` FOREIGN KEY (`did`) REFERENCES `discussion` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -746,6 +748,7 @@ CREATE TABLE `user_acproblem` (
   `gmt_create` datetime DEFAULT CURRENT_TIMESTAMP,
   `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_acproblem_uid_pid` (`uid`,`pid`),
   KEY `submit_id` (`submit_id`),
   KEY `uid` (`uid`),
   KEY `pid` (`pid`),
@@ -783,6 +786,70 @@ CREATE TABLE `user_info` (
   UNIQUE KEY `EMAIL_UNIQUE` (`email`),
   UNIQUE KEY `avatar` (`avatar`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*Table structure for table `user_daily_check_in` */
+
+DROP TABLE IF EXISTS `user_daily_check_in`;
+
+CREATE TABLE `user_daily_check_in` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uid` varchar(32) NOT NULL COMMENT '用户id',
+  `check_in_date` date NOT NULL COMMENT '按Asia/Shanghai时区计算的签到日期',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_uid_check_in_date` (`uid`,`check_in_date`),
+  KEY `idx_check_in_date` (`check_in_date`),
+  CONSTRAINT `user_daily_check_in_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `user_info` (`uuid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*Table structure for table `daily_fortune_advice` */
+
+DROP TABLE IF EXISTS `daily_fortune_advice`;
+
+CREATE TABLE `daily_fortune_advice` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `fortune_type` varchar(32) NOT NULL COMMENT '运势类型',
+  `advice_type` varchar(16) NOT NULL COMMENT 'recommended 或 avoid',
+  `title` varchar(100) NOT NULL COMMENT '宜忌事项',
+  `description` varchar(255) DEFAULT NULL COMMENT '事项说明',
+  `sort_order` int(11) NOT NULL DEFAULT '0',
+  `enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否启用',
+  `usage_count` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT '被签到结果使用的次数',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_fortune_advice_type` (`fortune_type`,`advice_type`,`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/*Table structure for table `daily_fortune_config` */
+
+DROP TABLE IF EXISTS `daily_fortune_config`;
+
+CREATE TABLE `daily_fortune_config` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(32) NOT NULL COMMENT '运势唯一编码',
+  `name` varchar(32) NOT NULL COMMENT '运势名称',
+  `color` varchar(7) NOT NULL DEFAULT '#409EFF' COMMENT '展示颜色',
+  `description` varchar(255) DEFAULT NULL COMMENT '运势说明',
+  `sort_order` int(11) NOT NULL DEFAULT '0' COMMENT '显示顺序',
+  `enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否启用',
+  `legacy_score` int(11) NOT NULL DEFAULT '64' COMMENT '兼容旧版的运势分数',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_daily_fortune_code` (`code`),
+  KEY `idx_daily_fortune_enabled_sort` (`enabled`,`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `daily_fortune_config`
+(`code`,`name`,`color`,`description`,`sort_order`,`enabled`,`legacy_score`)
+VALUES
+('great_luck','大吉','#25B864','运势极佳，万事如意',1,1,100),
+('medium_luck','中吉','#6FCF97','运势顺遂，稳中有进',2,1,88),
+('small_luck','小吉','#A3D977','运势尚可，小有收获',3,1,76),
+('neutral','中平','#90A4AE','运势平平，稳中求进',4,1,64),
+('bad_luck','凶','#FA8C16','运势欠佳，谨慎行事',5,1,42),
+('great_bad_luck','大凶','#F5222D','运势不佳，宜静不宜动',6,1,20);
 
 /*Table structure for table `user_record` */
 

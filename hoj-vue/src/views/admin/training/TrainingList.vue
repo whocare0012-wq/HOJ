@@ -1,30 +1,32 @@
 <template>
-  <div>
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">{{ $t('m.Training_List') }}</span>
-        <div class="filter-row">
-          <span>
-            <vxe-input
-              v-model="keyword"
-              :placeholder="$t('m.Enter_keyword')"
-              type="search"
-              size="medium"
-              @search-click="filterByKeyword"
-              @keyup.enter.native="filterByKeyword"
-            ></vxe-input>
-          </span>
-          <span>
-            <el-button
-              type="primary"
-              size="small"
-              @click="goCreateTraining"
-              icon="el-icon-plus"
-              >{{ $t('m.Create') }}
-            </el-button>
-          </span>
+  <div class="training-list-page">
+    <el-card class="training-list-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">{{ $t('m.Training_List') }}</span>
+          <div class="filter-row">
+            <span>
+              <vxe-input
+                v-model="keyword"
+                :placeholder="$t('m.Enter_keyword')"
+                type="search"
+                size="medium"
+                @search-click="filterByKeyword"
+                @keyup.enter="filterByKeyword"
+              ></vxe-input>
+            </span>
+            <span>
+              <el-button
+                type="primary"
+                size="small"
+                @click="goCreateTraining"
+                :icon="legacyElementIcons['el-icon-plus']"
+                >{{ $t('m.Create') }}
+              </el-button>
+            </span>
+          </div>
         </div>
-      </div>
+      </template>
       <vxe-table
         :loading="loading"
         ref="xTable"
@@ -55,19 +57,23 @@
             <el-switch
               v-model="row.status"
               :disabled="!isSuperAdmin && userInfo.username != row.author"
-              @change="changeTrainingStatus(row.id, row.status, row.author)"
+              @change="changeTrainingStatus(row)"
             >
             </el-switch>
           </template>
         </vxe-table-column>
         <vxe-table-column min-width="210" :title="$t('m.Info')">
           <template v-slot="{ row }">
-            <p>Created Time: {{ row.gmtCreate | localtime }}</p>
-            <p>Update Time: {{ row.gmtModified | localtime }}</p>
+            <p>Created Time: {{ $filters.localtime(row.gmtCreate) }}</p>
+            <p>Update Time: {{ $filters.localtime(row.gmtModified) }}</p>
             <p>Creator: {{ row.author }}</p>
           </template>
         </vxe-table-column>
-        <vxe-table-column min-width="150" :title="$t('m.Option')">
+        <vxe-table-column
+          min-width="150"
+          :title="$t('m.Option')"
+          fixed="right"
+        >
           <template v-slot="{ row }">
             <template v-if="isSuperAdmin || userInfo.username == row.author">
               <div style="margin-bottom:10px">
@@ -77,9 +83,9 @@
                   placement="top"
                 >
                   <el-button
-                    icon="el-icon-edit"
-                    size="mini"
-                    @click.native="goEdit(row.id)"
+                    :icon="legacyElementIcons['el-icon-edit']"
+                    size="small"
+                    @click="goEdit(row.id)"
                     type="primary"
                   >
                   </el-button>
@@ -90,9 +96,9 @@
                   placement="top"
                 >
                   <el-button
-                    icon="el-icon-tickets"
-                    size="mini"
-                    @click.native="goTrainingProblemList(row.id)"
+                    :icon="legacyElementIcons['el-icon-tickets']"
+                    size="small"
+                    @click="goTrainingProblemList(row.id)"
                     type="success"
                   >
                   </el-button>
@@ -106,9 +112,9 @@
               v-if="isSuperAdmin"
             >
               <el-button
-                icon="el-icon-delete"
-                size="mini"
-                @click.native="deleteTraining(row.id)"
+                :icon="legacyElementIcons['el-icon-delete']"
+                size="small"
+                @click="deleteTraining(row.id)"
                 type="danger"
               >
               </el-button>
@@ -121,6 +127,7 @@
           class="page"
           layout="prev, pager, next"
           @current-change="currentChange"
+          v-model:current-page="currentPage"
           :page-size="pageSize"
           :total="total"
         >
@@ -198,21 +205,30 @@ export default {
       });
     },
     deleteTraining(trainingId) {
-      this.$confirm(this.$i18n.t('m.Delete_Training_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Training_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       }).then(() => {
         api.admin_deleteTraining(trainingId).then((res) => {
-          myMessage.success(this.$i18n.t('m.Delete_successfully'));
+          myMessage.success(this.$t('m.Delete_successfully'));
           this.currentChange(1);
         });
       });
     },
-    changeTrainingStatus(trainingId, status, author) {
-      api.admin_changeTrainingStatus(trainingId, status, author).then((res) => {
-        myMessage.success(this.$i18n.t('m.Update_Successfully'));
-      });
+    changeTrainingStatus(training) {
+      api
+        .admin_changeTrainingStatus(
+          training.id,
+          training.status,
+          training.author
+        )
+        .then(() => {
+          myMessage.success(this.$t('m.Update_Successfully'));
+        })
+        .catch(() => {
+          training.status = !training.status;
+        });
     },
     filterByKeyword() {
       this.currentChange(1);
@@ -224,9 +240,50 @@ export default {
 };
 </script>
 <style scoped>
+.training-list-card {
+  display: block;
+}
+
 .filter-row {
   margin-top: 10px;
 }
+
+.training-list-page :deep(.filter-row .el-button--small) {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 9px 15px;
+}
+
+.training-list-page :deep(.vxe-table .el-button--small) {
+  box-sizing: border-box;
+  height: 29px;
+  min-height: 29px;
+  min-width: 44px;
+  padding: 7px 15px;
+}
+
+.training-list-page :deep(.vxe-table .el-tag) {
+  box-sizing: border-box;
+  height: 32px;
+  line-height: 30px;
+  padding: 0 10px;
+}
+
+.training-list-page :deep(.vxe-table .el-switch) {
+  height: 20px;
+  line-height: 20px;
+}
+
+.training-list-page :deep(.el-pagination.page) {
+  box-sizing: border-box;
+  display: block;
+  height: 32px;
+  width: 100%;
+  padding: 2px 5px;
+  --el-pagination-button-width: 35.5px;
+  --el-pagination-button-height: 28px;
+}
+
 @media screen and (max-width: 768px) {
   .filter-row span {
     margin-right: 5px;

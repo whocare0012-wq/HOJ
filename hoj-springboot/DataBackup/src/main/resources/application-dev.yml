@@ -22,6 +22,13 @@ jwt-token-fresh-expire: 43200
 
 # 网站是否开启远程评测
 open-remote-judge: true
+# 是否允许应用启动时初始化或同步数据库业务数据。默认关闭以避免误改共享数据库。
+startup-database-initialization-enabled: false
+# 密码升级开关。开发环境默认保持旧数据兼容行为。
+password-bcrypt-write-enabled: false
+password-upgrade-on-login-enabled: false
+archive-max-entries: 20000
+archive-max-uncompressed-bytes: 2147483648
 # 调用评测服务的token, default表示随机生成
 judge-token: default
 

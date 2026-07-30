@@ -1,8 +1,10 @@
 <template>
   <el-card class="contest-attention">
-    <div slot="header">
-      <span class="panel-title">Pay attention</span>
-    </div>
+    <template #header>
+      <div>
+        <span class="panel-title">Pay attention</span>
+      </div>
+    </template>
     <el-row :gutter="20">
       <el-col
         :md="6"
@@ -82,10 +84,10 @@ export default {
 .contest-attention-item .countdown-text {
   color: #777;
 }
-/deep/.el-card__header {
+:deep(.el-card__header) {
     padding: 10px 20px;
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
     padding: 10px 20px;
 }
 </style>

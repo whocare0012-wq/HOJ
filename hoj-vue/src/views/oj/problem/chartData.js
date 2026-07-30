@@ -58,11 +58,9 @@ const largePie = {
   },
   legend: {
     left: 'center',
-    top:0,
-    orient:
-      'horizontal',
-    itemGap:
-      10,
+    top: 0,
+    orient: 'horizontal',
+    itemGap: 10,
     data:
       ['AC','PA','PE','CE','RE', 'WA', 'TLE', 'MLE']
   },
@@ -87,6 +85,9 @@ const largePie = {
       ],
       label: {
         normal: {
+          width: 45,
+          overflow: 'none',
+          color: 'inherit',
           formatter: '{b}: \n{d}%\n {c}',
           textStyle:{
             fontSize:10,
@@ -103,6 +104,8 @@ const largePie = {
       type: 'pie',
       radius: '35%',
       center: ['52%', '55%'],
+      selectedMode: 'single',
+      selectedOffset: 10,
       itemStyle: {
         normal: {color: getItemColor}
       },
@@ -113,6 +116,10 @@ const largePie = {
       label: {
         normal: {
           position: 'inner',
+          color: '#fff',
+          fontSize: 12,
+          fontWeight: 'bold',
+          lineHeight: 12,
           formatter: '{b}: {c}\n {d}%'
         }
       }

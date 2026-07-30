@@ -17,7 +17,7 @@
             :type="createPage ? 'warning' : 'primary'"
             size="small"
             @click="handleCreatePage"
-            :icon="createPage ? 'el-icon-back' : 'el-icon-plus'"
+            :icon="legacyElementIcons[createPage ? 'el-icon-back' : 'el-icon-plus']"
             >{{ createPage ? $t('m.Back_To_Admin_Training_List') : $t('m.Create') }}</el-button
           >
           <el-button
@@ -25,7 +25,7 @@
             type="warning"
             size="small"
             @click="handleEditPage"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_To_Admin_Training_List') }}</el-button
           >
           <el-button
@@ -33,7 +33,7 @@
             v-if="!editPage&&!createPage"
             size="small"
             @click="handleAdminPage"
-            :icon="adminPage ? 'el-icon-back' : 'el-icon-s-opportunity'"
+            :icon="legacyElementIcons[adminPage ? 'el-icon-back' : 'el-icon-s-opportunity']"
             >{{ adminPage ? $t('m.Back_To_Training_List') : $t('m.Training_Admin') }}</el-button
           >
         </el-col>
@@ -48,21 +48,21 @@
             type="primary"
             size="small"
             @click="publicPage = true"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             >{{ $t('m.Add_From_Public_Problem') }}</el-button
           >
           <el-button
             type="success"
             size="small"
             @click="handleGroupPage"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             >{{ $t('m.Add_From_Group_Problem') }}</el-button
           >
           <el-button
             type="warning"
             size="small"
             @click="handleProblemPage(null)"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_To_Admin_Training_List') }}</el-button
           >
         </el-col>
@@ -75,7 +75,7 @@
             type="primary"
             size="small"
             @click="handleEditProblemPage"
-            icon="el-icon-back"
+            :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_Admin_Training_Problem_List') }}</el-button
           >`
         </el-col>
@@ -187,10 +187,10 @@
           <template v-slot="{ row }">
             <span>
                 <el-tooltip
-                  :content="row.gmtModified | localtime"
+                  :content="$filters.localtime(row.gmtModified)"
                   placement="top"
                 >
-                  <span>{{ row.gmtModified | fromNow }}</span>
+                  <span>{{ $filters.fromNow(row.gmtModified) }}</span>
                 </el-tooltip>
             </span>
           </template>
@@ -200,7 +200,7 @@
         :total="total"
         :page-size="limit"
         @on-change="currentChange"
-        :current.sync="currentPage"
+        v-model:current="currentPage"
         @on-page-size-change="onPageSizeChange"
         :layout="'prev, pager, next, sizes'"
       ></Pagination>
@@ -231,7 +231,7 @@
     <el-dialog
       :title="$t('m.Add_Training_Problem')"
       width="90%"
-      :visible.sync="publicPage"
+      v-model="publicPage"
       :close-on-click-modal="false"
     >
       <AddPublicProblem
@@ -245,7 +245,7 @@
     <el-dialog
       :title="$t('m.Add_Training_Problem')"
       width="350px"
-      :visible.sync="groupPage"
+      v-model="groupPage"
       :close-on-click-modal="false"
     >
       <AddGroupProblem

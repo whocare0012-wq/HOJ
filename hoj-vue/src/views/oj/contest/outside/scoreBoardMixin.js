@@ -174,7 +174,7 @@ export default {
       }
     },
   },
-  beforeDestroy () {
+  beforeUnmount () {
     clearInterval(this.refreshFunc)
     clearInterval(this.timer);
     this.$store.commit('clearContest');

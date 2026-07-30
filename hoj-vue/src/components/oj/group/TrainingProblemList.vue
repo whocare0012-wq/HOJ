@@ -77,9 +77,9 @@
             v-if="row.gid == gid"
           >
             <el-button
-              icon="el-icon-edit-outline"
-              size="mini"
-              @click.native="goEditProblem(row.id)"
+              :icon="legacyElementIcons['el-icon-edit-outline']"
+              size="small"
+              @click="goEditProblem(row.id)"
               type="primary"
             >
             </el-button>
@@ -92,9 +92,9 @@
             v-if="row.gid == gid"
           >
             <el-button
-              icon="el-icon-download"
-              size="mini"
-              @click.native="downloadTestCase(row.id)"
+              :icon="legacyElementIcons['el-icon-download']"
+              size="small"
+              @click="downloadTestCase(row.id)"
               type="success"
             >
             </el-button>
@@ -102,9 +102,9 @@
 
           <el-tooltip effect="dark" :content="$t('m.Remove')" placement="top">
             <el-button
-              icon="el-icon-close"
-              size="mini"
-              @click.native="removeProblem(row.id)"
+              :icon="legacyElementIcons['el-icon-close']"
+              size="small"
+              @click="removeProblem(row.id)"
               type="warning"
             >
             </el-button>
@@ -117,9 +117,9 @@
             v-if="row.gid == gid"
           >
             <el-button
-              icon="el-icon-delete-solid"
-              size="mini"
-              @click.native="deleteProblem(row.id)"
+              :icon="legacyElementIcons['el-icon-delete-solid']"
+              size="small"
+              @click="deleteProblem(row.id)"
               type="danger"
             >
             </el-button>
@@ -132,7 +132,7 @@
       :total="total"
       :page-size="limit"
       @on-change="currentChange"
-      :current.sync="currentPage"
+      v-model:current="currentPage"
       @on-page-size-change="onPageSizeChange"
       :layout="'prev, pager, next, sizes'"
     ></Pagination>
@@ -221,13 +221,13 @@ export default {
     },
     handleChangeRank(data) {
       api.updateGroupTrainingProblem(data).then((res) => {
-        mMessage.success(this.$i18n.t('m.Update_Successfully'));
+        mMessage.success(this.$t('m.Update_Successfully'));
         this.getProblemList(1);
       });
     },
     changeProblemAuth(pid, auth) {
       api.changeGroupProblemAuth(pid, auth).then((res) => {
-        mMessage.success(this.$i18n.t('m.Update_Successfully'));
+        mMessage.success(this.$t('m.Update_Successfully'));
       });
     },
     handleEditPage() {
@@ -240,14 +240,14 @@ export default {
       this.$emit("handleEditProblemPage");
     },
     deleteProblem(id) {
-      this.$confirm(this.$i18n.t('m.Delete_Problem_Tips'), this.$i18n.t('m.Warning'), {
+      this.$confirm(this.$t('m.Delete_Problem_Tips'), this.$t('m.Warning'), {
         type: 'warning',
       }).then(
         () => {
           api
             .deleteGroupProblem(id)
             .then((res) => {
-              mMessage.success(this.$i18n.t('m.Delete_successfully'));
+              mMessage.success(this.$t('m.Delete_successfully'));
               this.$emit("currentChangeProblem");
             })
             .catch(() => {});
@@ -256,7 +256,7 @@ export default {
       );
     },
     removeProblem(pid) {
-      this.$confirm(this.$i18n.t('m.Remove_Training_Problem_Tips'), this.$i18n.t('m.Warning'), {
+      this.$confirm(this.$t('m.Remove_Training_Problem_Tips'), this.$t('m.Warning'), {
         type: 'warning',
       }).then(
         () => {
@@ -274,7 +274,7 @@ export default {
     downloadTestCase(problemID) {
       let url = '/api/file/download-testcase?pid=' + problemID;
       utils.downloadFile(url).then(() => {
-        this.$alert(this.$i18n.t('m.Download_Testcase_Success'), this.$i18n.t('m.Tips'));
+        this.$alert(this.$t('m.Download_Testcase_Success'), this.$t('m.Tips'));
       });
     },
   },

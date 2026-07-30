@@ -1,12 +1,14 @@
 <template>
-  <div id="app">
+  <el-config-provider :locale="elementLocale">
     <el-backtop :right="10"></el-backtop>
     <div v-if="!isAdminView" class="full-height flex-column">
       <NavBar></NavBar>
       <div id="oj-content">
-        <transition name="el-zoom-in-bottom">
-          <router-view></router-view>
-        </transition>
+        <router-view v-slot="{ Component }">
+          <transition name="el-zoom-in-bottom">
+            <component :is="Component"></component>
+          </transition>
+        </router-view>
       </div>
       <footer v-if="showFooter" class="fix-to-bottom">
         <div class="mundb-footer">
@@ -18,7 +20,7 @@
               <h1>{{ websiteConfig.name }}</h1>
               <span
                 style="line-height:25px"
-                v-html="websiteConfig.description"
+                v-dompurify-html="websiteConfig.description"
                 v-katex
                 v-highlight
               >
@@ -105,13 +107,15 @@
                 >
                   {{ getLanguageLabelByValue(this.webLanguage) }}</i><i class="el-icon-arrow-up el-icon--right"></i>
               </span>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item 
-                  v-for="(lang, index) in languages"
-                  :key="index"
-                  :command="lang.value">{{ lang.label }}
-              </el-dropdown-item>
-              </el-dropdown-menu>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item
+                    v-for="(lang, index) in languages"
+                    :key="index"
+                    :command="lang.value">{{ lang.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
           </span>
         </div>
@@ -119,12 +123,14 @@
     </div>
     <div v-else>
       <div id="admin-content">
-        <transition name="el-zoom-in-bottom">
-          <router-view></router-view>
-        </transition>
+        <router-view v-slot="{ Component }">
+          <transition name="el-zoom-in-bottom">
+            <component :is="Component"></component>
+          </transition>
+        </router-view>
       </div>
     </div>
-  </div>
+  </el-config-provider>
 </template>
 
 <script>
@@ -147,7 +153,11 @@ export default {
     };
   },
   methods: {
-    ...mapActions(["changeDomTitle", "getWebsiteConfig"]),
+    ...mapActions([
+      "changeDomTitle",
+      "getWebsiteConfig",
+      "getProblemDifficulties",
+    ]),
     goRoute(path) {
       this.$router.push({
         path: path,
@@ -224,6 +234,59 @@ export default {
     },
     getLanguageLabelByValue(value){
       return getLangLabelByValue(value);
+    },
+    findWheelScroller(target, deltaY) {
+      let element = target instanceof Element ? target : target?.parentElement;
+      while (element && element !== document.documentElement) {
+        if (element === document.body) {
+          break;
+        }
+        const style = window.getComputedStyle(element);
+        const canOverflow = /^(auto|scroll|overlay)$/.test(style.overflowY);
+        if (canOverflow && element.scrollHeight > element.clientHeight + 1) {
+          const canScrollDown =
+            deltaY > 0 &&
+            element.scrollTop + element.clientHeight < element.scrollHeight - 1;
+          const canScrollUp = deltaY < 0 && element.scrollTop > 0;
+          if (canScrollDown || canScrollUp) {
+            return element;
+          }
+        }
+        element = element.parentElement;
+      }
+      return null;
+    },
+    handleViewportWheel(event) {
+      if (
+        event.ctrlKey ||
+        event.metaKey ||
+        Math.abs(event.deltaY) <= Math.abs(event.deltaX)
+      ) {
+        return;
+      }
+      const deltaY =
+        event.deltaMode === 1
+          ? event.deltaY * 16
+          : event.deltaMode === 2
+            ? event.deltaY * window.innerHeight
+            : event.deltaY;
+      const scroller = this.findWheelScroller(event.target, deltaY);
+      const initialScrollerTop = scroller?.scrollTop;
+      const initialPageTop = window.scrollY;
+      window.setTimeout(() => {
+        if (event.defaultPrevented) {
+          return;
+        }
+        if (scroller) {
+          if (scroller.scrollTop === initialScrollerTop) {
+            scroller.scrollTop += deltaY;
+          }
+          return;
+        }
+        if (window.scrollY === initialPageTop) {
+          window.scrollBy(0, deltaY);
+        }
+      }, 0);
     }
   },
   watch: {
@@ -247,6 +310,10 @@ export default {
   computed: {
     ...mapState(["websiteConfig"]),
     ...mapGetters(["webLanguage", "token", "isAuthenticated"]),
+    elementLocale() {
+      const language = languages.find(item => item.value === this.webLanguage);
+      return language ? language.elementLocale : languages[1].elementLocale;
+    },
   },
   created: function () {
     this.$nextTick(function () {
@@ -274,6 +341,17 @@ export default {
     console.log(MOTTO);
     this.autoChangeLanguge();
     this.getWebsiteConfig();
+    this.getProblemDifficulties().catch(() => {});
+    window.addEventListener("wheel", this.handleViewportWheel, {
+      capture: true,
+      passive: true,
+    });
+  },
+  beforeUnmount() {
+    window.removeEventListener("visibilitychange", this.autoRefreshUserInfo);
+    window.removeEventListener("wheel", this.handleViewportWheel, {
+      capture: true,
+    });
   },
 };
 </script>
@@ -285,11 +363,14 @@ export default {
   box-sizing: border-box;
 }
 body {
+  margin: 0;
+  min-width: 0;
   background-color: #eff3f5 !important;
   font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "微软雅黑", Arial, sans-serif !important;
   color: #495060 !important;
   font-size: 12px !important;
+  line-height: 18px;
 }
 code,
 kbd,
@@ -325,17 +406,9 @@ samp {
   top: 0;
   bottom: 0;
   width: 100%;
+  min-width: 0;
 }
 
-.mobile-menu-active {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-.mobile-menu-active .mu-item-title {
-  color: #2d8cf0 !important;
-}
-.mobile-menu-active .mu-icon {
-  color: #2d8cf0 !important;
-}
 #particles-js {
   position: fixed;
   z-index: 0;
@@ -541,6 +614,10 @@ a:hover {
   cursor: pointer;
 }
 .vxe-table {
+  --vxe-ui-table-header-background-color: #fff;
+  --vxe-ui-table-header-font-color: #000;
+  --vxe-ui-table-row-height-default: 48px;
+  --vxe-ui-table-row-line-height: 24px;
   color: #000 !important;
   font-size: 12px !important;
   font-weight: 500 !important;
@@ -612,8 +689,77 @@ a:hover {
   text-align: center;
 }
 .panel-options {
+  align-items: center;
+  clear: both;
+  display: flex;
+  justify-content: center;
   margin-top: 10px;
-  text-align: center;
+  min-width: 0;
+  width: 100%;
+}
+.panel-options .el-pagination {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  padding-inline: 0;
+}
+#oj-content,
+#oj-content .el-row,
+#oj-content .el-col,
+#admin-content .el-row,
+#admin-content .el-col,
+#oj-content .el-card,
+#admin-content .el-card,
+#oj-content .el-card__body,
+#admin-content .el-card__body {
+  min-width: 0;
+}
+#oj-content .vxe-table,
+#admin-content .vxe-table {
+  max-width: 100%;
+}
+#oj-content .el-card {
+  border-color: #ebeef5;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+#oj-content .el-card.is-always-shadow {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+#oj-content .el-button--small {
+  min-height: 32px;
+  padding: 9px 15px;
+}
+#oj-content .el-button--small.is-circle {
+  min-width: 32px;
+  padding: 9px;
+}
+#oj-content .el-select--small {
+  min-height: 32px;
+}
+#oj-content .el-select--small .el-select__wrapper {
+  min-height: 32px;
+}
+#oj-content .el-tag--default,
+#admin-content .el-tag--default {
+  height: 28px;
+  line-height: 26px;
+  padding: 0 10px;
+}
+#oj-content .vxe-table .vxe-header--column {
+  height: 42px;
+  line-height: 24px;
+}
+#oj-content .vxe-table .vxe-body--column {
+  line-height: 24px;
+}
+@media screen and (min-width: 1200px) {
+  #oj-content .container {
+    max-width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
 .el-tag--dark {
   border-color: #fff !important;
@@ -896,5 +1042,14 @@ footer h1 {
 }
 .hljs {
   padding: 0 !important;
+}
+.markdown-body .hljs-left {
+  text-align: left;
+}
+.markdown-body .hljs-center {
+  text-align: center;
+}
+.markdown-body .hljs-right {
+  text-align: right;
 }
 </style>

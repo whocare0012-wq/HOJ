@@ -377,22 +377,24 @@ public class DiscussionManager {
 
                 if (toLike) { // 添加点赞
                     if (discussionLike == null) { // 如果不存在就添加
-                        boolean isSave = discussionLikeEntityService.saveOrUpdate(new DiscussionLike().setUid(userRolesVo.getUid()).setDid(did));
+                        boolean isSave = discussionLikeEntityService.save(new DiscussionLike()
+                                .setUid(userRolesVo.getUid())
+                                .setDid(did));
                         if (!isSave) {
                             throw new StatusFailException("点赞失败，请重试尝试！");
                         }
-                    }
-                    // 点赞+1
-                    UpdateWrapper<Discussion> discussionUpdateWrapper = new UpdateWrapper<>();
-                    discussionUpdateWrapper.eq("id", discussion.getId())
-                            .setSql("like_num=like_num+1");
-                    discussionEntityService.update(discussionUpdateWrapper);
-                    // 当前帖子要不是点赞者的 才发送点赞消息
-                    if (!userRolesVo.getUsername().equals(discussion.getAuthor())) {
-                        discussionEntityService.updatePostLikeMsg(discussion.getUid(),
-                                userRolesVo.getUid(),
-                                did,
-                                discussion.getGid());
+                        // 只有点赞关系真正新增时才增加计数并发送通知。
+                        UpdateWrapper<Discussion> discussionUpdateWrapper = new UpdateWrapper<>();
+                        discussionUpdateWrapper.eq("id", discussion.getId())
+                                .setSql("like_num=like_num+1");
+                        discussionEntityService.update(discussionUpdateWrapper);
+                        // 当前帖子要不是点赞者的 才发送点赞消息
+                        if (!userRolesVo.getUsername().equals(discussion.getAuthor())) {
+                            discussionEntityService.updatePostLikeMsg(discussion.getUid(),
+                                    userRolesVo.getUid(),
+                                    did,
+                                    discussion.getGid());
+                        }
                     }
                 } else { // 取消点赞
                     if (discussionLike != null) { // 如果存在就删除
@@ -400,11 +402,13 @@ public class DiscussionManager {
                         if (!isDelete) {
                             throw new StatusFailException("取消点赞失败，请重试尝试！");
                         }
+                        // 只有点赞关系真正删除时才减少计数，且不允许出现负数。
+                        UpdateWrapper<Discussion> discussionUpdateWrapper = new UpdateWrapper<>();
+                        discussionUpdateWrapper
+                                .setSql("like_num=GREATEST(like_num-1,0)")
+                                .eq("id", did);
+                        discussionEntityService.update(discussionUpdateWrapper);
                     }
-                    // 点赞-1
-                    UpdateWrapper<Discussion> discussionUpdateWrapper = new UpdateWrapper<>();
-                    discussionUpdateWrapper.setSql("like_num=like_num-1").eq("id", did);
-                    discussionEntityService.update(discussionUpdateWrapper);
                 }
             }finally {
                 redisUtils.releaseLock(key, requestId);

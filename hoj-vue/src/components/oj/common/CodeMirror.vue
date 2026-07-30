@@ -14,7 +14,7 @@
           <span>{{ $t('m.Lang') }}:</span>
           <span>
             <el-select
-              :value="this.language"
+              :model-value="language"
               @change="onLangChange"
               class="left-adjust"
               size="small"
@@ -33,7 +33,8 @@
               placement="top"
             >
               <el-button
-                icon="el-icon-refresh"
+                :icon="legacyElementIcons['el-icon-refresh']"
+                :aria-label="$t('m.Reset_Code')"
                 @click="onResetClick"
                 size="small"
               ></el-button>
@@ -45,7 +46,8 @@
               placement="top"
             >
               <el-button
-                icon="el-icon-download"
+                :icon="legacyElementIcons['el-icon-download']"
+                :aria-label="$t('m.Get_Recently_Passed_Code')"
                 size="small"
                 @click="getUserLastAccepetedCode"
               >
@@ -67,7 +69,8 @@
               placement="bottom"
             >
               <el-button
-                icon="el-icon-upload"
+                :icon="legacyElementIcons['el-icon-upload2']"
+                :aria-label="$t('m.Upload_file')"
                 @click="onUploadFile"
                 size="small"
               ></el-button>
@@ -77,6 +80,7 @@
             <input
               type="file"
               id="file-uploader"
+              ref="fileUploader"
               style="display: none"
               @change="onUploadFileDone"
             />
@@ -91,12 +95,14 @@
                 width="300"
                 trigger="click"
               >
-                <el-button
-                  slot="reference"
-                  icon="el-icon-s-tools"
-                  size="small"
-                >
-                </el-button>
+                <template #reference>
+                  <el-button
+                    :icon="legacyElementIcons['el-icon-s-tools']"
+                    :aria-label="$t('m.Code_Editor_Setting')"
+                    size="small"
+                  >
+                  </el-button>
+                </template>
                 <div class="setting-title">{{ $t('m.Setting') }}</div>
                 <div class="setting-item">
                   <span class="setting-item-name">
@@ -104,10 +110,9 @@
                     {{ $t('m.Theme') }}
                   </span>
                   <el-select
-                    :value="this.theme"
+                    :model-value="theme"
                     @change="onThemeChange"
                     class="setting-item-value"
-                    size="small"
                   >
                     <el-option
                       v-for="item in themes"
@@ -124,10 +129,9 @@
                     {{ $t('m.FontSize') }}
                   </span>
                   <el-select
-                    :value="fontSize"
+                    :model-value="fontSize"
                     @change="onFontSizeChange"
                     class="setting-item-value"
-                    size="small"
                   >
                     <el-option
                       v-for="item in fontSizes"
@@ -182,10 +186,9 @@
                     </svg> {{ $t('m.TabSize') }}
                   </span>
                   <el-select
-                    :value="tabSize"
+                    :model-value="tabSize"
                     @change="onTabSizeChange"
                     class="setting-item-value"
-                    size="small"
                   >
                     <el-option
                       :label="$t('m.Two_Spaces') "
@@ -220,7 +223,8 @@
                 placement="bottom"
               >
                 <el-button
-                  icon="el-icon-full-screen"
+                  :icon="legacyElementIcons['el-icon-full-screen']"
+                  :aria-label="$t('m.Enter_Focus_Mode')"
                   @click="switchFocusMode(true)"
                   size="small"
                 ></el-button>
@@ -235,6 +239,7 @@
                 placement="bottom"
               >
                 <el-button
+                  :aria-label="$t('m.Exit_Focus_Mode')"
                   @click="switchFocusMode(false)"
                   size="small"
                 >
@@ -256,41 +261,58 @@
         </div>
       </el-col>
     </el-row>
-    <div :style="'line-height: 1.5;font-size:'+fontSize">
+    <div
+      :style="'line-height: 1.5;font-size:'+fontSize"
+      @click="closeTestCaseDrawerFromEditor"
+    >
       <codemirror
         class="js-right"
         :value="value"
         :options="options"
         @change="onEditorCodeChange"
+        @ready="onEditorReady"
         ref="myEditor"
       >
       </codemirror>
     </div>
     <el-drawer
-      :visible.sync="openTestCaseDrawer"
-      style="position: absolute;"
+      :model-value="openTestCaseDrawer"
       :modal="false"
-      size="40%"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
+      size="372px"
       :with-header="false"
-      @close="closeDrawer"
+      modal-class="test-judge-overlay"
+      body-class="test-judge-drawer-body"
+      class="test-judge-drawer"
+      @update:model-value="onDrawerVisibilityChange"
       direction="btt"
     >
-      <el-tabs
-        v-model="testJudgeActiveTab"
-        type="border-card"
-        style="height: 100%;"
-        @tab-click="handleClick"
-      >
+      <div class="test-judge-panel">
+        <el-tabs
+          v-model="testJudgeActiveTab"
+          type="border-card"
+          class="test-judge-tabs"
+        >
         <el-tab-pane
           :label="$t('m.Test_Case')"
           name="input"
-          style="margin-right: 15px;margin-top: 8px;"
+          class="test-judge-tab-pane"
         >
+          <el-alert
+            v-if="!isAuthenticated"
+            class="mt-10"
+            :title="$t('m.Please_login_first')"
+            type="warning"
+            center
+            :closable="false"
+            show-icon
+          >
+          </el-alert>
           <div class="mt-10">
             <el-tag
               type="primary"
               class="tj-test-tag"
-              size="samll"
               v-for="(example, index) of problemTestCase"
               :key="index"
               @click="addTestCaseToTestJudge(example.input, example.output, index)"
@@ -335,7 +357,7 @@
                   :closable="false"
                   show-icon
                 >
-                  <template slot="title">
+                  <template #title>
                     <span class="status-title">{{ getResultStatusName(testJudgeRes.problemJudgeMode,
                       testJudgeRes.status,
                       testJudgeRes.expectedOutput!=null) }}
@@ -344,7 +366,7 @@
                       </template>
                     </span>
                   </template>
-                  <template slot>
+                  <template #default>
                     <div style="display:flex">
                       <div style="margin-right:15px">
                         <span class="color-gray mr-5"><i class="el-icon-time"></i></span>
@@ -442,9 +464,11 @@
             <template v-else>
               <div class="tj-res-tab mt-10">
                 <el-card>
-                  <div slot="header">
-                    <span class="ce-title">{{ $t('m.Compilation_Failed') }}</span>
-                  </div>
+                  <template #header>
+                    <div>
+                      <span class="ce-title">{{ $t('m.Compilation_Failed') }}</span>
+                    </div>
+                  </template>
                   <div style="color: #f90;font-weight: 600;">
                     <pre>{{ testJudgeRes.stderr }}</pre>
                   </div>
@@ -453,31 +477,24 @@
             </template>
           </div>
         </el-tab-pane>
-        <el-tab-pane>
-          <span slot="label">
-            <el-tag
-              type="success"
-              class="tj-btn"
-              @click="submitTestJudge"
-              effect="plain"
-            >
-              <i class="el-icon-video-play"> {{ $t('m.Running_Test') }}</i>
-            </el-tag>
-          </span>
-          <template v-if="!isAuthenticated">
-            <div class="tj-res-tab mt-10">
-              <el-alert
-                :title="$t('m.Please_login_first')"
-                type="warning"
-                center
-                :closable="false"
-                show-icon
-              >
-              </el-alert>
-            </div>
-          </template>
-        </el-tab-pane>
-      </el-tabs>
+        </el-tabs>
+        <div class="test-judge-actions">
+          <el-button
+            type="success"
+            plain
+            class="run-test-button"
+            :loading="testJudgeLoding"
+            @click="submitTestJudge"
+          >
+            <i
+              v-if="!testJudgeLoding"
+              class="fa fa-play-circle-o run-test-icon"
+              aria-hidden="true"
+            ></i>
+            {{ $t('m.Running_Test') }}
+          </el-button>
+        </div>
+      </div>
     </el-drawer>
   </div>
 </template>
@@ -485,7 +502,8 @@
 import utils from "@/common/utils";
 import api from "@/common/api";
 import myMessage from "@/common/message";
-import { codemirror, CodeMirror } from "vue-codemirror-lite";
+import codemirror from '@/components/common/CodeMirrorAdapter.vue';
+import CodeMirror from 'codemirror/lib/codemirror.js';
 import { JUDGE_STATUS, JUDGE_STATUS_RESERVE } from "@/common/constants";
 
 // 风格对应的样式
@@ -671,13 +689,17 @@ export default {
         mode[lang.name] = lang.contentType;
       });
       this.mode = mode;
-      this.editor.setOption("mode", this.mode[this.language]);
+      this.editor?.setOption("mode", this.mode[this.language]);
     });
-    this.editor.setOption("theme", this.theme);
-    this.editor.setSize('100%', this.height);
-    this.editor.on("inputRead", (instance, changeObj) => {
+  },
+  methods: {
+    onEditorReady(editor) {
+      editor.setOption("theme", this.theme);
+      editor.setOption("mode", this.mode[this.language] || this.options.mode);
+      editor.setSize('100%', this.height);
+      editor.on("inputRead", (instance, changeObj) => {
       if (changeObj.text && changeObj.text.length > 0) {
-      let c = changeObj.text[0].charAt(changeObj.text[0].length - 1)
+        let c = changeObj.text[0].charAt(changeObj.text[0].length - 1)
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
           instance.showHint({ completeSingle:false });
         }
@@ -689,50 +711,55 @@ export default {
       //     range: 1000, // 附近多少行代码匹配
       //   });
       // }
-    });
-    this.$nextTick(() => {
-      this.editor.refresh();
-    })
-  },
-  methods: {
+      });
+      this.$nextTick(() => {
+        editor.refresh();
+      });
+    },
     onEditorCodeChange(newCode) {
       this.$emit("update:value", newCode);
     },
     onLangChange(newVal) {
-      this.editor.setOption("mode", this.mode[newVal]);
+      this.editor?.setOption("mode", this.mode[newVal]);
       this.$emit("changeLang", newVal);
     },
     onThemeChange(newTheme) {
-      this.editor.setOption("theme", newTheme);
+      this.editor?.setOption("theme", newTheme);
       this.$emit("changeTheme", newTheme);
     },
     onFontSizeChange(fontSize) {
-      this.fontSize = fontSize;
-      this.$nextTick(() => {
-        this.editor.refresh();
-      })
       this.$emit("update:fontSize", fontSize);
+      this.$nextTick(() => {
+        this.editor?.setSize('100%', this.height);
+        this.editor?.refresh();
+      })
     },
     onTabSizeChange(tabSize) {
-      this.tabSize = tabSize;
       this.$emit("update:tabSize", tabSize);
-      this.editor.setOption("tabSize", tabSize);
-      this.editor.setOption("indentUnit", tabSize);
+      this.editor?.setOption("tabSize", tabSize);
+      this.editor?.setOption("indentUnit", tabSize);
     },
     onResetClick() {
       this.$emit("resetCode");
     },
     onUploadFile() {
-      document.getElementById("file-uploader").click();
+      this.$refs.fileUploader?.click();
     },
-    onUploadFileDone() {
-      let f = document.getElementById("file-uploader").files[0];
+    onUploadFileDone(event) {
+      const input = event?.target;
+      const f = input?.files?.[0];
+      if (!f) {
+        return;
+      }
       let fileReader = new window.FileReader();
       let self = this;
       fileReader.onload = function (e) {
         var text = e.target.result;
         self.editor.setValue(text);
-        document.getElementById("file-uploader").value = "";
+        input.value = "";
+      };
+      fileReader.onerror = function () {
+        input.value = "";
       };
       fileReader.readAsText(f, "UTF-8");
     },
@@ -758,19 +785,23 @@ export default {
     },
 
     submitTestJudge() {
+      if (this.testJudgeLoding) {
+        return;
+      }
+
       if (!this.isAuthenticated) {
-        myMessage.warning(this.$i18n.t("m.Please_login_first"));
+        myMessage.warning(this.$t("m.Please_login_first"));
         this.$store.dispatch("changeModalStatus", { visible: true });
         return;
       }
 
       if (this.value.trim() === "") {
-        myMessage.error(this.$i18n.t("m.Code_can_not_be_empty"));
+        myMessage.error(this.$t("m.Code_can_not_be_empty"));
         return;
       }
 
       if (this.value.length > 65535) {
-        myMessage.error(this.$i18n.t("m.Code_Length_can_not_exceed_65535"));
+        myMessage.error(this.$t("m.Code_Length_can_not_exceed_65535"));
         return;
       }
       let data = {
@@ -783,14 +814,16 @@ export default {
         mode: this.mode[this.language],
         isRemoteJudge: this.isRemoteJudge,
       };
+      this.testJudgeLoding = true;
+      this.equalsExpectedOuput = null;
       api.submitTestJudge(data).then(
         (res) => {
           this.testJudgeKey = res.data.data;
           this.testJudgeActiveTab = "result";
-          this.testJudgeLoding = true;
           this.checkTestJudgeStatus();
         },
         (err) => {
+          this.testJudgeLoding = false;
           this.testJudgeActiveTab = "input";
         }
       );
@@ -823,6 +856,7 @@ export default {
               }
               this.testJudgeLoding = false;
               clearTimeout(this.refreshStatus);
+              this.refreshStatus = null;
             } else {
               this.refreshStatus = setTimeout(checkStatus, 1000);
             }
@@ -830,14 +864,20 @@ export default {
           (res) => {
             this.testJudgeLoding = false;
             clearTimeout(this.refreshStatus);
+            this.refreshStatus = null;
           }
         );
       };
       // 设置每1秒检查一下该题的提交结果
       this.refreshStatus = setTimeout(checkStatus, 1000);
     },
-    closeDrawer() {
-      this.$emit("update:openTestCaseDrawer", false);
+    onDrawerVisibilityChange(visible) {
+      this.$emit("update:openTestCaseDrawer", visible);
+    },
+    closeTestCaseDrawerFromEditor() {
+      if (this.openTestCaseDrawer) {
+        this.$emit("update:openTestCaseDrawer", false);
+      }
     },
     getUserLastAccepetedCode() {
       this.$emit("getUserLastAccepetedCode");
@@ -849,7 +889,7 @@ export default {
   computed: {
     editor() {
       // get current editor object
-      return this.$refs.myEditor.editor;
+      return this.$refs.myEditor?.editor || null;
     },
     currentLanguage() {
       return this.language;
@@ -867,13 +907,17 @@ export default {
   },
   watch: {
     height(newVal){
-      this.editor.setSize('100%', newVal);
+      const editor = this.editor;
+      if (!editor) {
+        return;
+      }
+      editor.setSize('100%', newVal);
       this.$nextTick(() => {
-        this.editor.refresh();
+        this.editor?.refresh();
       })
     },
     theme(newVal, oldVal) {
-      this.editor.setOption("theme", newVal);
+      this.editor?.setOption("theme", newVal);
     },
     userInput(newVal, oldVal) {
       this.expectedOutput = null;
@@ -887,9 +931,9 @@ export default {
       }
     },
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // 防止切换组件后仍然不断请求
-    clearInterval(this.refreshStatus);
+    clearTimeout(this.refreshStatus);
   },
 };
 </script>
@@ -904,10 +948,15 @@ export default {
   width: 170px;
   margin-left: 5px;
 }
+.header .left-adjust :deep(.el-select__wrapper) {
+  padding-left: 12px;
+}
 .setting-title {
   border-bottom: 1px solid #f3f3f6;
   color: #000;
   font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
   padding: 10px 0;
 }
 .setting-item {
@@ -915,34 +964,78 @@ export default {
   padding: 15px 0 0;
 }
 .setting-item-name {
-  flex: 2;
+  flex: 0 0 76px;
   color: #333;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 20px;
   margin-top: 7px;
+  white-space: nowrap;
 }
 .setting-item-value {
-  width: 140px;
+  width: auto;
+  min-width: 0;
   margin-left: 15px;
-  flex: 5;
+  flex: 1;
 }
 
 .select-row {
   margin-top: 4px;
 }
-/deep/.el-drawer__body {
+:deep(.test-judge-overlay) {
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+:deep(.test-judge-drawer) {
+  pointer-events: auto;
+}
+:deep(.test-judge-drawer-body) {
+  padding: 0;
   border: 1px solid rgb(240, 240, 240);
+  overflow: hidden;
 }
-.tj-btn {
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid #32ca99;
+.test-judge-panel {
+  position: relative;
+  height: 100%;
 }
-.tj-btn:hover {
+.test-judge-tabs {
+  height: 100%;
+}
+.test-judge-actions {
+  position: absolute;
+  top: 7px;
+  left: 215px;
+  z-index: 2;
+}
+.run-test-button {
+  height: 32px;
+  padding: 0 10px;
+  border-color: #67c23a;
+  border-radius: 4px;
+  color: #67c23a;
+  font-size: 12px;
+}
+.run-test-button:hover,
+.run-test-button:focus {
   background-color: #d5f1eb;
+  border-color: #67c23a;
+  color: #67c23a;
+}
+.run-test-icon {
+  margin-right: 5px;
+}
+.test-judge-tab-pane {
+  padding: 0 15px 12px 0;
 }
 .tj-test-tag {
+  height: 32px;
+  padding: 0 10px;
   margin-right: 15px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 30px;
   cursor: pointer;
 }
 .tj-test-tag:hover {
@@ -964,7 +1057,10 @@ export default {
 .tj-res-item .value {
   flex: 10;
 }
-/deep/.el-textarea__inner[readonly] {
+.tj-res-item .textarea :deep(.el-textarea__inner) {
+  padding-left: 15px;
+}
+:deep(.el-textarea__inner[readonly]) {
   background-color: #f7f8f9 !important;
 }
 .color-gray {
@@ -977,6 +1073,9 @@ export default {
   margin-top: 10px;
 }
 @media screen and (max-width: 768px) {
+  :deep(.test-judge-drawer) {
+    height: min(372px, 70%) !important;
+  }
   .select-row span {
     margin-right: 2px;
   }
@@ -995,7 +1094,7 @@ export default {
     float: right;
   }
 }
-/deep/.el-tabs__content {
+.test-judge-tabs :deep(.el-tabs__content) {
   position: absolute;
   top: 40px;
   bottom: 2px;
@@ -1003,7 +1102,7 @@ export default {
   right: 0;
   overflow-y: auto;
 }
-/deep/.el-card__header {
+:deep(.el-card__header) {
   padding: 10px 25px;
   background-color: antiquewhite;
 }

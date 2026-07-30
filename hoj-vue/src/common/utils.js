@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import axios from 'axios'
 import storage from '@/common/storage'
 import { STORAGE_KEY,PROBLEM_LEVEL,FOCUS_MODE_ROUTE_NAME } from '@/common/constants'
 import myMessage from '@/common/message'
@@ -60,7 +60,7 @@ function breakLongWords (value, length = 16) {
 
 function downloadFile (url) {
   return new Promise((resolve, reject) => {
-    Vue.prototype.$axios.get(url, {responseType: 'blob',timeout: 5 * 60 * 1000}).then(resp => {
+    axios.get(url, {responseType: 'blob',timeout: 5 * 60 * 1000}).then(resp => {
       let headers = resp.headers
       if (headers['content-type'].indexOf('json') !== -1) {
         let fr = new window.FileReader()
@@ -148,13 +148,18 @@ function examplesToString(objList){
 function getLevelColor(difficulty) {
   if (difficulty != undefined && difficulty != null) {
     if (PROBLEM_LEVEL[difficulty]) {
+      const borderColor =
+        PROBLEM_LEVEL[difficulty]['borderColor'] ||
+        PROBLEM_LEVEL[difficulty]['color'];
       return (
-        'color: #fff !important;background-color:' +
-        PROBLEM_LEVEL[difficulty]['color'] +
+        'color:#ffffff !important;border-color:' +
+        borderColor +
+        ' !important;background-color:' +
+        borderColor +
         ' !important;'
       );
     } else {
-      return 'color: #fff !important;background-color: rgb(255, 153, 0)!important;';
+      return 'color:#ffffff !important;border-color:#ff9900 !important;background-color:#ff9900 !important;';
     }
   }
 }

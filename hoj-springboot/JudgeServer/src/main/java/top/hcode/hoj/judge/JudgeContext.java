@@ -10,7 +10,6 @@ import top.hcode.hoj.pojo.dto.TestJudgeReq;
 import top.hcode.hoj.pojo.dto.TestJudgeRes;
 import top.hcode.hoj.pojo.entity.judge.Judge;
 import top.hcode.hoj.pojo.entity.problem.Problem;
-import top.hcode.hoj.pojo.entity.user.UserAcproblem;
 import top.hcode.hoj.util.Constants;
 
 import javax.annotation.Resource;
@@ -108,11 +107,7 @@ public class JudgeContext {
         if (cid == 0) { // 非比赛提交
             // 如果是AC,就更新user_acproblem表,
             if (status.intValue() == Constants.Judge.STATUS_ACCEPTED.getStatus() && gid == null) {
-                userAcproblemEntityService.saveOrUpdate(new UserAcproblem()
-                        .setPid(pid)
-                        .setUid(uid)
-                        .setSubmitId(submitId)
-                );
+                userAcproblemEntityService.saveIfAbsent(uid, pid, submitId);
             }
 
         } else { //如果是比赛提交

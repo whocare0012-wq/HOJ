@@ -1,19 +1,22 @@
 <template>
-  <el-card shadow>
-    <div slot="header">
-      <span class="panel-title">{{ $t('m.Contest_Rank') }}（{{
-          contest.oiRankScoreType == 'Recent'
-            ? $t('m.Based_on_The_Recent_Score_Submitted_Of_Each_Problem')
-            : $t('m.Based_on_The_Highest_Score_Submitted_For_Each_Problem')
-        }}）</span>
-    </div>
+  <el-card shadow="always">
+    <template #header>
+      <div>
+        <span class="panel-title">{{ $t('m.Contest_Rank') }}（{{
+            contest.oiRankScoreType == 'Recent'
+              ? $t('m.Based_on_The_Recent_Score_Submitted_Of_Each_Problem')
+              : $t('m.Based_on_The_Highest_Score_Submitted_For_Each_Problem')
+          }}）</span>
+      </div>
+    </template>
     <div
       v-show="showChart"
       class="echarts"
     >
       <ECharts
-        :options="options"
-        ref="chart"
+        :option="options"
+        :loading="chartLoading"
+        :loading-options="chartLoadingOptions"
         :autoresize="true"
       ></ECharts>
     </div>
@@ -26,14 +29,15 @@
           <el-input
             :placeholder="$t('m.Contest_Rank_Search_Placeholder')"
             v-model="keyword"
-            @keyup.enter.native="getContestRankData(page)"
+            @keyup.enter="getContestRankData(page)"
           >
-            <el-button
-              slot="append"
-              icon="el-icon-search"
-              class="search-btn"
-              @click="getContestRankData(page)"
-            ></el-button>
+            <template #append>
+              <el-button
+                  :icon="legacyElementIcons['el-icon-search']"
+                class="search-btn"
+                @click="getContestRankData(page)"
+              ></el-button>
+            </template>
           </el-input>
         </div>
       </el-col>
@@ -46,13 +50,14 @@
             trigger="hover"
             placement="left-start"
           >
-            <el-button
-              round
-              size="small"
-              slot="reference"
-            >
-              {{$t('m.Contest_Rank_Setting')}}
-            </el-button>
+            <template #reference>
+              <el-button
+                round
+                size="small"
+                >
+                {{$t('m.Contest_Rank_Setting')}}
+              </el-button>
+            </template>
             <div id="switches">
               <p>
                 <span>{{ $t('m.Chart') }}</span>
@@ -160,11 +165,13 @@
                 ></avatar>
               </span>
               <el-tooltip placement="top">
-                <div slot="content">
-                  {{
-                    row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
-                  }}
-                </div>
+                <template #content>
+                  <div>
+                    {{
+                      row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
+                    }}
+                  </div>
+                </template>
                 <span
                   class="contest-rank-concerned"
                   @click="updateConcernedList(row.uid, !row.isConcerned)"
@@ -232,11 +239,13 @@
                 ></avatar>
               </span>
               <el-tooltip placement="top">
-                <div slot="content">
-                  {{
-                    row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
-                  }}
-                </div>
+                <template #content>
+                  <div>
+                    {{
+                      row.isConcerned ? $t('m.Unfollow') : $t('m.Top_And_Follow')
+                    }}
+                  </div>
+                </template>
                 <span
                   class="contest-rank-concerned"
                   @click="updateConcernedList(row.uid, !row.isConcerned)"
@@ -350,13 +359,15 @@
                 effect="dark"
                 placement="top"
               >
-                <div slot="content">
-                  {{ problem.displayId + '. ' + problem.displayTitle }}
-                  <br />
-                  {{ 'Accepted: ' + problem.ac }}
-                  <br />
-                  {{ 'Rejected: ' + (problem.total - problem.ac) }}
-                </div>
+                <template #content>
+                  <div>
+                    {{ problem.displayId + '. ' + problem.displayTitle }}
+                    <br />
+                    {{ 'Accepted: ' + problem.ac }}
+                    <br />
+                    {{ 'Rejected: ' + (problem.total - problem.ac) }}
+                  </div>
+                </template>
                 <span>({{ problem.ac }}/{{ problem.total }}) </span>
               </el-tooltip>
             </span>
@@ -379,8 +390,8 @@
     </div>
     <Pagination
       :total="total"
-      :page-size.sync="limit"
-      :current.sync="page"
+      v-model:page-size="limit"
+      v-model:current="page"
       :page-sizes="[10, 30, 50, 100, 300, 500]"
       @on-change="getContestRankData"
       @on-page-size-change="getContestRankData(1)"
@@ -389,12 +400,13 @@
   </el-card>
 </template>
 <script>
-import Avatar from "vue-avatar";
+import { defineAsyncComponent } from 'vue';
+import Avatar from "@/components/common/Avatar.vue";
 import { mapActions } from "vuex";
 import ContestRankMixin from "./contestRankMixin";
 import utils from "@/common/utils";
-const Pagination = () => import("@/components/oj/common/Pagination");
-const RankBox = () => import("@/components/oj/common/RankBox");
+const Pagination = defineAsyncComponent(() => import("@/components/oj/common/Pagination"));
+const RankBox = defineAsyncComponent(() => import("@/components/oj/common/RankBox"));
 export default {
   name: "OIContestRank",
   components: {
@@ -412,9 +424,27 @@ export default {
       dataRank: [],
       keyword: null,
       autoRefresh: false,
+      chartLoading: false,
+      chartLoadingOptions: {
+        maskColor: "rgba(250, 250, 250, 0.8)",
+        color: "#c23531",
+      },
       options: {
+        color: [
+          "#c23531",
+          "#2f4554",
+          "#61a0a8",
+          "#d48265",
+          "#91c7ae",
+          "#749f83",
+          "#ca8622",
+          "#bda29a",
+          "#6e7074",
+          "#546570",
+          "#c4ccd3",
+        ],
         title: {
-          text: this.$i18n.t("m.Top_10_Teams"),
+          text: this.$t("m.Top_10_Teams"),
           left: "center",
         },
         tooltip: {
@@ -425,7 +455,7 @@ export default {
           feature: {
             dataView: { show: true, readOnly: true },
             magicType: { show: true, type: ["line", "bar"] },
-            saveAsImage: { show: true, title: this.$i18n.t("m.save_as_image") },
+            saveAsImage: { show: true, title: this.$t("m.save_as_image") },
           },
           right: "10%",
           top: "5%",
@@ -460,7 +490,7 @@ export default {
         },
         series: [
           {
-            name: this.$i18n.t("m.Score"),
+            name: this.$t("m.Score"),
             type: "bar",
             barMaxWidth: "80",
             data: [0],
@@ -639,12 +669,12 @@ export default {
   height: 400px;
   width: 100%;
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 20px !important;
   padding-top: 0 !important;
 }
 @media screen and (max-width: 768px) {
-  /deep/.el-card__body {
+  :deep(.el-card__body) {
     padding: 0 !important;
   }
 }
@@ -668,14 +698,14 @@ export default {
   margin: 0;
   padding: 0;
 }
-/deep/.vxe-table .vxe-header--column:not(.col--ellipsis) {
+:deep(.vxe-table .vxe-header--column:not(.col--ellipsis)) {
   padding: 4px 0 !important;
 }
-/deep/.vxe-table .vxe-body--column {
+:deep(.vxe-table .vxe-body--column) {
   line-height: 20px !important;
   padding: 0px !important;
 }
-/deep/.vxe-body--column {
+:deep(.vxe-body--column) {
   min-width: 0;
   height: 48px;
   box-sizing: border-box;
@@ -694,7 +724,7 @@ a.emphasis:hover {
   font-size: 12px;
 }
 
-/deep/.vxe-table .vxe-cell {
+:deep(.vxe-table .vxe-cell) {
   padding-left: 5px !important;
   padding-right: 5px !important;
 }

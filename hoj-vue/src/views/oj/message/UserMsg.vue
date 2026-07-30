@@ -60,29 +60,30 @@
               <div
                 class="content"
                 v-if="item.sourceContent != null"
-                v-html="item.sourceContent"
+                v-dompurify-html="item.sourceContent"
               ></div>
 
               <div
                 class="orginal-reply"
                 v-if="item.quoteContent != null"
-                v-html="item.quoteContent"
+                v-dompurify-html="item.quoteContent"
               ></div>
             </div>
             <div class="extra-info">
               <span
                 ><i class="el-icon-time">
                   <el-tooltip
-                    :content="item.gmtCreate | localtime"
+                    :content="$filters.localtime(item.gmtCreate)"
                     placement="top"
                   >
-                    <span>&nbsp;{{ item.gmtCreate | fromNow }}</span>
+                    <span>&nbsp;{{ $filters.fromNow(item.gmtCreate) }}</span>
                   </el-tooltip></i
                 ></span
               >
-              <span class="delete" @click="deleteMsg(item.id)"
-                ><i class="el-icon-delete"> {{ $t('m.Delete') }}</i></span
-              >
+              <span class="delete" @click="deleteMsg(item.id)">
+                <i class="el-icon-delete" aria-hidden="true"></i>
+                {{ $t('m.Delete') }}
+              </span>
             </div>
           </div>
         </div>
@@ -107,12 +108,12 @@
       :total="total"
       :page-size="query.limit"
       @on-change="changeRoute"
-      :current.sync="query.currentPage"
+      v-model:current="query.currentPage"
     ></Pagination>
   </div>
 </template>
 <script>
-import Avatar from 'vue-avatar';
+import Avatar from '@/components/common/Avatar.vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import Pagination from '@/components/oj/common/Pagination';
@@ -173,13 +174,13 @@ export default {
       });
     },
     deleteMsg(id = undefined) {
-      this.$confirm(this.$i18n.t('m.Delete_Msg_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Delete_Msg_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       }).then(() => {
         api.cleanMsg(this.route_name, id).then((res) => {
-          myMessage.success(this.$i18n.t('m.Delete_successfully'));
+          myMessage.success(this.$t('m.Delete_successfully'));
           this.getMsgList();
         });
       });
@@ -309,6 +310,9 @@ export default {
 .msg-list-item .extra-info .delete:hover {
   cursor: pointer;
   color: red;
+}
+.msg-list-item .extra-info .delete .el-icon-delete {
+  margin-right: 5px;
 }
 .link-discussion {
   color: #999;

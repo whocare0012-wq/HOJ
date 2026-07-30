@@ -1,8 +1,10 @@
 <template>
   <el-card>
-      <div slot="header">
-        <span class="title">{{OJ}} {{$t('m.Account_Config')}}</span>
-      </div>
+      <template #header>
+        <div>
+          <span class="title">{{OJ}} {{$t('m.Account_Config')}}</span>
+        </div>
+      </template>
       <el-row 
         v-for="(value,index) in usernameListTmp" 
         :key="index" 
@@ -13,7 +15,7 @@
             v-model="usernameListTmp[index]"
             size="small"
             clearable>
-            <template slot="prepend">{{$t('m.Account')}}{{index+1}}</template>
+            <template #prepend>{{$t('m.Account')}}{{index+1}}</template>
           </el-input>
         </el-col>
         <el-col :xs="24" :md="10">
@@ -21,13 +23,13 @@
             v-model="passwordListTmp[index]"
             size="small"
             show-password>
-            <template slot="prepend">{{$t('m.Password')}}{{index+1}}</template>
+            <template #prepend>{{$t('m.Password')}}{{index+1}}</template>
           </el-input>
         </el-col>
         <el-col :xs="24" :md="4" class="t-center">
           <el-button 
             type="danger" 
-            icon="el-icon-delete" 
+            :icon="legacyElementIcons['el-icon-delete']"
             circle 
             size="small"
             @click="deleteAccount(index)">
@@ -39,18 +41,22 @@
         type="warning" 
         round 
         size="small"
-        class="mg-top"
+        class="mg-top remote-account-action-button"
         @click="addAccount"
-        icon="el-icon-plus">{{ $t('m.Add_Account') }}
+        :icon="legacyElementIcons['el-icon-plus']">{{ $t('m.Add_Account') }}
       </el-button>
       <el-button
         type="primary"
         :loading="loading"
         style="margin-top:15px"
-        @click.native="saveSwitchConfig"
+        @click="saveSwitchConfig"
         size="small"
+        class="remote-account-action-button"
         >
-        <i class="fa fa-save"> {{ $t('m.Save') }}</i>
+        <span class="remote-account-action-button__content">
+          <i class="fa fa-save"></i>
+          <span>{{ $t('m.Save') }}</span>
+        </span>
       </el-button>
   </el-card>
 </template>
@@ -123,6 +129,18 @@ export default {
 }
 .mg-top{
   margin-top: 15px;
+}
+.remote-account-action-button {
+  min-height: 32px;
+  padding: 7px 14px;
+}
+.remote-account-action-button :deep(.el-icon) {
+  margin-right: 6px;
+}
+.remote-account-action-button__content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 @media screen and (max-width: 992px) {
   .t-center{

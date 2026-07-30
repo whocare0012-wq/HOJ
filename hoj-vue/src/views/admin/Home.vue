@@ -19,10 +19,10 @@
           <i class="fa fa-tachometer fa-size" aria-hidden="true"></i
           >{{ $t('m.Dashboard') }}
         </el-menu-item>
-        <!-- <el-submenu v-if="isSuperAdmin" index="general"> -->
-        <el-submenu index="general" v-if="isSuperAdmin">
-          <template slot="title"
-            ><i class="el-icon-menu"></i>{{ $t('m.General') }}</template
+        <!-- <el-sub-menu v-if="isSuperAdmin" index="general"> -->
+        <el-sub-menu index="general" v-if="isSuperAdmin">
+          <template #title
+            ><el-icon class="admin-menu-icon"><MenuIcon /></el-icon>{{ $t('m.General') }}</template
           >
           <el-menu-item index="/admin/user">{{
             $t('m.User_Admin')
@@ -39,10 +39,10 @@
           <el-menu-item index="/admin/switch">{{
             $t('m.System_Switch')
           }}</el-menu-item>
-        </el-submenu>
-        <!-- <el-submenu index="problem" v-if="hasProblemPermission"> -->
-        <el-submenu index="problem">
-          <template slot="title"
+        </el-sub-menu>
+        <!-- <el-sub-menu index="problem" v-if="hasProblemPermission"> -->
+        <el-sub-menu index="problem">
+          <template #title
             ><i class="fa fa-bars fa-size" aria-hidden="true"></i
             >{{ $t('m.Problem_Admin') }}</template
           >
@@ -55,6 +55,12 @@
           <el-menu-item index="/admin/problem/tag">{{
             $t('m.Admin_Tag')
           }}</el-menu-item>
+          <el-menu-item
+            index="/admin/problem/difficulty"
+            v-if="isSuperAdmin || isProblemAdmin"
+          >
+            {{ $t('m.Problem_Difficulty_Admin') }}
+          </el-menu-item>
            <el-menu-item index="/admin/group-problem/apply"
            v-if="isSuperAdmin || isProblemAdmin"
            >{{$t('m.Admin_Group_Apply_Problem')}}
@@ -64,16 +70,11 @@
             v-if="isSuperAdmin || isProblemAdmin"
             >{{ $t('m.Export_Import_Problem') }}</el-menu-item
           >
-        </el-submenu>
+        </el-sub-menu>
 
-        <el-submenu index="training">
-          <template slot="title"
-            ><i
-              class="el-icon-s-claim"
-              aria-hidden="true"
-              style="font-size: 20px;"
-            ></i
-            >{{ $t('m.Training_Admin') }}</template
+        <el-sub-menu index="training">
+          <template #title
+            ><el-icon class="admin-menu-icon"><TrainingIcon /></el-icon>{{ $t('m.Training_Admin') }}</template
           >
           <el-menu-item index="/admin/training">{{
             $t('m.Training_List')
@@ -84,10 +85,10 @@
           <el-menu-item index="/admin/training/category">{{
             $t('m.Admin_Category')
           }}</el-menu-item>
-        </el-submenu>
+        </el-sub-menu>
 
-        <el-submenu index="contest">
-          <template slot="title"
+        <el-sub-menu index="contest">
+          <template #title
             ><i class="fa fa-trophy fa-size" aria-hidden="true"></i
             >{{ $t('m.Contest_Admin') }}</template
           >
@@ -97,17 +98,25 @@
           <el-menu-item index="/admin/contest/create">{{
             $t('m.Create_Contest')
           }}</el-menu-item>
-        </el-submenu>
+        </el-sub-menu>
 
-        <el-submenu index="discussion">
-          <template slot="title"
+        <el-sub-menu index="discussion">
+          <template #title
             ><i class="fa fa-comments fa-size" aria-hidden="true"></i
             >{{ $t('m.Discussion') }}</template
           >
           <el-menu-item index="/admin/discussion">{{
             $t('m.Discussion_Admin')
           }}</el-menu-item>
-        </el-submenu>
+        </el-sub-menu>
+        <el-menu-item v-if="isSuperAdmin" index="/admin/daily-check-in">
+          <i class="fa fa-calendar-check-o fa-size" aria-hidden="true"></i>
+          {{ $t('m.Daily_Check_In_Admin') }}
+        </el-menu-item>
+        <el-menu-item v-if="isSuperAdmin" index="/admin/ai-assistant">
+          <i class="fa fa-comments-o fa-size" aria-hidden="true"></i>
+          {{ $t('m.AI_Assistant') }}
+        </el-menu-item>
       </el-menu>
       <div id="header">
         <el-row>
@@ -144,11 +153,13 @@
                 >{{ userInfo.username
                 }}<i class="el-icon-caret-bottom el-icon--right"></i
               ></span>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item command="logout">{{
-                  $t('m.Logout')
-                }}</el-dropdown-item>
-              </el-dropdown-menu>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="logout">{{
+                    $t('m.Logout')
+                  }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
           </el-col>
         </el-row>
@@ -156,353 +167,146 @@
     </div>
 
     <div v-else>
-      <mu-appbar class="mobile-nav" color="primary">
-        <mu-button icon slot="left" @click="opendrawer = !opendrawer">
-          <i class="el-icon-s-unfold"></i>
-        </mu-button>
-        {{
-          websiteConfig.shortName
-            ? websiteConfig.shortName + ' ADMIN'
-            : 'ADMIN'
-        }}
-        <mu-menu slot="right" v-show="isAuthenticated">
-          <mu-button flat @click="katexVisible = true">
-            <i class="fa fa-font katex-editor"></i>
-          </mu-button>
-        </mu-menu>
-        <mu-menu
-          slot="right"
-          v-show="isAuthenticated"
-          :open.sync="openusermenu"
+      <header class="mobile-nav">
+        <el-button
+          class="mobile-nav-button"
+          text
+          :aria-label="$t('m.Dashboard')"
+          @click="opendrawer = true"
         >
-          <mu-button flat>
-            {{ userInfo.username }}<i class="el-icon-caret-bottom"></i>
-          </mu-button>
-          <mu-list slot="content" @change="handleCommand">
-            <mu-list-item button value="logout">
-              <mu-list-item-content>
-                <mu-list-item-title>{{ $t('m.Logout') }}</mu-list-item-title>
-              </mu-list-item-content>
-            </mu-list-item>
-          </mu-list>
-        </mu-menu>
-      </mu-appbar>
-
-      <mu-drawer :open.sync="opendrawer" :docked="false" :right="false">
-        <mu-list toggle-nested>
-          <mu-list-item
-            button
-            :ripple="true"
-            nested
-            to="/admin/dashboard"
-            @click="opendrawer = !opendrawer"
-            active-class="mobile-menu-active"
+          <i class="el-icon-s-unfold"></i>
+        </el-button>
+        <span class="mobile-nav-title">
+          {{ websiteConfig.shortName ? websiteConfig.shortName + ' ADMIN' : 'ADMIN' }}
+        </span>
+        <div v-if="isAuthenticated" class="mobile-nav-actions">
+          <el-button
+            class="mobile-nav-button"
+            text
+            aria-label="Latex Editor"
+            @click="katexVisible = true"
           >
-            <mu-list-item-action>
-              <mu-icon value=":fa fa-tachometer" size="24"></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item-title>{{ $t('m.Dashboard') }}</mu-list-item-title>
-          </mu-list-item>
+            <i class="fa fa-font katex-editor"></i>
+          </el-button>
+          <el-dropdown trigger="click" @command="handleCommand">
+            <el-button class="mobile-user-button" text>
+              {{ userInfo.username }}<i class="el-icon-caret-bottom"></i>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout">
+                  {{ $t('m.Logout') }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </header>
+      <div class="mobile-nav-spacer"></div>
 
-          <mu-list-item
+      <el-drawer
+        v-model="opendrawer"
+        direction="ltr"
+        size="280px"
+        :with-header="false"
+        class="admin-mobile-drawer"
+      >
+        <el-menu
+          :default-active="currentPath"
+          router
+          @select="closeMobileDrawer"
+        >
+          <el-menu-item index="/admin/dashboard">
+            <i class="fa fa-tachometer mobile-drawer-icon"></i>
+            <span>{{ $t('m.Dashboard') }}</span>
+          </el-menu-item>
+          <el-sub-menu v-if="isSuperAdmin" index="mobile-general">
+            <template #title>
+              <el-icon class="mobile-drawer-icon"><MenuIcon /></el-icon>
+              <span>{{ $t('m.General') }}</span>
+            </template>
+            <el-menu-item index="/admin/user">{{ $t('m.User_Admin') }}</el-menu-item>
+            <el-menu-item index="/admin/announcement">{{ $t('m.Announcement_Admin') }}</el-menu-item>
+            <el-menu-item index="/admin/notice">{{ $t('m.SysNotice') }}</el-menu-item>
+            <el-menu-item index="/admin/conf">{{ $t('m.System_Config') }}</el-menu-item>
+            <el-menu-item index="/admin/switch">{{ $t('m.System_Switch') }}</el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="mobile-problem">
+            <template #title>
+              <i class="fa fa-bars mobile-drawer-icon"></i>
+              <span>{{ $t('m.Problem_Admin') }}</span>
+            </template>
+            <el-menu-item index="/admin/problems">{{ $t('m.Problem_List') }}</el-menu-item>
+            <el-menu-item index="/admin/problem/create">{{ $t('m.Create_Problem') }}</el-menu-item>
+            <el-menu-item index="/admin/problem/tag">{{ $t('m.Admin_Tag') }}</el-menu-item>
+            <el-menu-item
+              v-if="isSuperAdmin || isProblemAdmin"
+              index="/admin/problem/difficulty"
+            >
+              {{ $t('m.Problem_Difficulty_Admin') }}
+            </el-menu-item>
+            <el-menu-item
+              v-if="isSuperAdmin || isProblemAdmin"
+              index="/admin/group-problem/apply"
+            >
+              {{ $t('m.Admin_Group_Apply_Problem') }}
+            </el-menu-item>
+            <el-menu-item
+              v-if="isSuperAdmin || isProblemAdmin"
+              index="/admin/problem/batch-operation"
+            >
+              {{ $t('m.Export_Import_Problem') }}
+          </el-menu-item>
+        </el-sub-menu>
+          <el-sub-menu index="mobile-training">
+            <template #title>
+              <el-icon class="mobile-drawer-icon"><TrainingIcon /></el-icon>
+              <span>{{ $t('m.Training_Admin') }}</span>
+            </template>
+            <el-menu-item index="/admin/training">{{ $t('m.Training_List') }}</el-menu-item>
+            <el-menu-item index="/admin/training/create">{{ $t('m.Create_Training') }}</el-menu-item>
+            <el-menu-item index="/admin/training/category">{{ $t('m.Admin_Category') }}</el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="mobile-contest">
+            <template #title>
+              <i class="fa fa-trophy mobile-drawer-icon"></i>
+              <span>{{ $t('m.Contest_Admin') }}</span>
+            </template>
+            <el-menu-item index="/admin/contest">{{ $t('m.Contest_List') }}</el-menu-item>
+            <el-menu-item index="/admin/contest/create">{{ $t('m.Create_Contest') }}</el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="mobile-discussion">
+            <template #title>
+              <i class="fa fa-comments mobile-drawer-icon"></i>
+              <span>{{ $t('m.Discussion') }}</span>
+            </template>
+            <el-menu-item index="/admin/discussion">{{ $t('m.Discussion_Admin') }}</el-menu-item>
+          </el-sub-menu>
+          <el-menu-item
             v-if="isSuperAdmin"
-            button
-            :ripple="false"
-            nested
-            :open="openSideMenu === 'general'"
-            @toggle-nested="openSideMenu = arguments[0] ? 'general' : ''"
+            index="/admin/daily-check-in"
+            @click="closeMobileDrawer"
           >
-            <mu-list-item-action>
-              <mu-icon value=":el-icon-menu" size="24"></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item-title>{{ $t('m.General') }}</mu-list-item-title>
-            <mu-list-item-action>
-              <mu-icon
-                class="toggle-icon"
-                size="24"
-                value=":el-icon-arrow-down"
-              ></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/user"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{ $t('m.User_Admin') }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/announcement"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Announcement_Admin')
-              }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/notice"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{ $t('m.SysNotice') }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/conf"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.System_Config')
-              }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/switch"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.System_Switch')
-              }}</mu-list-item-title>
-            </mu-list-item>
-          </mu-list-item>
-
-          <mu-list-item
-            button
-            :ripple="false"
-            nested
-            :open="openSideMenu === 'problem'"
-            @toggle-nested="openSideMenu = arguments[0] ? 'problem' : ''"
+            <i class="fa fa-calendar-check-o mobile-drawer-icon"></i>
+            {{ $t('m.Daily_Check_In_Admin') }}
+          </el-menu-item>
+          <el-menu-item
+            v-if="isSuperAdmin"
+            index="/admin/ai-assistant"
+            @click="closeMobileDrawer"
           >
-            <mu-list-item-action>
-              <mu-icon value=":fa fa-bars" size="24"></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item-title>{{ $t('m.Problem_Admin') }}</mu-list-item-title>
-            <mu-list-item-action>
-              <mu-icon
-                class="toggle-icon"
-                size="24"
-                value=":el-icon-arrow-down"
-              ></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/problems"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Problem_List')
-              }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/problem/create"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Create_Problem')
-              }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              v-if="isSuperAdmin || isProblemAdmin"
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/problem/tag"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{ $t('m.Admin_Tag') }}</mu-list-item-title>
-            </mu-list-item>
-
-            <mu-list-item
-              v-if="isSuperAdmin || isProblemAdmin"
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/group-problem/apply"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{ $t('m.Admin_Group_Apply_Problem') }}</mu-list-item-title>
-            </mu-list-item>
-
-            <mu-list-item
-              v-if="isSuperAdmin"
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/problem/batch-operation"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Export_Import_Problem')
-              }}</mu-list-item-title>
-            </mu-list-item>
-          </mu-list-item>
-
-          <mu-list-item
-            button
-            :ripple="false"
-            nested
-            :open="openSideMenu === 'training'"
-            @toggle-nested="openSideMenu = arguments[0] ? 'training' : ''"
-          >
-            <mu-list-item-action>
-              <mu-icon value=":el-icon-s-claim fa-size" size="24"></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item-title>{{
-              $t('m.Training_Admin')
-            }}</mu-list-item-title>
-            <mu-list-item-action>
-              <mu-icon
-                class="toggle-icon"
-                size="24"
-                value=":el-icon-arrow-down"
-              ></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/training"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Training_List')
-              }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/training/create"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Create_Training')
-              }}</mu-list-item-title>
-            </mu-list-item>
-
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/training/category"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Admin_Category')
-              }}</mu-list-item-title>
-            </mu-list-item>
-          </mu-list-item>
-
-          <mu-list-item
-            button
-            :ripple="false"
-            nested
-            :open="openSideMenu === 'contest'"
-            @toggle-nested="openSideMenu = arguments[0] ? 'contest' : ''"
-          >
-            <mu-list-item-action>
-              <mu-icon value=":fa fa-trophy fa-size" size="24"></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item-title>{{ $t('m.Contest_Admin') }}</mu-list-item-title>
-            <mu-list-item-action>
-              <mu-icon
-                class="toggle-icon"
-                size="24"
-                value=":el-icon-arrow-down"
-              ></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/contest"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Contest_List')
-              }}</mu-list-item-title>
-            </mu-list-item>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/contest/create"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Create_Contest')
-              }}</mu-list-item-title>
-            </mu-list-item>
-          </mu-list-item>
-
-          <mu-list-item
-            button
-            :ripple="false"
-            nested
-            :open="openSideMenu === 'discussion'"
-            @toggle-nested="openSideMenu = arguments[0] ? 'discussion' : ''"
-          >
-            <mu-list-item-action>
-              <mu-icon value=":fa fa-comments fa-size" size="24"></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item-title>{{ $t('m.Discussion') }}</mu-list-item-title>
-            <mu-list-item-action>
-              <mu-icon
-                class="toggle-icon"
-                size="24"
-                value=":el-icon-arrow-down"
-              ></mu-icon>
-            </mu-list-item-action>
-            <mu-list-item
-              button
-              :ripple="false"
-              slot="nested"
-              to="/admin/discussion"
-              @click="opendrawer = !opendrawer"
-              active-class="mobile-menu-active"
-            >
-              <mu-list-item-title>{{
-                $t('m.Discussion_Admin')
-              }}</mu-list-item-title>
-            </mu-list-item>
-          </mu-list-item>
-        </mu-list>
-      </mu-drawer>
+            <i class="fa fa-comments-o mobile-drawer-icon"></i>
+            {{ $t('m.AI_Assistant') }}
+          </el-menu-item>
+        </el-menu>
+      </el-drawer>
     </div>
     <div class="content-app">
-      <transition name="fadeInUp" mode="out-in">
-        <router-view></router-view>
-      </transition>
+      <router-view v-slot="{ Component }">
+        <transition name="fadeInUp" mode="out-in">
+          <component :is="Component"></component>
+        </transition>
+      </router-view>
       <div class="footer">
         Powered by
         <a
@@ -518,31 +322,36 @@
                 {{ getLanguageLabelByValue(this.webLanguage) }}</i
               ><i class="el-icon-arrow-up el-icon--right"></i>
             </span>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item 
-                  v-for="(lang, index) in languages"
-                  :key="index"
-                  :command="lang.value">{{ lang.label }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                    v-for="(lang, index) in languages"
+                    :key="index"
+                    :command="lang.value">{{ lang.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
           </el-dropdown>
         </span>
       </div>
     </div>
 
-    <el-dialog title="Latex Editor" :visible.sync="katexVisible" width="350px">
+    <el-dialog title="Latex Editor" v-model="katexVisible" width="350px">
       <KatexEditor></KatexEditor>
     </el-dialog>
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
+import { Menu as MenuIcon, Tickets as TrainingIcon } from '@element-plus/icons-vue';
 import { mapGetters } from 'vuex';
-const KatexEditor = () => import('@/components/admin/KatexEditor.vue');
+const KatexEditor = defineAsyncComponent(() => import('@/components/admin/KatexEditor.vue'));
 import api from '@/common/api';
 import mMessage from '@/common/message';
-import Avatar from 'vue-avatar';
+import Avatar from '@/components/common/Avatar.vue';
 import { languages, getLangLabelByValue } from '@/i18n';
+import backstageImage from '@/assets/backstage.png'
 export default {
   name: 'app',
   mounted() {
@@ -556,33 +365,36 @@ export default {
   },
   data() {
     return {
-      openusermenu: false,
-      openSideMenu: '',
       katexVisible: false,
       opendrawer: false,
       mobileNar: false,
       currentPath: '',
       routeList: [],
-      imgUrl: require('@/assets/backstage.png'),
+      imgUrl: backstageImage,
       languages:[]
     };
   },
   components: {
     KatexEditor,
     Avatar,
+    MenuIcon,
+    TrainingIcon,
   },
   methods: {
     handleCommand(command) {
       if (command === 'logout') {
         api.admin_logout().then((res) => {
           this.$router.push({ path: '/admin/login' });
-          mMessage.success(this.$i18n.t('m.Log_Out_Successfully'));
+          mMessage.success(this.$t('m.Log_Out_Successfully'));
           this.$store.commit('clearUserInfoAndToken');
         });
       }
     },
+    closeMobileDrawer() {
+      this.opendrawer = false;
+    },
     page_width() {
-      let screenWidth = window.screen.width;
+      let screenWidth = window.innerWidth;
       if (screenWidth < 992) {
         this.mobileNar = true;
       } else {
@@ -609,16 +421,10 @@ export default {
       'websiteConfig',
       'webLanguage',
     ]),
-    'window.screen.width'(newVal, oldVal) {
-      if (newVal < 992) {
-        this.mobileNar = true;
-      } else {
-        this.mobileNar = false;
-      }
-    },
   },
   watch: {
     $route() {
+      this.currentPath = this.$route.path;
       this.getBreadcrumb(); //监听路由变化
     },
   },
@@ -627,7 +433,9 @@ export default {
 
 <style scoped>
 .vertical_menu {
-  overflow: auto;
+  background-color: #fff;
+  overflow-x: hidden;
+  overflow-y: auto;
   width: 15%;
   height: 100%;
   position: fixed !important;
@@ -654,6 +462,12 @@ export default {
   margin-right: 5px;
   width: 24px;
 }
+.admin-menu-icon {
+  font-size: 18px;
+  margin-right: 5px;
+  vertical-align: middle;
+  width: 24px;
+}
 a {
   background-color: transparent;
 }
@@ -668,7 +482,7 @@ img {
 }
 
 .admin-container {
-  overflow: auto;
+  overflow-x: hidden;
   font-weight: 400;
   height: 100%;
   -webkit-font-smoothing: antialiased;
@@ -755,5 +569,61 @@ img {
 .drop-avatar {
   vertical-align: middle;
   margin-right: 10px;
+}
+.content-app {
+  min-width: 0;
+}
+.mobile-nav {
+  align-items: center;
+  background: #2196f3;
+  color: #fff;
+  display: flex;
+  height: 56px;
+  left: 0;
+  padding: 0 8px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 2500;
+}
+.mobile-nav-spacer {
+  height: 56px;
+}
+.mobile-nav-title {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 500;
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-nav-actions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+}
+.mobile-nav :deep(.el-button) {
+  color: #fff;
+  margin-left: 0;
+}
+.mobile-nav-button {
+  font-size: 20px;
+}
+.mobile-user-button {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.mobile-drawer-icon {
+  font-size: 18px;
+  margin-right: 10px;
+  text-align: center;
+  width: 24px;
+}
+:global(.admin-mobile-drawer .el-drawer__body) {
+  padding: 0;
+}
+:global(.admin-mobile-drawer .el-menu) {
+  border-right: 0;
 }
 </style>

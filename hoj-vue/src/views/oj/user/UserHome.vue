@@ -12,14 +12,15 @@
     <el-card>
       <div class="recent-login">
         <el-tooltip
-          :content="profile.recentLoginTime | localtime"
+          :content="$filters.localtime(profile.recentLoginTime)"
           placement="top"
         >
-          <el-tag type="success" effect="plain" size="medium">
-            <i class="fa fa-circle">
+          <el-tag type="success" effect="plain" size="default">
+            <i class="fa fa-circle recent-login-icon" aria-hidden="true"></i>
+            <span>
               {{ $t('m.Recent_login_time')
-              }}{{ profile.recentLoginTime | fromNow }}</i
-            >
+              }}{{ $filters.fromNow(profile.recentLoginTime) }}
+            </span>
           </el-tag>
         </el-tooltip>
       </div>
@@ -129,7 +130,7 @@
           <calendar-heatmap 
             :values="calendarHeatmapValue" 
             :end-date="calendarHeatmapEndDate"
-            :tooltipUnit="$t('m.Calendar_Tooltip_Uint')"
+            :tooltip-unit="$t('m.Calendar_Tooltip_Uint')"
             :locale="calendarHeatLocale"
             :range-color="['rgb(218, 226, 239)', '#9be9a8', '#40c463', '#30a14e', '#216e39']"
           >
@@ -158,29 +159,32 @@
                   {{ $t('m.Difficulty_Statistics') }}
                 </div>
                 <el-collapse accordion>
-                  <el-collapse-item v-for="(level, key) in PROBLEM_LEVEL" :key="key">
-                    <template slot="title">
+                  <el-collapse-item
+                    v-for="level in PROBLEM_LEVEL_OPTIONS"
+                    :key="level.value"
+                  >
+                    <template #title>
                       <div style="width: 100%;text-align: left;">
                         <el-tag
                         effect="dark"
-                        :style="getLevelColor(key)"
-                        size="medium">
-                        {{ getLevelName(key) }}
+                        :style="getLevelColor(level.value)"
+                        size="default">
+                        {{ getLevelName(level.value) }}
                         </el-tag>
                         <span class="card-p-count">
-                          {{ getProblemListCount(profile.solvedGroupByDifficulty[key])}} {{$t('m.Problems')}}
+                          {{ getProblemListCount(profile.solvedGroupByDifficulty[level.value])}} {{$t('m.Problems')}}
                         </span>
                       </div>
                     </template>
                     <div class="btns">
                       <div
                         class="problem-btn"
-                        v-for="(value, index) in profile.solvedGroupByDifficulty[key]"
+                        v-for="(value, index) in profile.solvedGroupByDifficulty[level.value]"
                         :key="index"
                       >
                         <el-button 
                           round
-                          :style="getLevelColor(key)"
+                          :style="getLevelColor(level.value)"
                           @click="goProblem(value.problemId)" 
                           size="small">{{
                           value.problemId
@@ -197,9 +201,9 @@
                     {{ $t('m.List_Solved_Problems') }}
                     <el-button
                       type="primary"
-                      icon="el-icon-refresh"
+                      :icon="legacyElementIcons['el-icon-refresh']"
                       circle
-                      size="mini"
+                      size="small"
                       @click="freshProblemDisplayID"
                     ></el-button>
                   </div>
@@ -230,10 +234,9 @@ import { mapActions } from 'vuex';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import { addCodeBtn } from '@/common/codeblock';
-import Avatar from 'vue-avatar';
-import 'vue-calendar-heatmap/dist/vue-calendar-heatmap.css'
-import { CalendarHeatmap } from 'vue-calendar-heatmap'
-import { PROBLEM_LEVEL } from '@/common/constants';
+import Avatar from '@/components/common/Avatar.vue';
+import CalendarHeatmap from '@/components/common/CalendarHeatmap.vue';
+import { PROBLEM_LEVEL_OPTIONS } from '@/common/constants';
 import utils from '@/common/utils';
 import Markdown from '@/components/oj/common/Markdown';
 export default {
@@ -256,16 +259,17 @@ export default {
         score: 0,
         solvedList: [],
         solvedGroupByDifficulty:null,
-        calendarHeatLocale:null,
-        calendarHeatmapValue:[],
-        calendarHeatmapEndDate:'',
-        loadingCalendarHeatmap:false,
-        loading:false,
       },
-      PROBLEM_LEVEL: {},
+      calendarHeatLocale:null,
+      calendarHeatmapValue:[],
+      calendarHeatmapEndDate:'',
+      loadingCalendarHeatmap:false,
+      loading:false,
+      PROBLEM_LEVEL_OPTIONS,
     };
   },
   created(){
+    this.setCalendarHeatLocale();
     const uid = this.$route.query.uid;
     const username = this.$route.query.username;
     api.getUserCalendarHeatmap(uid, username).then((res) => {
@@ -273,41 +277,42 @@ export default {
       this.calendarHeatmapEndDate = res.data.data.endDate;
       this.loadingCalendarHeatmap = true
     });
-    this.PROBLEM_LEVEL = Object.assign({}, PROBLEM_LEVEL);
   },
   mounted() {
-    this.calendarHeatLocale = {
-          months: [
-            this.$i18n.t('m.Jan'),
-            this.$i18n.t('m.Feb'), 
-            this.$i18n.t('m.Mar'),
-            this.$i18n.t('m.Apr'),
-            this.$i18n.t('m.May'),
-            this.$i18n.t('m.Jun'),
-            this.$i18n.t('m.Jul'),
-            this.$i18n.t('m.Aug'),
-            this.$i18n.t('m.Sep'),
-            this.$i18n.t('m.Oct'),
-            this.$i18n.t('m.Nov'),
-            this.$i18n.t('m.Dec')
-          ],
-          days: [
-            this.$i18n.t('m.Sun'),
-            this.$i18n.t('m.Mon'),
-            this.$i18n.t('m.Tue'),
-            this.$i18n.t('m.Wed'),
-            this.$i18n.t('m.Thu'),
-            this.$i18n.t('m.Fri'),
-            this.$i18n.t('m.Sat')
-          ],
-          on: this.$i18n.t('m.on'),
-          less: this.$i18n.t('m.Less'),
-          more: this.$i18n.t('m.More')
-    }
     this.init();
   },
   methods: {
     ...mapActions(['changeDomTitle']),
+    setCalendarHeatLocale() {
+      this.calendarHeatLocale = {
+        months: [
+          this.$t('m.Jan'),
+          this.$t('m.Feb'),
+          this.$t('m.Mar'),
+          this.$t('m.Apr'),
+          this.$t('m.May'),
+          this.$t('m.Jun'),
+          this.$t('m.Jul'),
+          this.$t('m.Aug'),
+          this.$t('m.Sep'),
+          this.$t('m.Oct'),
+          this.$t('m.Nov'),
+          this.$t('m.Dec')
+        ],
+        days: [
+          this.$t('m.Sun'),
+          this.$t('m.Mon'),
+          this.$t('m.Tue'),
+          this.$t('m.Wed'),
+          this.$t('m.Thu'),
+          this.$t('m.Fri'),
+          this.$t('m.Sat')
+        ],
+        on: this.$t('m.on'),
+        less: this.$t('m.Less'),
+        more: this.$t('m.More')
+      };
+    },
     init() {
       const uid = this.$route.query.uid;
       const username = this.$route.query.username;
@@ -332,7 +337,7 @@ export default {
     },
     freshProblemDisplayID() {
       this.init();
-      myMessage.success(this.$i18n.t('m.Update_Successfully'));
+      myMessage.success(this.$t('m.Update_Successfully'));
     },
     getSumScore(scoreList) {
       if (scoreList) {
@@ -369,35 +374,7 @@ export default {
       }
     },
     "$store.state.language"(newVal,oldVal){
-      console.log(newVal,oldVal)
-      this.calendarHeatLocale = {
-          months: [
-            this.$i18n.t('m.Jan'),
-            this.$i18n.t('m.Feb'), 
-            this.$i18n.t('m.Mar'),
-            this.$i18n.t('m.Apr'),
-            this.$i18n.t('m.May'),
-            this.$i18n.t('m.Jun'),
-            this.$i18n.t('m.Jul'),
-            this.$i18n.t('m.Aug'),
-            this.$i18n.t('m.Sep'),
-            this.$i18n.t('m.Oct'),
-            this.$i18n.t('m.Nov'),
-            this.$i18n.t('m.Dec')
-          ],
-          days: [
-            this.$i18n.t('m.Sun'),
-            this.$i18n.t('m.Mon'),
-            this.$i18n.t('m.Tue'),
-            this.$i18n.t('m.Wed'),
-            this.$i18n.t('m.Thu'),
-            this.$i18n.t('m.Fri'),
-            this.$i18n.t('m.Sat')
-          ],
-          on: this.$i18n.t('m.on'),
-          less: this.$i18n.t('m.Less'),
-          more: this.$i18n.t('m.More')
-      }
+      this.setCalendarHeatLocale();
     }
   },
 };
@@ -436,6 +413,10 @@ export default {
 .container p {
   margin-top: 8px;
   margin-bottom: 8px;
+}
+
+.recent-login-icon {
+  margin-right: 6px;
 }
 
 @media screen and (max-width: 1080px) {
@@ -558,27 +539,27 @@ export default {
   text-align: left;
   margin-bottom: 10px;
 }
-/deep/.vch__day__square {
+:deep(.vch__day__square) {
   cursor: pointer!important;
   transition: all .2s ease-in-out!important;
 }
-/deep/.vch__day__square:hover{
+:deep(.vch__day__square:hover){
   height: 11px !important;
   width: 11px !important;
 }
 
-/deep/svg.vch__wrapper rect.vch__day__square:hover {
+:deep(svg.vch__wrapper rect.vch__day__square:hover) {
   stroke: rgb(115, 179, 243) !important;
 }
 
-/deep/svg.vch__wrapper .vch__months__labels__wrapper text.vch__month__label,
-/deep/svg.vch__wrapper .vch__days__labels__wrapper text.vch__day__label,
-/deep/svg.vch__wrapper .vch__legend__wrapper text{
+:deep(svg.vch__wrapper .vch__months__labels__wrapper text.vch__month__label),
+:deep(svg.vch__wrapper .vch__days__labels__wrapper text.vch__day__label),
+:deep(svg.vch__wrapper .vch__legend__wrapper text){
   font-size: 0.5rem !important;
   font-weight: 600 !important;
 }
 
-/deep/rect{
+:deep(rect){
   rx: 2;
   ry: 2;
 }

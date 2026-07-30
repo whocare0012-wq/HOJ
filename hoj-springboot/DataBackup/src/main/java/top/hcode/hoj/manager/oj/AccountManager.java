@@ -4,7 +4,6 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.apache.shiro.SecurityUtils;
@@ -30,6 +29,7 @@ import top.hcode.hoj.pojo.vo.*;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
 import top.hcode.hoj.utils.RedisUtils;
+import top.hcode.hoj.utils.UserPasswordService;
 import top.hcode.hoj.validator.CommonValidator;
 
 import java.text.SimpleDateFormat;
@@ -46,6 +46,9 @@ public class AccountManager {
 
     @Autowired
     private RedisUtils redisUtils;
+
+    @Autowired
+    private UserPasswordService userPasswordService;
 
     @Autowired
     private UserInfoEntityService userInfoEntityService;
@@ -269,9 +272,9 @@ public class AccountManager {
                 .eq("uuid", userRolesVo.getUid());
         UserInfo userInfo = userInfoEntityService.getOne(userInfoQueryWrapper, false);
         // 与当前登录用户的密码进行比较判断
-        if (userInfo.getPassword().equals(SecureUtil.md5(oldPassword))) { // 如果相同，则进行修改密码操作
+        if (userPasswordService.matches(oldPassword, userInfo.getPassword())) {
             UpdateWrapper<UserInfo> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.set("password", SecureUtil.md5(newPassword))// 数据库用户密码全部用md5加密
+            updateWrapper.set("password", userPasswordService.encode(newPassword))
                     .eq("uuid", userRolesVo.getUid());
             boolean isOk = userInfoEntityService.update(updateWrapper);
             if (isOk) {
@@ -418,7 +421,7 @@ public class AccountManager {
         }
 
         // 与当前登录用户的密码进行比较判断
-        if (userInfo.getPassword().equals(SecureUtil.md5(password))) { // 如果相同，则进行修改操作
+        if (userPasswordService.matches(password, userInfo.getPassword())) {
             UpdateWrapper<UserInfo> updateWrapper = new UpdateWrapper<>();
             updateWrapper.set("email", newEmail)
                     .eq("uuid", userRolesVo.getUid());
@@ -467,17 +470,23 @@ public class AccountManager {
 
     public UserInfoVO changeUserInfo(UserInfoVO userInfoVo) throws StatusFailException {
 
+        // 获取当前登录的用户
+        AccountProfile userRolesVo = (AccountProfile) SecurityUtils.getSubject().getPrincipal();
+        UserInfo currentUserInfo = userInfoEntityService.getById(userRolesVo.getUid());
+
         commonValidator.validateContentLength(userInfoVo.getRealname(), "真实姓名",50);
-        commonValidator.validateContentLength(userInfoVo.getNickname(), "昵称",20);
+        // 兼容历史上已经存在的超长昵称：未修改昵称时允许保存其他资料，
+        // 一旦修改昵称，仍按当前长度限制校验。
+        if (currentUserInfo == null
+                || !Objects.equals(currentUserInfo.getNickname(), userInfoVo.getNickname())) {
+            commonValidator.validateContentLength(userInfoVo.getNickname(), "昵称",20);
+        }
         commonValidator.validateContentLength(userInfoVo.getSignature(), "个性简介",65535);
         commonValidator.validateContentLength(userInfoVo.getBlog(), "博客", 255);
         commonValidator.validateContentLength(userInfoVo.getGithub(), "Github", 255);
         commonValidator.validateContentLength(userInfoVo.getSchool(), "学校", 100);
         commonValidator.validateContentLength(userInfoVo.getNumber(), "学号", 200);
         commonValidator.validateContentLength(userInfoVo.getCfUsername(), "Codeforces用户名", 255);
-
-        // 获取当前登录的用户
-        AccountProfile userRolesVo = (AccountProfile) SecurityUtils.getSubject().getPrincipal();
 
         UpdateWrapper<UserInfo> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("uuid", userRolesVo.getUid())

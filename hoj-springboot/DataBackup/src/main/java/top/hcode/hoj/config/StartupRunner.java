@@ -158,6 +158,9 @@ public class StartupRunner implements CommandLineRunner {
     @Value("${forced-update-remote-judge-account}")
     private Boolean forcedUpdateRemoteJudgeAccount;
 
+    @Value("${startup-database-initialization-enabled:false}")
+    private Boolean startupDatabaseInitializationEnabled;
+
     @Resource
     private CheckLanguageConfig checkLanguageConfig;
 
@@ -171,13 +174,17 @@ public class StartupRunner implements CommandLineRunner {
 
         initSwitchConfig();
 
-        upsertHOJLanguageV2();
+        if (Boolean.TRUE.equals(startupDatabaseInitializationEnabled)) {
+            upsertHOJLanguageV2();
 //      upsertHOJLanguage("PHP", "PyPy2", "PyPy3", "JavaScript Node", "JavaScript V8");
 //      checkAllLanguageUpdate();
 
-        checkLanguageUpdate();
+            checkLanguageUpdate();
 
-        upsertHOJLanguageV3();
+            upsertHOJLanguageV3();
+        } else {
+            log.info("[Init System Config] Startup database initialization is disabled; existing business data will not be changed.");
+        }
 
     }
 
@@ -337,10 +344,10 @@ public class StartupRunner implements CommandLineRunner {
         }
 
         if (isChanged) {
-            nacosSwitchConfig.publishWebConfig();
+            nacosSwitchConfig.publishSwitchConfig();
         }
 
-        if (openRemoteJudge.equals("true")) {
+        if (Boolean.TRUE.equals(startupDatabaseInitializationEnabled) && Boolean.parseBoolean(openRemoteJudge)) {
             // 初始化清空表
             remoteJudgeAccountEntityService.remove(new QueryWrapper<>());
             addRemoteJudgeAccountToMySQL(Constants.RemoteOJ.HDU.getName(),
@@ -379,9 +386,11 @@ public class StartupRunner implements CommandLineRunner {
 
 
         if (CollectionUtils.isEmpty(usernameList) || CollectionUtils.isEmpty(passwordList) || usernameList.size() != passwordList.size()) {
-            log.error("[Init System Config] [{}]: There is no account or password configured for remote judge, " +
-                            "username list:{}, password list:{}", oj, Arrays.toString(usernameList.toArray()),
-                    Arrays.toString(passwordList.toArray()));
+            int usernameCount = usernameList == null ? 0 : usernameList.size();
+            int passwordCount = passwordList == null ? 0 : passwordList.size();
+            log.warn("[Init System Config] [{}]: Remote judge account configuration is invalid, username count:[{}], password count:[{}]",
+                    oj, usernameCount, passwordCount);
+            return;
         }
 
         List<RemoteJudgeAccount> remoteAccountList = new LinkedList<>();

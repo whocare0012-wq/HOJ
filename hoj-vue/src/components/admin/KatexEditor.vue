@@ -5,12 +5,12 @@
         type="textarea"
         v-model="input"
         @change="changeInput"
-        @keyup.enter.native="changeInput"
+        @keyup.enter="changeInput"
       ></el-input>
     </el-form-item>
 
     <el-form-item label="Output"> </el-form-item>
-    <div v-html="text"></div>
+    <div v-dompurify-html="text"></div>
   </el-form>
 </template>
 

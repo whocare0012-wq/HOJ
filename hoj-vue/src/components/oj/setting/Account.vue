@@ -29,13 +29,14 @@
             v-model="visible.passwordSlideBlock"
             trigger="click"
           >
-            <el-button
-              type="primary"
-              slot="reference"
-              :loading="loading.btnPassword"
-              :disabled="disabled.btnPassword"
-              >{{ $t('m.Update_Password') }}</el-button
-            >
+            <template #reference>
+              <el-button
+                type="primary"
+                  :loading="loading.btnPassword"
+                :disabled="disabled.btnPassword"
+                >{{ $t('m.Update_Password') }}</el-button
+              >
+            </template>
             <slide-verify
               :l="42"
               :r="10"
@@ -94,13 +95,18 @@
               <el-input v-model="formEmail.oldEmail" disabled />
             </el-form-item>
             <el-form-item :label="$t('m.New_Email')" prop="newEmail">
-              <el-input v-model="formEmail.newEmail">
-                <el-button slot="append"
-                @click="getChangeEmailCode"
-                :loading="loading.btnSendEmail"
-                icon="el-icon-message">
-                {{$t('m.Get_Captcha')}}
-              </el-button>
+              <el-input
+                v-model="formEmail.newEmail"
+                class="email-captcha-input"
+              >
+                <template #append>
+                  <el-button
+                  @click="getChangeEmailCode"
+                  :loading="loading.btnSendEmail"
+                  :icon="legacyElementIcons['el-icon-message']">
+                  {{$t('m.Get_Captcha')}}
+                </el-button>
+                </template>
               </el-input>
             </el-form-item>
             <el-form-item :label="$t('m.Captcha')" prop="code">
@@ -113,13 +119,14 @@
             v-model="visible.emailSlideBlock"
             trigger="click"
           >
-            <el-button
-              type="primary"
-              slot="reference"
-              :loading="loading.btnEmailLoading"
-              :disabled="disabled.btnEmail"
-              >{{ $t('m.Update_Email') }}</el-button
-            >
+            <template #reference>
+              <el-button
+                type="primary"
+                :loading="loading.btnEmail"
+                :disabled="disabled.btnEmail"
+                >{{ $t('m.Update_Email') }}</el-button
+              >
+            </template>
             <slide-verify
               :l="42"
               :r="10"
@@ -165,25 +172,25 @@
 <script>
 import api from '@/common/api';
 import myMessage from '@/common/message';
-import 'element-ui/lib/theme-chalk/display.css';
+import 'element-plus/theme-chalk/display.css';
 export default {
   data() {
     const oldPasswordCheck = [
       {
         required: true,
         trigger: 'blur',
-        message: this.$i18n.t('m.The_current_password_cannot_be_empty'),
+        message: this.$t('m.The_current_password_cannot_be_empty'),
       },
       {
         trigger: 'blur',
         min: 6,
         max: 20,
-        message: this.$i18n.t('m.Password_Check_Between'),
+        message: this.$t('m.Password_Check_Between'),
       },
     ];
     const CheckAgainPassword = (rule, value, callback) => {
       if (value !== this.formPassword.newPassword) {
-        callback(new Error(this.$i18n.t('m.Password_does_not_match')));
+        return callback(new Error(this.$t('m.Password_does_not_match')));
       }
       callback();
     };
@@ -191,11 +198,11 @@ export default {
       if (this.formPassword.oldPassword !== '') {
         if (this.formPassword.oldPassword === this.formPassword.newPassword) {
           callback(
-            new Error(this.$i18n.t('m.The_new_password_does_not_change'))
+            new Error(this.$t('m.The_new_password_does_not_change'))
           );
         } else {
           // 对第二个密码框再次验证
-          this.$refs.formPassword.validateField('again_password');
+          this.$refs.formPassword.validateField('againPassword');
         }
       }
       callback();
@@ -203,7 +210,7 @@ export default {
     const CheckEmail = (rule, value, callback) => {
       if (this.formEmail.oldEmail !== '') {
         if (this.formEmail.oldEmail === this.formEmail.newEmail) {
-          callback(new Error(this.$i18n.t('m.The_new_email_does_not_change')));
+          callback(new Error(this.$t('m.The_new_email_does_not_change')));
         }
       }
       callback();
@@ -256,13 +263,13 @@ export default {
           {
             required: true,
             trigger: 'blur',
-            message: this.$i18n.t('m.The_new_password_cannot_be_empty'),
+            message: this.$t('m.The_new_password_cannot_be_empty'),
           },
           {
             trigger: 'blur',
             min: 6,
             max: 20,
-            message: this.$i18n.t('m.Password_Check_Between'),
+            message: this.$t('m.Password_Check_Between'),
           },
           { validator: CheckNewPassword, trigger: 'blur' },
         ],
@@ -270,7 +277,7 @@ export default {
           {
             required: true,
             trigger: 'blur',
-            message: this.$i18n.t('m.Password_Again_Check_Required'),
+            message: this.$t('m.Password_Again_Check_Required'),
           },
           { validator: CheckAgainPassword, trigger: 'blur' },
         ],
@@ -280,20 +287,20 @@ export default {
         newEmail: [
           {
             required: true,
-            message: this.$i18n.t('m.Email_Check_Required'),
+            message: this.$t('m.Email_Check_Required'),
             trigger: 'blur',
           },
           {
             type: 'email',
             trigger: 'change',
-            message: this.$i18n.t('m.Email_Check_Format'),
+            message: this.$t('m.Email_Check_Format'),
           },
           { validator: CheckEmail, trigger: 'blur' },
         ],
         code:[
           {
               required: true,
-              message: this.$i18n.t('m.Code_Check_Required'),
+              message: this.$t('m.Code_Check_Required'),
               trigger: 'blur',
           },
         ]
@@ -336,10 +343,10 @@ export default {
             (res) => {
               this.loading.btnPassword = false;
               if (res.data.data.code == 200) {
-                myMessage.success(this.$i18n.t('m.Update_Successfully'));
+                myMessage.success(this.$t('m.Update_Successfully'));
                 this.visible.passwordAlert = {
                   show: true,
-                  title: this.$i18n.t('m.Update_Successfully'),
+                  title: this.$t('m.Update_Successfully'),
                   type: 'success',
                   description: res.data.data.msg,
                 };
@@ -351,7 +358,7 @@ export default {
                 myMessage.error(res.data.data.msg);
                 this.visible.passwordAlert = {
                   show: true,
-                  title: this.$i18n.t('m.Update_Failed'),
+                  title: this.$t('m.Update_Failed'),
                   type: 'warning',
                   description: res.data.data.msg,
                 };
@@ -370,22 +377,24 @@ export default {
     },
     getChangeEmailCode(){
       if(!this.formEmail.newEmail){
-        myMessage.error(this.$i18n.t('m.The_new_email_cannot_be_empty'));
+        myMessage.error(this.$t('m.The_new_email_cannot_be_empty'));
+        return;
       }
       var emailReg = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
       if (!emailReg.test(this.formEmail.newEmail)) {
-        mMessage.error(this.$i18n.t('m.Email_Check_Format'));
+        myMessage.error(this.$t('m.Email_Check_Format'));
         return;
       }
       if (this.formEmail.oldEmail === this.formEmail.newEmail) {
-        myMessage.error(this.$i18n.t('m.The_new_email_does_not_change'));
+        myMessage.error(this.$t('m.The_new_email_does_not_change'));
+        return;
       }
       this.loading.btnSendEmail = true;
       api.getChangeEmailCode(this.formEmail.newEmail).then((res)=>{
-        myMessage.success(this.$i18n.t('m.Change_Send_Email_Msg'));
+        myMessage.success(this.$t('m.Change_Send_Email_Msg'));
         this.$notify.success({
-          title: this.$i18n.t('m.Success'),
-          message: this.$i18n.t('m.Change_Send_Email_Msg'),
+          title: this.$t('m.Success'),
+          message: this.$t('m.Change_Send_Email_Msg'),
           duration: 5000,
           offset: 50
         });
@@ -412,10 +421,10 @@ export default {
             (res) => {
               this.loading.btnEmail = false;
               if (res.data.data.code == 200) {
-                myMessage.success(this.$i18n.t('m.Update_Successfully'));
+                myMessage.success(this.$t('m.Update_Successfully'));
                 this.visible.emailAlert = {
                   show: true,
-                  title: this.$i18n.t('m.Update_Successfully'),
+                  title: this.$t('m.Update_Successfully'),
                   type: 'success',
                   description: res.data.data.msg,
                 };
@@ -427,7 +436,7 @@ export default {
                 myMessage.error(res.data.data.msg);
                 this.visible.emailAlert = {
                   show: true,
-                  title: this.$i18n.t('m.Update_Failed'),
+                  title: this.$t('m.Update_Failed'),
                   type: 'warning',
                   description: res.data.data.msg,
                 };
@@ -445,12 +454,12 @@ export default {
       });
     },
     onAgain(type) {
-      if ((type = 'password')) {
+      if (type === 'password') {
         this.$refs.passwordSlideBlock.reset();
       } else {
         this.$refs.emailSlideBlock.reset();
       }
-      myMessage.warning(this.$i18n.t('m.Guess_robot'));
+      myMessage.warning(this.$t('m.Guess_robot'));
     },
   },
 };
@@ -470,10 +479,55 @@ export default {
 .right {
   text-align: center;
 }
-/deep/ .el-input__inner {
+:deep(.el-input__inner) {
   height: 32px;
+  line-height: 40px;
 }
-/deep/ .el-form-item__label {
+:deep(.el-form-item) {
+  display: block;
+  margin-bottom: 22px;
+}
+:deep(.el-form-item__content) {
+  display: block;
+  line-height: 40px;
+}
+:deep(.el-input) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+}
+:deep(.el-input__wrapper) {
+  width: 100%;
+  min-height: 32px;
+  height: 32px;
+  padding: 1px 15px;
+}
+:deep(.email-captcha-input) {
+  min-width: 0;
+  box-sizing: border-box;
+}
+:deep(.email-captcha-input .el-input__wrapper) {
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+}
+:deep(.email-captcha-input .el-input-group__append) {
+  flex: 0 0 auto;
+  align-self: center;
+  height: 32px;
+  min-height: 32px;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+:deep(.el-form-item__label) {
+  display: block;
+  float: none;
+  width: auto;
+  height: 20px;
+  justify-content: flex-start;
+  padding-right: 0;
+  text-align: left;
   font-size: 12px;
   line-height: 20px;
 }

@@ -10,13 +10,13 @@
             type="search"
             size="medium"
             style="width:230px; margin-right: 1.7em"
-            @keyup.enter.native="filterByKeyword"
+            @keyup.enter="filterByKeyword"
             @search-click="filterByKeyword"
           ></vxe-input>
           <el-button
             class="hidden-xs-only"
             type="warning"
-            icon="el-icon-search"
+            :icon="legacyElementIcons['el-icon-search']"
             size="small"
             :disabled="!isAuthenticated"
             @click="handleOnlyMine(!query.onlyMine)"
@@ -26,7 +26,7 @@
           <el-button
             class="hidden-sm-and-up"
             type="warning"
-            icon="el-icon-search"
+            :icon="legacyElementIcons['el-icon-search']"
             size="small"
             :disabled="!isAuthenticated"
             @click="handleOnlyMine(!query.onlyMine)"
@@ -34,7 +34,7 @@
           <el-button
             class="hidden-xs-only"
             type="primary"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             size="small"
             @click="toCreateGroup"
           >
@@ -43,7 +43,7 @@
           <el-button
             class="hidden-sm-and-up"
             type="primary"
-            icon="el-icon-plus"
+            :icon="legacyElementIcons['el-icon-plus']"
             size="small"
             @click="toCreateGroup"
           ></el-button>
@@ -52,7 +52,7 @@
           <b class="group-category">{{ $t('m.Group_Auth') }}</b>
           <div>
             <el-tag
-              size="medium"
+              size="default"
               class="category-item"
               :effect="query.auth ? 'plain' : 'dark'"
               @click="filterByAuth(null)"
@@ -60,7 +60,7 @@
               {{ $t('m.All') }}
             </el-tag>
             <el-tag
-              size="medium"
+              size="default"
               class="category-item"
               v-for="(key, index) in GROUP_TYPE_REVERSE"
               :type="key.color"
@@ -107,58 +107,72 @@
           <el-row :gutter="1">
             <el-col :span="7" style="text-align: center;">
               <el-card
+                class="group-owner-card"
                 :body-style="{ padding: '0px' }"
-                style="border-radius: 10px; height: 170px"
               >
                 <template v-if="group.avatar">
                   <el-image
+                    class="group-avatar"
                     :src="group.avatar"
                     @click="toGroup(group.id)"
                     fit="cover"
-                    style="height: 135px; width: 100%"
                   ></el-image>
                 </template>
                 <template v-else>
                   <el-image
+                    class="group-avatar"
                     :src="defaultAvatar"
                     @click="toGroup(group.id)"
                     fit="cover"
-                    style="height: 135px; width: 100%"
                   ></el-image>
                 </template>
                 <el-link
-                  style="font-size: 16px"
+                  class="group-owner-link"
                   type="primary"
-                  :underline="false"
+                  underline="never"
                   @click="toUserHome(group.owner)"
-                  ><i class="el-icon-user-solid"></i> {{ group.owner }}
+                >
+                  <el-icon class="group-owner-icon">
+                    <component
+                      :is="legacyElementIcons['el-icon-user-solid']"
+                    />
+                  </el-icon>
+                  <span>{{ group.owner }}</span>
                 </el-link>
               </el-card>
             </el-col>
             <el-col :span="17" :class="GROUP_TYPE_REVERSE[group.auth].name">
               <el-card
+                class="group-info-card"
                 :body-style="{ padding: '0px' }"
-                style="border-radius: 10px; height: 170px"
               >
-                <div slot="header" style="height: 24px">
-                  <a class="group-name" @click="toGroup(group.id)">
-                    <Marquee :val="group.name" :id="group.id"></Marquee>
-                  </a>
-                </div>
+                <template #header>
+                  <div class="group-name-header">
+                    <a class="group-name" @click="toGroup(group.id)">
+                      <Marquee :val="group.name" :id="group.id"></Marquee>
+                    </a>
+                  </div>
+                </template>
                 <div class="group-brief">
                   <span>{{ group.brief }}</span>
                 </div>
                 <el-divider></el-divider>
-                <div style="font-size: 16px; padding: 3.5px">
-                  <span>
-                    <i class="el-icon-user-solid"></i>
-                    <i class="el-icon-close">{{ group.memberCount }}</i>
+                <div class="group-meta">
+                  <span class="group-meta-main">
+                    <span class="group-member-count">
+                      <el-icon class="group-member-icon">
+                        <component
+                          :is="legacyElementIcons['el-icon-user-solid']"
+                        />
+                      </el-icon>
+                      <span>× {{ group.memberCount }}</span>
+                    </span>
                     <el-tooltip
                       :content="$t('m.' + GROUP_TYPE_REVERSE[group.auth].tips)"
                     >
                       <el-tag
                         class="group-auth"
-                        size="medium"
+                        size="default"
                         :type="GROUP_TYPE_REVERSE[group.auth].color"
                         effect="plain"
                         @click="filterByAuth(group.auth)"
@@ -168,11 +182,13 @@
                         }}
                       </el-tag>
                     </el-tooltip>
-                    <el-tooltip :content="$t('m.Group_Hidden_Tips')">
+                    <el-tooltip
+                      v-if="!group.visible"
+                      :content="$t('m.Group_Hidden_Tips')"
+                    >
                       <el-tag
-                        v-if="!group.visible"
                         class="group-auth"
-                        size="medium"
+                        size="default"
                         type="primary"
                         effect="plain"
                       >
@@ -180,10 +196,11 @@
                       </el-tag>
                     </el-tooltip>
                   </span>
-                  <span style="float: right">
-                    <i class="el-icon-time">
-                      {{ group.gmtCreate | localtime((format = 'YYYY-MM-DD')) }}
-                    </i>
+                  <span class="group-date">
+                    <el-icon class="group-date-icon"><Clock /></el-icon>
+                    <span>{{
+                      $filters.localtime(group.gmtCreate, 'YYYY-MM-DD')
+                    }}</span>
                   </span>
                 </div>
               </el-card>
@@ -196,7 +213,7 @@
       :total="total"
       :page-size="query.limit"
       @on-change="currentChange"
-      :current.sync="query.currentPage"
+      v-model:current="query.currentPage"
       @on-page-size-change="onPageSizeChange"
       style="margin-top: 10px; margin-bottom: 30px;"
       :layout="'prev, pager, next, sizes'"
@@ -204,7 +221,7 @@
     ></Pagination>
     <el-dialog
       :title="$t('m.Create_Group')"
-      :visible.sync="showEditGroupDialog"
+      v-model="showEditGroupDialog"
       :fullscreen="true"
       @open="onOpenEditDialog"
     >
@@ -315,19 +332,21 @@
               required
               prop="description"
             >
-              <Editor :value.sync="group.description"></Editor>
+              <Editor v-model:value="group.description"></Editor>
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="danger" @click.native="showEditGroupDialog = false">{{
-          $t('m.Cancel')
-        }}</el-button>
-        <el-button type="primary" @click.native="submitGroup">{{
-          $t('m.OK')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="danger" @click="showEditGroupDialog = false">{{
+            $t('m.Cancel')
+          }}</el-button>
+          <el-button type="primary" @click="submitGroup">{{
+            $t('m.OK')
+          }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </el-row>
 </template>
@@ -340,12 +359,15 @@ import { mapGetters } from 'vuex';
 import Pagination from '@/components/oj/common/Pagination';
 import Editor from '@/components/admin/Editor';
 import Marquee from '@/components/oj/common/Marquee';
+import { Clock } from '@element-plus/icons-vue';
+import defaultAvatarImage from '@/assets/default.jpg'
 export default {
   name: 'GroupList',
   components: {
     Pagination,
     Editor,
     Marquee,
+    Clock,
   },
   data() {
     return {
@@ -372,72 +394,72 @@ export default {
         name: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Name_Check_Required'),
+            message: this.$t('m.Group_Name_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 25,
-            message: this.$i18n.t('m.Group_Name_Check_Min_Max'),
+            message: this.$t('m.Group_Name_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         shortName: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Short_Name_Check_Required'),
+            message: this.$t('m.Group_Short_Name_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 10,
-            message: this.$i18n.t('m.Group_Short_Name_Check_Min_Max'),
+            message: this.$t('m.Group_Short_Name_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         brief: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Brief_Check_Required'),
+            message: this.$t('m.Group_Brief_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 50,
-            message: this.$i18n.t('m.Group_Brief_Check_Min_Max'),
+            message: this.$t('m.Group_Brief_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         code: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Code_Check_Required'),
+            message: this.$t('m.Group_Code_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 6,
             max: 6,
-            message: this.$i18n.t('m.Group_Code_Check_Min_Max'),
+            message: this.$t('m.Group_Code_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
         auth: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Auth_Check_Required'),
+            message: this.$t('m.Group_Auth_Check_Required'),
             trigger: 'blur',
           },
         ],
         description: [
           {
             required: true,
-            message: this.$i18n.t('m.Group_Description_Check_Required'),
+            message: this.$t('m.Group_Description_Check_Required'),
             trigger: 'blur',
           },
           {
             min: 5,
             max: 1000,
-            message: this.$i18n.t('m.Group_Description_Check_Min_Max'),
+            message: this.$t('m.Group_Description_Check_Min_Max'),
             trigger: 'blur',
           },
         ],
@@ -445,7 +467,7 @@ export default {
       backupGroup: null,
       groupList: [],
       loading: false,
-      defaultAvatar: require('@/assets/default.jpg'),
+      defaultAvatar: defaultAvatarImage,
     };
   },
   mounted() {
@@ -509,7 +531,7 @@ export default {
     },
     toGroup(groupID) {
       if (!this.isAuthenticated) {
-        mMessage.warning(this.$i18n.t('m.Please_login_first'));
+        mMessage.warning(this.$t('m.Please_login_first'));
         this.$store.dispatch('changeModalStatus', { visible: true });
       } else {
         this.$router.push({
@@ -526,7 +548,7 @@ export default {
     },
     toCreateGroup() {
       if (!this.isAuthenticated) {
-        mMessage.warning(this.$i18n.t('m.Please_login_first'));
+        mMessage.warning(this.$t('m.Please_login_first'));
         this.$store.dispatch('changeModalStatus', { visible: true });
       } else {
         if (this.backupGroup) {
@@ -565,7 +587,7 @@ export default {
         if (valid) {
           let group = Object.assign({}, this.group);
           api.addGroup(group).then((res) => {
-            mMessage.success(this.$i18n.t('m.Create_Successfully'));
+            mMessage.success(this.$t('m.Create_Successfully'));
             this.showEditGroupDialog = false;
             this.init();
           });
@@ -627,12 +649,41 @@ section {
   font-size: 1.15rem;
   font-weight: 600;
 }
+.group-owner-card,
+.group-info-card {
+  height: 170px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.group-avatar {
+  display: block;
+  width: 100%;
+  height: 134px;
+  cursor: pointer;
+}
+.group-owner-link {
+  width: 100%;
+  height: 34px;
+  font-size: 16px;
+}
+:deep(.group-owner-link .el-link__inner) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.group-owner-icon {
+  font-size: 15px;
+}
+.group-name-header {
+  height: 24px;
+}
 
-/deep/ .Public .el-card {
+:deep(.Public .el-card) {
   border-color: rgba(103, 194, 58, 0.5);
 }
 
-/deep/ .Public .el-card__header {
+:deep(.Public .el-card__header) {
   background-color: rgba(103, 194, 58, 0.2);
 }
 
@@ -640,11 +691,11 @@ section {
   color: rgb(103, 194, 58);
 }
 
-/deep/ .Protected .el-card {
+:deep(.Protected .el-card) {
   border-color: rgba(230, 162, 60, 0.5);
 }
 
-/deep/ .Protected .el-card__header {
+:deep(.Protected .el-card__header) {
   background-color: rgba(230, 162, 60, 0.2);
 }
 
@@ -652,11 +703,11 @@ section {
   color: rgb(230, 162, 60);
 }
 
-/deep/ .Private .el-card {
+:deep(.Private .el-card) {
   border-color: rgba(245, 108, 108, 0.5);
 }
 
-/deep/ .Private .el-card__header {
+:deep(.Private .el-card__header) {
   background-color: rgba(245, 108, 108, 0.2);
 }
 
@@ -672,6 +723,43 @@ section {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.group-meta {
+  align-items: center;
+  display: flex;
+  font-size: 14px;
+  gap: 4px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 3.5px;
+}
+.group-meta-main {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+.group-member-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.group-member-icon {
+  font-size: 14px;
+}
+.group-date {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  gap: 3px;
+  font-size: 16px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.group-date-icon {
+  font-size: 16px;
 }
 .group-auth {
   margin-left: 3px;
@@ -681,11 +769,11 @@ section {
 .group-auth:hover {
   cursor: pointer;
 }
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   padding: 10px;
   margin-bottom: 4px;
 }
-/deep/ .el-divider--horizontal {
+:deep(.el-divider--horizontal) {
   margin: 0;
 }
 </style>

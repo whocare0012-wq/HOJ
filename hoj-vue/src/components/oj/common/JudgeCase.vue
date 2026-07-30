@@ -3,8 +3,8 @@
     :shadow="isSubtask?'never':'hover'"
     :class="isSubtask?'subtask-list-card':'default-list-card'"
   >
-    <template v-if="!isSubtask">
-      <div slot="header">
+    <template v-if="!isSubtask" #header>
+      <div>
         <span class="panel-title home-title">
           {{$t('m.Test_point_details')}}
         </span>
@@ -20,19 +20,21 @@
         :key="index"
       >
         <el-tooltip placement="top">
-          <div slot="content">
-            <template v-if="item.inputData">
-              {{ $t('m.Input_File') }}：{{ item.inputData }}<br />
-            </template>
+          <template #content>
+            <div>
+              <template v-if="item.inputData">
+                {{ $t('m.Input_File') }}：{{ item.inputData }}<br />
+              </template>
 
-            <template v-if="item.outputData">
-              {{ $t('m.Output_File') }}：{{ item.outputData }}<br />
-            </template>
+              <template v-if="item.outputData">
+                {{ $t('m.Output_File') }}：{{ item.outputData }}<br />
+              </template>
 
-            {{ $t('m.Case_tips') }}：{{
-                  item.userOutput ? item.userOutput : $t('m.Nothing')
-                }}
-          </div>
+              {{ $t('m.Case_tips') }}：{{
+                    item.userOutput ? item.userOutput : $t('m.Nothing')
+                  }}
+            </div>
+          </template>
           <div
             class="test-detail-item"
             :style="getTestCaseResultColor(item.status)"

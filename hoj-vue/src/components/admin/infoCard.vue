@@ -1,5 +1,13 @@
 <template>
-  <el-card :body-style="{ padding: 0, height: '100%' }" class="info-card">
+  <el-card
+    :body-style="{
+      padding: 0,
+      height: '100%',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+    }"
+    class="info-card"
+  >
     <el-row type="flex" class="info-card-container">
       <el-col
         :span="8"
@@ -12,8 +20,8 @@
         ></i>
       </el-col>
       <el-col :span="16" class="info-card-text">
-        <p :style="textStyle">{{ value }}</p>
-        <p style="font-weight: 300">{{ message }}</p>
+        <p class="info-card-value" :style="textStyle">{{ value }}</p>
+        <p class="info-card-message">{{ message }}</p>
       </el-col>
     </el-row>
   </el-card>
@@ -55,6 +63,9 @@ export default {
 <style  scoped>
 .height-100 {
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .info-card {
@@ -62,6 +73,8 @@ export default {
   margin-right: 10px;
   width: 250px;
   height: 90px;
+  box-sizing: border-box;
+  overflow: hidden;
   text-align: center;
   vertical-align: middle;
 }
@@ -76,11 +89,19 @@ export default {
   justify-content: center;
 }
 .info-card-icon {
-  line-height: 90px;
+  line-height: 1;
   color: white;
 }
 .info-card-text p {
   margin: 0;
+}
+.info-card-value {
+  line-height: 1;
+  margin-bottom: 6px !important;
+}
+.info-card-message {
+  line-height: 1.2;
+  font-weight: 300;
 }
 .info-card-text .minor-text {
   font-weight: 300;

@@ -220,6 +220,8 @@ public class Constants {
 
         MARKDOWN_FILE_FOLDER("/hoj/file/md"),
 
+        LEARNING_RESOURCE_FOLDER("/hoj/file/learning-resource"),
+
         PROBLEM_FILE_FOLDER("/hoj/file/problem"),
 
         CONTEST_TEXT_PRINT_FOLDER("/hoj/file/contest_print"),

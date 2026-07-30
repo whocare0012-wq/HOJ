@@ -3,11 +3,13 @@
     <el-row :gutter="20">
       <el-col :md="12" :sm="24">
         <el-card class="container">
-          <div slot="header">
-            <span class="panel-title home-title">{{
-              $t('m.Compiler') + ' & ' + $t('m.Example')
-            }}</span>
-          </div>
+          <template #header>
+            <div>
+              <span class="panel-title home-title">{{
+                $t('m.Compiler') + ' & ' + $t('m.Example')
+              }}</span>
+            </div>
+          </template>
           <div class="content">
             <ul>
               <li v-for="lang in languages" :key="lang.name">
@@ -30,11 +32,13 @@
       </el-col>
       <el-col :md="12" :sm="24">
         <el-card class="container">
-          <div slot="header">
-            <span class="panel-title home-title">{{
-              $t('m.Result_Explanation')
-            }}</span>
-          </div>
+          <template #header>
+            <div>
+              <span class="panel-title home-title">{{
+                $t('m.Result_Explanation')
+              }}</span>
+            </div>
+          </template>
           <ul class="result">
             <li>
               <span :class="getStatusColor(5)">Pending</span>
@@ -95,11 +99,13 @@
           </ul>
         </el-card>
         <el-card class="container">
-          <div slot="header">
-            <span class="panel-title home-title">{{
-              $t('m.Compile_Explanation')
-            }}</span>
-          </div>
+          <template #header>
+            <div>
+              <span class="panel-title home-title">{{
+                $t('m.Compile_Explanation')
+              }}</span>
+            </div>
+          </template>
           <ul class="result">
             <li>1. {{ $t('m.Compile_Tips1') }}</li>
             <li>2. {{ $t('m.Compile_Tips2') }}</li>
@@ -113,10 +119,11 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import utils from '@/common/utils';
 import { JUDGE_STATUS } from '@/common/constants';
 import { addCodeBtn } from '@/common/codeblock';
-const Highlight = () => import('@/components/oj/common/Highlight');
+const Highlight = defineAsyncComponent(() => import('@/components/oj/common/Highlight'));
 export default {
   components: {
     Highlight,
@@ -149,12 +156,15 @@ export default {
     });
   },
   watch: {
-    languages(newVal, oldVal) {
-      if (newVal.length > 0) {
-        this.$nextTick((_) => {
-          addCodeBtn();
-        });
-      }
+    languages: {
+      deep: true,
+      handler(newVal) {
+        if (newVal.length > 0) {
+          this.$nextTick((_) => {
+            addCodeBtn();
+          });
+        }
+      },
     },
   },
 };

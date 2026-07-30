@@ -7,10 +7,9 @@
         :inline="true"
         :size="130"
         color="#FFF"
-        style="margin-bottom:15px"
         :src="avatar"
       ></avatar>
-      <template v-if="!avatarOption.imgSrc">
+      <div v-if="!avatarOption.imgSrc" class="avatar-upload-wrap">
         <el-upload
           class="upload-container"
           action=""
@@ -22,25 +21,25 @@
             <p>{{ $t('m.Upload_avatar_hint') }}</p>
           </div>
         </el-upload>
-      </template>
+      </div>
 
       <template v-else>
         <el-row :gutter="20">
           <el-col :xs="24" :md="12">
             <div class="cropper-main inline">
-              <vueCropper
+              <VueCropper
                 ref="cropper"
-                autoCrop
+                auto-crop
                 fixed
-                :autoCropWidth="200"
-                :autoCropHeight="200"
+                :auto-crop-width="200"
+                :auto-crop-height="200"
                 :img="avatarOption.imgSrc"
-                :outputSize="avatarOption.size"
-                :outputType="avatarOption.outputType"
+                :output-size="avatarOption.size"
+                :output-type="avatarOption.outputType"
                 :info="true"
-                @realTime="realTime"
+                @real-time="realTime"
               >
-              </vueCropper>
+              </VueCropper>
             </div>
             <div class="cropper-btn">
               <el-tooltip
@@ -52,8 +51,8 @@
               >
                 <el-button
                   @click="rotate('left')"
-                  icon="el-icon-refresh-left"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-refresh-left']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
               <el-tooltip
@@ -65,8 +64,8 @@
               >
                 <el-button
                   @click="rotate('right')"
-                  icon="el-icon-refresh-right"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-refresh-right']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
               <el-tooltip
@@ -78,8 +77,8 @@
               >
                 <el-button
                   @click="reselect"
-                  icon="el-icon-refresh"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-refresh']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
               <el-tooltip
@@ -91,8 +90,8 @@
               >
                 <el-button
                   @click="finishCrop"
-                  icon="el-icon-check"
-                  size="mini"
+                  :icon="legacyElementIcons['el-icon-check']"
+                  size="small"
                 ></el-button>
               </el-tooltip>
             </div>
@@ -107,7 +106,7 @@
         </el-row>
       </template>
       <el-dialog
-        :visible.sync="uploadModalVisible"
+        v-model="uploadModalVisible"
         :title="$t('m.Upload')"
         width="350px"
       >
@@ -115,14 +114,16 @@
           <p class="notice">{{ $t('m.Your_new_avatar') + ':' }}</p>
           <img :src="uploadImgSrc" />
         </div>
-        <div slot="footer">
-          <el-button
-            @click="uploadAvatar"
-            :loading="loadingUploadBtn"
-            type="primary"
-            >{{ $t('m.Upload') }}</el-button
-          >
-        </div>
+        <template #footer>
+          <div>
+            <el-button
+              @click="uploadAvatar"
+              :loading="loadingUploadBtn"
+              type="primary"
+              >{{ $t('m.Upload') }}</el-button
+            >
+          </div>
+        </template>
       </el-dialog>
     </div>
 
@@ -159,13 +160,13 @@
           </el-form-item>
           <el-form-item :label="$t('m.Gender')">
             <el-radio-group v-model="formProfile.gender">
-              <el-radio label="male" border size="small">{{
+              <el-radio value="male" border size="small">{{
                 $t('m.Male')
               }}</el-radio>
-              <el-radio label="female" border size="small">{{
+              <el-radio value="female" border size="small">{{
                 $t('m.Female')
               }}</el-radio>
-              <el-radio label="secrecy" border size="small">{{
+              <el-radio value="secrecy" border size="small">{{
                 $t('m.Secrecy')
               }}</el-radio>
             </el-radio-group>
@@ -178,8 +179,9 @@
             $t('m.Signature')
           }}</label>
           <Editor
-            :value.sync="formProfile.signature"
-            style="padding: 5px;"
+            v-model:value="formProfile.signature"
+            class="profile-signature-editor"
+            auto-grow
           ></Editor>
         </el-col>
       </el-row>
@@ -196,13 +198,13 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
-import utils from '@/common/utils';
 import myMessage from '@/common/message';
-import { VueCropper } from 'vue-cropper';
-import Avatar from 'vue-avatar';
-import 'element-ui/lib/theme-chalk/display.css';
-const Editor = () => import('@/components/admin/Editor.vue');
+import VueCropper from '@/components/common/VueCropperAdapter.mjs';
+import Avatar from '@/components/common/Avatar.vue';
+import 'element-plus/theme-chalk/display.css';
+const Editor = defineAsyncComponent(() => import('@/components/admin/Editor.vue'));
 export default {
   components: {
     Avatar,
@@ -236,20 +238,27 @@ export default {
       },
     };
   },
-  mounted() {
-    let profile = this.$store.getters.userInfo;
-    Object.keys(this.formProfile).forEach((element) => {
-      if (profile[element] !== undefined) {
-        this.formProfile[element] = profile[element];
-      }
-    });
+  watch: {
+    userInfo: {
+      immediate: true,
+      handler(profile) {
+        this.applyProfile(profile);
+      },
+    },
   },
   methods: {
+    applyProfile(profile = {}) {
+      Object.keys(this.formProfile).forEach((field) => {
+        if (profile[field] !== undefined) {
+          this.formProfile[field] = profile[field] ?? '';
+        }
+      });
+    },
     checkFileType(file) {
       if (!/\.(gif|jpg|jpeg|png|bmp|webp|GIF|JPG|PNG|WEBP)$/.test(file.name)) {
         this.$notify.warning({
-          title: this.$i18n.t('m.File_type_not_support'),
-          message: file.name + this.$i18n.t('m.is_incorrect_format_file'),
+          title: this.$t('m.File_type_not_support'),
+          message: file.name + this.$t('m.is_incorrect_format_file'),
         });
         return false;
       }
@@ -259,8 +268,8 @@ export default {
       // max size is 2MB
       if (file.size > 2 * 1024 * 1024) {
         this.$notify.warning({
-          title: this.$i18n.t('m.Exceed_max_size_limit'),
-          message: file.name + this.$i18n.t('m.File_Exceed_Tips'),
+          title: this.$t('m.Exceed_max_size_limit'),
+          message: file.name + this.$t('m.File_Exceed_Tips'),
         });
         return false;
       }
@@ -289,9 +298,9 @@ export default {
       }
     },
     reselect() {
-      this.$confirm(this.$i18n.t('m.Cancel_Avater_Tips'), 'Tips', {
-        confirmButtonText: this.$i18n.t('m.OK'),
-        cancelButtonText: this.$i18n.t('m.Cancel'),
+      this.$confirm(this.$t('m.Cancel_Avater_Tips'), 'Tips', {
+        confirmButtonText: this.$t('m.OK'),
+        cancelButtonText: this.$t('m.Cancel'),
         type: 'warning',
       }).then(() => {
         this.avatarOption.imgSrc = '';
@@ -320,7 +329,7 @@ export default {
         }).then(
           (res) => {
             this.loadingUploadBtn = false;
-            myMessage.success(this.$i18n.t('m.Upload_Avatar_Successfully'));
+            myMessage.success(this.$t('m.Upload_Avatar_Successfully'));
             this.uploadModalVisible = false;
             this.avatarOption.imgSrc = '';
             this.$store.dispatch('setUserInfo', res.data.data);
@@ -333,15 +342,27 @@ export default {
     },
     updateUserInfo() {
       this.loadingSaveBtn = true;
-      let updateData = utils.filterEmptyValue(
-        Object.assign({}, this.formProfile)
-      );
-      if(!updateData.gender){
+      const editableFields = [
+        'realname',
+        'nickname',
+        'school',
+        'number',
+        'cfUsername',
+        'blog',
+        'github',
+        'gender',
+        'signature',
+      ];
+      const updateData = editableFields.reduce((profile, field) => {
+        profile[field] = this.formProfile[field] ?? '';
+        return profile;
+      }, {});
+      if (!updateData.gender) {
         updateData.gender = 'secrecy';
       }
       api.changeUserInfo(updateData).then(
         (res) => {
-          myMessage.success(this.$i18n.t('m.Update_Successfully'));
+          myMessage.success(this.$t('m.Update_Successfully'));
           this.$store.dispatch('setUserInfo', res.data.data);
           this.loadingSaveBtn = false;
         },
@@ -352,6 +373,9 @@ export default {
     },
   },
   computed: {
+    userInfo() {
+      return this.$store.getters.userInfo || {};
+    },
     avatar() {
       return this.$store.getters.userInfo.avatar;
     },
@@ -367,10 +391,38 @@ export default {
 </script>
 
 <style scoped>
-/deep/ .el-input__inner {
+:deep(.el-input__inner) {
   height: 32px;
+  line-height: 40px;
 }
-/deep/ .el-form-item__label {
+:deep(.el-form-item) {
+  display: block;
+  margin-bottom: 22px;
+}
+:deep(.el-form-item__content) {
+  display: block;
+  line-height: 40px;
+}
+:deep(.el-input) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+}
+:deep(.el-input__wrapper) {
+  width: 100%;
+  min-height: 32px;
+  height: 32px;
+  padding: 1px 15px;
+}
+:deep(.el-form-item__label) {
+  display: block;
+  float: none;
+  width: auto;
+  height: 20px;
+  justify-content: flex-start;
+  padding-right: 0;
+  text-align: left;
   font-size: 12px;
   line-height: 20px;
 }
@@ -387,15 +439,26 @@ export default {
   margin-bottom: 20px;
 }
 
-/deep/.upload-container .el-upload {
+.avatar-upload-wrap {
+  display: flex;
+  width: 100%;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+:deep(.upload-container) {
+  width: min(320px, 100%);
+}
+
+:deep(.upload-container .el-upload) {
   border: 1px dashed #d9d9d9;
   border-radius: 6px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  width: 320px;
+  width: 100%;
 }
-/deep/.upload-container .el-upload:hover {
+:deep(.upload-container .el-upload:hover) {
   border-color: #409eff;
 }
 .inline {
@@ -411,7 +474,7 @@ export default {
 
 .cropper-main {
   flex: none;
-  width: 400px;
+  width: min(400px, 100%);
   height: 300px;
 }
 .section-main .cropper-preview {
@@ -430,10 +493,10 @@ export default {
   vertical-align: top;
   padding: 10px;
 }
-/deep/ .el-dialog__body {
+:deep(.el-dialog__body) {
   padding: 0;
 }
-/deep/ .el-upload-dragger {
+:deep(.el-upload-dragger) {
   width: 100%;
   height: 100%;
 }
@@ -450,5 +513,9 @@ export default {
   bottom: 0;
   left: 50%;
   border: 1px dashed #eee;
+}
+.profile-signature-editor :deep(.md-editor) {
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(31, 45, 61, 0.08);
 }
 </style>

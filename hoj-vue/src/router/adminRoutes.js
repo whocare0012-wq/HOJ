@@ -12,6 +12,7 @@ const ProblemList= ()=>import('@/views/admin/problem/ProblemList')
 const AdminGroupProblemList= ()=>import('@/views/admin/problem/GroupProblemList')
 const Problem= ()=>import('@/views/admin/problem/Problem')
 const Tag= ()=>import('@/views/admin/problem/Tag')
+const ProblemDifficulty= ()=>import('@/views/admin/problem/Difficulty')
 const ProblemImportAndExport= ()=>import('@/views/admin/problem/ImportAndExport')
 const Contest= ()=>import('@/views/admin/contest/Contest')
 const ContestList= ()=>import('@/views/admin/contest/ContestList')
@@ -20,6 +21,8 @@ const TrainingList= ()=>import('@/views/admin/training/TrainingList')
 const TrainingProblemList= ()=>import('@/views/admin/training/TrainingProblemList')
 const TrainingCategory= ()=>import('@/views/admin/training/Category')
 const DiscussionList= ()=>import('@/views/admin/discussion/Discussion')
+const DailyCheckInAdmin= ()=>import('@/views/admin/daily-check-in/DailyCheckIn')
+const AiAssistantAdmin= ()=>import('@/views/admin/ai-assistant/AiAssistant')
 const adminRoutes= [
     {
       path: '/admin/login',
@@ -34,7 +37,7 @@ const adminRoutes= [
       children: [
         {
           path: '',
-          redirect: 'dashboard',
+          redirect: '/admin/dashboard',
           component: Dashboard,
           meta: { title: 'Dashboard' }
         },
@@ -97,6 +100,12 @@ const adminRoutes= [
           name: 'admin-problem-tag',
           component: Tag,
           meta: { title:'Admin Tag'},
+        },
+        {
+          path: 'problem/difficulty',
+          name: 'admin-problem-difficulty',
+          component: ProblemDifficulty,
+          meta: { title:'Problem Difficulty Admin'},
         },
         {
           path: 'group-problem/apply',
@@ -188,10 +197,22 @@ const adminRoutes= [
           component: DiscussionList,
           meta: { title:'Discussion Admin'}
         },
+        {
+          path: 'daily-check-in',
+          name: 'admin-daily-check-in',
+          component: DailyCheckInAdmin,
+          meta: { requireSuperAdmin: true, title:'Daily Check In Admin'}
+        },
+        {
+          path: 'ai-assistant',
+          name: 'admin-ai-assistant',
+          component: AiAssistantAdmin,
+          meta: { requireSuperAdmin: true, title:'AI Assistant'}
+        },
       ]
     },
     {
-      path: '/admin/*', redirect: '/admin/login'
+      path: '/admin/:pathMatch(.*)*', redirect: '/admin/login'
     }
   ]
 

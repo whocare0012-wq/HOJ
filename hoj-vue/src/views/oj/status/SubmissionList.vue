@@ -1,128 +1,131 @@
 <template>
   <el-row class="flex-container">
     <div id="main">
-      <el-card shadow>
-        <div slot="header">
-          <el-row :gutter="18">
-            <el-col
-              :md="4"
-              :lg="2"
-            >
-              <span class="panel-title hidden-md-and-down">{{
-                $t('m.Status')
-              }}</span>
-            </el-col>
-            <el-col
-              :xs="10"
-              :sm="8"
-              :md="4"
-              :lg="4"
-            >
-              <el-switch
-                style="display: block"
-                v-model="formFilter.onlyMine"
-                :active-text="$t('m.Mine')"
-                :width="40"
-                @change="handleOnlyMine"
-                :inactive-text="$t('m.All')"
+      <el-card shadow="always">
+        <template #header>
+          <div>
+            <el-row :gutter="18">
+              <el-col
+                :md="4"
+                :lg="2"
               >
-              </el-switch>
-            </el-col>
-
-            <el-col
-              :xs="10"
-              :sm="8"
-              :md="5"
-              :lg="4"
-              style="padding-top: 5px;"
-            >
-              <el-dropdown
-                class="drop-menu"
-                @command="handleStatusChange"
-                placement="bottom"
-                trigger="hover"
+                <span class="panel-title hidden-md-and-down">{{
+                  $t('m.Status')
+                }}</span>
+              </el-col>
+              <el-col
+                :xs="10"
+                :sm="8"
+                :md="4"
+                :lg="4"
               >
-                <span class="el-dropdown-link">
-                  {{ status }}
-                  <i class="el-icon-caret-bottom"></i>
-                </span>
-                <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item command="All">{{
-                    $t('m.All')
-                  }}</el-dropdown-item>
-                  <el-dropdown-item
-                    v-for="result in Object.keys(JUDGE_STATUS_LIST)"
-                    :key="result"
-                    :command="result"
-                  >
-                    {{ JUDGE_STATUS_LIST[result].name }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </el-dropdown>
-            </el-col>
+                <el-switch
+                  v-model="formFilter.onlyMine"
+                  :active-text="$t('m.Mine')"
+                  :width="40"
+                  @change="handleOnlyMine"
+                  :inactive-text="$t('m.All')"
+                >
+                </el-switch>
+              </el-col>
 
-            <el-col
-              :sm="8"
-              :md="5"
-              :lg="4"
-              class="hidden-xs-only"
-            >
-              <el-button
-                type="primary"
-                size="small"
-                icon="el-icon-refresh"
-                round
-                @click="getSubmissions"
-              >{{ $t('m.Refresh') }}</el-button>
-            </el-col>
-            <el-col
-              :xs="4"
-              class="hidden-sm-and-up"
-            >
-              <el-button
-                type="primary"
-                size="small"
-                icon="el-icon-refresh"
-                circle
-                @click="getSubmissions"
-              ></el-button>
-            </el-col>
+              <el-col
+                :xs="10"
+                :sm="8"
+                :md="5"
+                :lg="4"
+                class="status-filter"
+              >
+                <el-dropdown
+                  class="drop-menu"
+                  @command="handleStatusChange"
+                  placement="bottom"
+                  trigger="hover"
+                >
+                  <span class="el-dropdown-link">
+                    {{ status }}
+                    <i class="el-icon-caret-bottom"></i>
+                  </span>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                    <el-dropdown-item command="All">{{
+                      $t('m.All')
+                    }}</el-dropdown-item>
+                    <el-dropdown-item
+                      v-for="result in Object.keys(JUDGE_STATUS_LIST)"
+                      :key="result"
+                      :command="result"
+                    >
+                      {{ JUDGE_STATUS_LIST[result].name }}
+                    </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </el-col>
 
-            <el-col
-              :xs="24"
-              :sm="12"
-              :md="5"
-              :lg="5"
-              class="search"
-            >
-              <vxe-input
-                v-model="formFilter.problemID"
-                :placeholder="$t('m.Enter_Problem_ID')"
-                type="search"
-                size="medium"
-                @keyup.enter.native="handleQueryChange('probemID')"
-                @search-click="handleQueryChange('probemID')"
-              ></vxe-input>
-            </el-col>
-            <el-col
-              :xs="24"
-              :sm="12"
-              :md="5"
-              :lg="5"
-              class="search"
-            >
-              <vxe-input
-                v-model="formFilter.username"
-                :disabled="formFilter.onlyMine"
-                :placeholder="$t('m.Enter_Author')"
-                type="search"
-                size="medium"
-                @keyup.enter.native="handleQueryChange('username')"
-                @search-click="handleQueryChange('username')"
-              ></vxe-input>
-            </el-col>
-          </el-row>
-        </div>
+              <el-col
+                :sm="8"
+                :md="5"
+                :lg="4"
+                class="hidden-xs-only"
+              >
+                <el-button
+                  type="primary"
+                  size="small"
+                  :icon="legacyElementIcons['el-icon-refresh']"
+                  round
+                  @click="getSubmissions"
+                >{{ $t('m.Refresh') }}</el-button>
+              </el-col>
+              <el-col
+                :xs="4"
+                class="hidden-sm-and-up"
+              >
+                <el-button
+                  type="primary"
+                  size="small"
+                  :icon="legacyElementIcons['el-icon-refresh']"
+                  circle
+                  @click="getSubmissions"
+                ></el-button>
+              </el-col>
+
+              <el-col
+                :xs="24"
+                :sm="12"
+                :md="5"
+                :lg="5"
+                class="search"
+              >
+                <vxe-input
+                  v-model="formFilter.problemID"
+                  :placeholder="$t('m.Enter_Problem_ID')"
+                  type="search"
+                  size="medium"
+                  @keyup.enter="handleQueryChange('probemID')"
+                  @search-click="handleQueryChange('probemID')"
+                ></vxe-input>
+              </el-col>
+              <el-col
+                :xs="24"
+                :sm="12"
+                :md="5"
+                :lg="5"
+                class="search"
+              >
+                <vxe-input
+                  v-model="formFilter.username"
+                  :disabled="formFilter.onlyMine"
+                  :placeholder="$t('m.Enter_Author')"
+                  type="search"
+                  size="medium"
+                  @keyup.enter="handleQueryChange('username')"
+                  @search-click="handleQueryChange('username')"
+                ></vxe-input>
+              </el-col>
+            </el-row>
+          </div>
+        </template>
         <vxe-table
           border="inner"
           stripe
@@ -188,40 +191,43 @@
                   <div>
                     <span>
                       <el-button
-                        size="mini"
+                        class="manual-judge-action"
+                        size="small"
                         type="warning"
-                        icon="el-icon-edit"
+                        :icon="legacyElementIcons['el-icon-edit']"
                         @click="openChangeJudgeStatusDialog(row)"
                         :disabled="row.status == JUDGE_STATUS_RESERVE['Pending']"
                       >{{ $t('m.Modify_Evaluation') }}</el-button>
                       <el-button
-                        size="mini"
+                        class="manual-judge-action"
+                        size="small"
                         type="danger"
-                        icon="el-icon-close"
+                        :icon="legacyElementIcons['el-icon-close']"
                         :disabled="row.status == JUDGE_STATUS_RESERVE['ca']"
                         @click="cancelJudge(row)"
                       >{{ $t('m.Cancel_Evaluation') }}</el-button>
                     </span>
                   </div>
-                  <span
-                    :class="getStatusColor(row.status)"
-                    slot="reference"
-                  >
-                    <i
-                      class="el-icon-loading"
-                      v-if="
-                    row.status == JUDGE_STATUS_RESERVE['Pending'] ||
-                      row.status == JUDGE_STATUS_RESERVE['Compiling'] ||
-                      row.status == JUDGE_STATUS_RESERVE['Judging']
-                  "
-                    ></i>
-                    <i
-                      class="el-icon-refresh"
-                      v-if="row.status == JUDGE_STATUS_RESERVE['sf'] && row.uid == userInfo.uid"
-                      @click="reSubmit(row)"
-                    ></i>
-                    {{ JUDGE_STATUS[row.status].name }}
-                  </span>
+                  <template #reference>
+                    <span
+                      :class="getStatusColor(row.status)"
+                      >
+                      <i
+                        class="el-icon-loading"
+                        v-if="
+                      row.status == JUDGE_STATUS_RESERVE['Pending'] ||
+                        row.status == JUDGE_STATUS_RESERVE['Compiling'] ||
+                        row.status == JUDGE_STATUS_RESERVE['Judging']
+                    "
+                      ></i>
+                      <i
+                        class="el-icon-refresh"
+                        v-if="row.status == JUDGE_STATUS_RESERVE['sf'] && row.uid == userInfo.uid"
+                        @click="reSubmit(row)"
+                      ></i>
+                      {{ JUDGE_STATUS[row.status].name }}
+                    </span>
+                  </template>
                 </el-popover>
               </el-tooltip>
               <el-tooltip
@@ -243,20 +249,20 @@
                   height="16"
                 >
                   <path
-                    d="M706.1 489.4c24.3-36.7 38.6-80.6 38.6-128 0-128.1-103.9-232-232-232s-232 103.9-232 232c0 47.3 14.2 91.3 38.6 128C168.9 561.5 65 715.2 
+                    d="M706.1 489.4c24.3-36.7 38.6-80.6 38.6-128 0-128.1-103.9-232-232-232s-232 103.9-232 232c0 47.3 14.2 91.3 38.6 128C168.9 561.5 65 715.2
                   65 893.2h895.3c0.1-178-103.8-331.7-254.2-403.8z"
                     fill="#D6F3FA"
                     p-id="9873"
                   >
                   </path>
                   <path
-                    d="M587 800.7l86.3 61.1-72.6 33.4c-10.5 4.8-22.2-3.5-21.1-15l7.4-79.5z m274.9-205L685.4 844.8l-86.3-61.1 176.5-249.1 86.3 61.1zM825 612.3c3.1-4.4 
-                  2.1-10.5-2.3-13.6-4.4-3.1-10.5-2.1-13.6 2.3l-132 186.2c-3.1 4.4-2.1 10.5 2.3 13.6 4.4 3.1 10.5 2.1 13.6-2.3l132-186.2z m41.5-23.1c6.1-8.6 4-20.6-4.6-26.7l-55-39c-8.6-6.1-20.6-4-26.7 
-                  4.6l-1.6 2.2 86.3 61.1 1.6-2.2z m-75.4 200.1c0 10.4 8.5 19 19 19h78c10.4 0 19-8.5 19-19 0-10.4-8.5-19-19-19h-78c-10.5 0-19 8.5-19 19z m97 63.5H766.6c-10.4 0-19 8.5-19 19 0 10.4 8.5 
-                  19 19 19h121.5c10.4 0 19-8.5 19-19 0-10.4-8.6-19-19-19z m-231-275.2c-44.9-21-94.5-32.1-144.5-32.1-113.5 0-220.2 57.4-283.1 151.1-6.3 9.4-19 12-28.8 6.3-10.8-6.4-14-20.6-7-31 53.6-79.5 
-                  135.2-135.7 227-158.5-51.8-31.3-86.6-87.9-86.6-152.7 0-98.4 80.1-178.5 178.5-178.5s178.5 80.1 178.5 178.5c0 64.7-34.8 121.4-86.5 152.7 24.2 5.9 47.8 14.1 70.3 24.6 11.5 5.3 16.2 19.2 
-                  10.2 30.3-5.4 9.9-17.7 14.1-28 9.3z m-144.4-76.4c77.5 0 140.5-63 140.5-140.5s-63-140.5-140.5-140.5-140.5 63-140.5 140.5 63 140.5 140.5 140.5zM196.2 711c-11-6.1-24.9-1.7-30.3 9.7-3 6.2-5.8 
-                  12.5-8.4 18.8-4.8 11.6 1.2 24.9 13 29 10.8 3.7 22.7-1.6 27-12.2 2.4-5.8 4.9-11.5 7.6-17.1 5.1-10.3 1.1-22.7-8.9-28.2z m-28 64.5c-12.1-3.9-24.8 3.4-27.9 15.7-6 23.5-9.7 47.4-11.2 71.7-0.8 12.6 
+                    d="M587 800.7l86.3 61.1-72.6 33.4c-10.5 4.8-22.2-3.5-21.1-15l7.4-79.5z m274.9-205L685.4 844.8l-86.3-61.1 176.5-249.1 86.3 61.1zM825 612.3c3.1-4.4
+                  2.1-10.5-2.3-13.6-4.4-3.1-10.5-2.1-13.6 2.3l-132 186.2c-3.1 4.4-2.1 10.5 2.3 13.6 4.4 3.1 10.5 2.1 13.6-2.3l132-186.2z m41.5-23.1c6.1-8.6 4-20.6-4.6-26.7l-55-39c-8.6-6.1-20.6-4-26.7
+                  4.6l-1.6 2.2 86.3 61.1 1.6-2.2z m-75.4 200.1c0 10.4 8.5 19 19 19h78c10.4 0 19-8.5 19-19 0-10.4-8.5-19-19-19h-78c-10.5 0-19 8.5-19 19z m97 63.5H766.6c-10.4 0-19 8.5-19 19 0 10.4 8.5
+                  19 19 19h121.5c10.4 0 19-8.5 19-19 0-10.4-8.6-19-19-19z m-231-275.2c-44.9-21-94.5-32.1-144.5-32.1-113.5 0-220.2 57.4-283.1 151.1-6.3 9.4-19 12-28.8 6.3-10.8-6.4-14-20.6-7-31 53.6-79.5
+                  135.2-135.7 227-158.5-51.8-31.3-86.6-87.9-86.6-152.7 0-98.4 80.1-178.5 178.5-178.5s178.5 80.1 178.5 178.5c0 64.7-34.8 121.4-86.5 152.7 24.2 5.9 47.8 14.1 70.3 24.6 11.5 5.3 16.2 19.2
+                  10.2 30.3-5.4 9.9-17.7 14.1-28 9.3z m-144.4-76.4c77.5 0 140.5-63 140.5-140.5s-63-140.5-140.5-140.5-140.5 63-140.5 140.5 63 140.5 140.5 140.5zM196.2 711c-11-6.1-24.9-1.7-30.3 9.7-3 6.2-5.8
+                  12.5-8.4 18.8-4.8 11.6 1.2 24.9 13 29 10.8 3.7 22.7-1.6 27-12.2 2.4-5.8 4.9-11.5 7.6-17.1 5.1-10.3 1.1-22.7-8.9-28.2z m-28 64.5c-12.1-3.9-24.8 3.4-27.9 15.7-6 23.5-9.7 47.4-11.2 71.7-0.8 12.6
                   9.1 23.4 21.7 23.4 11.4 0 21-8.7 21.6-20.1 1.3-22 4.7-43.8 10.1-65.1 3-10.9-3.5-22.1-14.3-25.6z"
                     fill="#18BAE5"
                     p-id="9874"
@@ -275,29 +281,33 @@
             <template v-slot="{ row }">
               <template v-if="contestID && row.score != null">
                 <el-tag
+                  class="submission-score-tag"
                   effect="plain"
-                  size="medium"
-                  :type="JUDGE_STATUS[row.status]['type']"
+                  size="default"
+                  :type="getScoreTagType(row.status)"
                 >{{ row.score }}</el-tag>
               </template>
               <template v-else-if="row.score != null">
                 <el-tooltip placement="top">
-                  <div slot="content">
-                    {{ $t('m.Problem_Score') }}：{{
-                      row.score != null ? row.score : $t('m.Unknown')
-                    }}<br />{{ $t('m.OI_Rank_Score') }}：{{
-                      row.oiRankScore != null
-                        ? row.oiRankScore
-                        : $t('m.Unknown')
-                    }}<br />
-                    {{
-                      $t('m.OI_Rank_Calculation_Rule')
-                    }}：(score*0.1+difficulty*2)
-                  </div>
+                  <template #content>
+                    <div>
+                      {{ $t('m.Problem_Score') }}：{{
+                        row.score != null ? row.score : $t('m.Unknown')
+                      }}<br />{{ $t('m.OI_Rank_Score') }}：{{
+                        row.oiRankScore != null
+                          ? row.oiRankScore
+                          : $t('m.Unknown')
+                      }}<br />
+                      {{
+                        $t('m.OI_Rank_Calculation_Rule')
+                      }}：(score*0.1+difficulty*2)
+                    </div>
+                  </template>
                   <el-tag
+                    class="submission-score-tag"
                     effect="plain"
-                    size="medium"
-                    :type="JUDGE_STATUS[row.status]['type']"
+                    size="default"
+                    :type="getScoreTagType(row.status)"
                   >{{ row.score }}</el-tag>
                 </el-tooltip>
               </template>
@@ -307,18 +317,20 @@
                     row.status == JUDGE_STATUS_RESERVE['Judging']
                 ">
                 <el-tag
+                  class="submission-score-tag"
                   effect="plain"
-                  size="medium"
-                  :type="JUDGE_STATUS[row.status]['type']"
+                  size="default"
+                  :type="getScoreTagType(row.status)"
                 >
                   <i class="el-icon-loading"></i>
                 </el-tag>
               </template>
               <template v-else>
                 <el-tag
+                  class="submission-score-tag"
                   effect="plain"
-                  size="medium"
-                  :type="JUDGE_STATUS[row.status]['type']"
+                  size="default"
+                  :type="getScoreTagType(row.status)"
                 >--</el-tag>
               </template>
             </template>
@@ -405,10 +417,10 @@
             <template v-slot="{ row }">
               <span>
                 <el-tooltip
-                  :content="row.submitTime | localtime"
+                  :content="$filters.localtime(row.submitTime)"
                   placement="top"
                 >
-                  <span>{{ row.submitTime | fromNow }}</span>
+                  <span>{{ $filters.fromNow(row.submitTime) }}</span>
                 </el-tooltip>
               </span>
             </template>
@@ -434,7 +446,7 @@
         :total="total"
         :page-size="limit"
         @on-change="changeRoute"
-        :current.sync="currentPage"
+        v-model:current="currentPage"
         @on-page-size-change="onPageSizeChange"
         :layout="'prev, pager, next, sizes'"
       ></Pagination>
@@ -442,7 +454,7 @@
     <el-dialog
       :title="$t('m.Manually_Jugde')+'(Run ID：'+changeJudgeStatus.submitId+')'"
       width="350px"
-      :visible.sync="changeJudgeStatusDialogVisible"
+      v-model="changeJudgeStatusDialogVisible"
       :close-on-click-modal="false"
       center
     >
@@ -479,15 +491,17 @@
           ></el-input-number>
         </el-form-item>
       </el-form>
-      <span slot="footer">
-        <el-button
-          type="primary"
-          @click="manualJudge"
-          :disabled="changeJudgeStatus.status == JUDGE_STATUS_RESERVE['ca']"
-          :loading="changeJudgeStatusLoading"
-        >{{ $t('m.To_Update') }}
-        </el-button>
-      </span>
+      <template #footer>
+        <span>
+          <el-button
+            type="primary"
+            @click="manualJudge"
+            :disabled="changeJudgeStatus.status == JUDGE_STATUS_RESERVE['ca']"
+            :loading="changeJudgeStatusLoading"
+          >{{ $t('m.To_Update') }}
+          </el-button>
+        </span>
+      </template>
     </el-dialog>
   </el-row>
 </template>
@@ -504,7 +518,7 @@ import {
 import utils from "@/common/utils";
 import Pagination from "@/components/oj/common/Pagination";
 import myMessage from "@/common/message";
-import "element-ui/lib/theme-chalk/display.css";
+import "element-plus/theme-chalk/display.css";
 export default {
   name: "submissionList",
   components: {
@@ -632,7 +646,7 @@ export default {
         xTable.reloadRow(row, null, null);
 
         this.submissions[row.index] = res.data.data;
-        myMessage.success(this.$i18n.t("m.Resubmitted_Successfully"));
+        myMessage.success(this.$t("m.Resubmitted_Successfully"));
 
         // 加入待重判列表
         this.needCheckSubmitIds[row.submitId] = row.index;
@@ -663,7 +677,7 @@ export default {
           this.formFilter.username = "";
         } else {
           this.formFilter.onlyMine = false;
-          myMessage.error(this.$i18n.t("m.Please_login_first"));
+          myMessage.error(this.$t("m.Please_login_first"));
           return;
         }
       }
@@ -854,7 +868,7 @@ export default {
 
           this.submissions[row.index] = res.data.data;
           this.submissions[row.index].loading = false;
-          myMessage.success(this.$i18n.t("m.Rejudge_successfully"));
+          myMessage.success(this.$t("m.Rejudge_successfully"));
 
           // 加入待重判列表
           this.needCheckSubmitIds[row.submitId] = row.index;
@@ -876,7 +890,7 @@ export default {
           this.formFilter.username = "";
         } else {
           this.formFilter.onlyMine = false;
-          myMessage.error(this.$i18n.t("m.Please_login_first"));
+          myMessage.error(this.$t("m.Please_login_first"));
           return;
         }
       }
@@ -935,7 +949,14 @@ export default {
       }
     },
     getStatusColor(status) {
-      return "el-tag el-tag--medium status-" + JUDGE_STATUS[status]["color"];
+      return (
+        "el-tag submission-status-tag status-" +
+        JUDGE_STATUS[status]["color"]
+      );
+    },
+    getScoreTagType(status) {
+      const type = JUDGE_STATUS[status]["type"];
+      return type === "error" ? "" : type;
     },
     tableRowClassName({ row, rowIndex }) {
       if (row.username == this.userInfo.username && this.isAuthenticated) {
@@ -943,7 +964,7 @@ export default {
       }
     },
     disabledManualJudge(status){
-      return !this.isSuperAdmin || status == JUDGE_STATUS_RESERVE['Judging'] 
+      return !this.isSuperAdmin || status == JUDGE_STATUS_RESERVE['Judging']
                 || status == JUDGE_STATUS_RESERVE['Compiling']
                 || status == JUDGE_STATUS_RESERVE['ce']
     },
@@ -957,14 +978,14 @@ export default {
       this.changeJudgeStatusDialogVisible = true;
     },
     cancelJudge(row) {
-      this.$confirm(this.$i18n.t("m.Cancel_Judge_Tips"), "Run ID："+row.submitId, {
+      this.$confirm(this.$t("m.Cancel_Judge_Tips"), "Run ID："+row.submitId, {
         type: "warning",
       }).then(
         () => {
           api
             .admin_cancelJudge(row.submitId)
             .then((res) => {
-              myMessage.success(this.$i18n.t("m.Cancel_Successfully"));
+              myMessage.success(this.$t("m.Cancel_Successfully"));
               let data = res.data.data;
               row.status = data.status;
               row.score = data.score;
@@ -990,7 +1011,7 @@ export default {
         )
         .then(
           (res) => {
-            myMessage.success(this.$i18n.t("m.Update_Successfully"));
+            myMessage.success(this.$t("m.Update_Successfully"));
             let data = res.data.data;
             // 更新数据列表
             this.submissions[this.changeJudgeStatus.index].status = data.status;
@@ -1040,10 +1061,10 @@ export default {
     },
     status() {
       return this.formFilter.status === ""
-        ? this.$i18n.t("m.Status")
+        ? this.$t("m.Status")
         : JUDGE_STATUS[this.formFilter.status]
         ? JUDGE_STATUS[this.formFilter.status].name
-        : this.$i18n.t("m.Status");
+        : this.$t("m.Status");
     },
     rejudgeColumnVisible() {
       return this.isSuperAdmin;
@@ -1087,6 +1108,8 @@ export default {
 
 .flex-container #main {
   flex: auto;
+  min-width: 0;
+  width: 100%;
 }
 .flex-container .filter {
   margin-right: -10px;
@@ -1095,18 +1118,65 @@ export default {
   flex: none;
   width: 210px;
 }
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   border-bottom: 0px;
   padding-bottom: 0px;
   text-align: center;
 }
 
-/deep/ .el-dialog {
+:deep(.el-dialog) {
   border-radius: 6px !important;
   text-align: center;
 }
-/deep/ .el-switch {
-  padding-top: 6px;
+.status-filter {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+}
+:deep(.submission-status-tag),
+:deep(.submission-score-tag) {
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 26px;
+  vertical-align: middle;
+}
+:deep(.submission-score-tag.el-tag--primary) {
+  color: #409eff !important;
+  background-color: #fff !important;
+  border-color: #b3d8ff !important;
+}
+:deep(.submission-score-tag.el-tag--success) {
+  color: #67c23a !important;
+  background-color: #fff !important;
+  border-color: #c2e7b0 !important;
+}
+:deep(.submission-score-tag.el-tag--info) {
+  color: #909399 !important;
+  background-color: #fff !important;
+  border-color: #d3d4d6 !important;
+}
+:deep(.submission-score-tag.el-tag--warning) {
+  color: #e6a23c !important;
+  background-color: #fff !important;
+  border-color: #f5dab1 !important;
+}
+:deep(.submission-score-tag.el-tag--danger) {
+  color: #f56c6c !important;
+  background-color: #fff !important;
+  border-color: #fbc4c4 !important;
+}
+:deep(.manual-judge-action.el-button--small) {
+  height: 28px;
+  padding: 7px 15px;
+}
+:deep(.manual-judge-action + .manual-judge-action) {
+  margin-left: 10px;
+}
+:deep(.manual-judge-action .el-icon + span) {
+  margin-left: 5px;
 }
 @media only screen and (min-width: 768px) and (max-width: 992px) {
   .el-col-sm-12 {
@@ -1114,14 +1184,14 @@ export default {
   }
 }
 @media screen and (min-width: 1350px) {
-  /deep/ .vxe-table--body-wrapper {
+  :deep(.vxe-table--body-wrapper) {
     overflow-x: hidden !important;
   }
 }
-/deep/.vxe-table .vxe-cell{
+:deep(.vxe-table .vxe-cell){
   padding: 0 !important;
 }
-/deep/.el-dialog--center .el-dialog__body {
+:deep(.el-dialog--center .el-dialog__body) {
   padding-bottom: 0px !important;
 }
 .manual-judge-title {

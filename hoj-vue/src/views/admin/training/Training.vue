@@ -1,12 +1,14 @@
 <template>
-  <div class="view">
-    <el-card>
-      <div slot="header">
-        <span class="panel-title home-title">
-          {{ title }}
-        </span>
-      </div>
-      <el-form label-position="top">
+  <div class="view training-editor-page">
+    <el-card class="training-editor-card">
+      <template #header>
+        <div>
+          <span class="panel-title home-title">
+            {{ title }}
+          </span>
+        </div>
+      </template>
+      <el-form class="training-form" label-position="top">
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item :label="$t('m.Training_rank')" required>
@@ -30,12 +32,15 @@
           </el-col>
           <el-col :span="24">
             <el-form-item :label="$t('m.Training_Description')" required>
-              <Editor :value.sync="training.description"></Editor>
+              <Editor v-model:value="training.description"></Editor>
             </el-form-item>
           </el-col>
           <el-col :span="24">
             <el-form-item :label="$t('m.Category')" required>
-              <el-select v-model="trainingCategoryId">
+              <el-select
+                class="training-category-select"
+                v-model="trainingCategoryId"
+              >
                 <el-option
                   :label="category.name"
                   :value="category.id"
@@ -47,7 +52,7 @@
           </el-col>
           <el-col :md="8" :xs="24">
             <el-form-item :label="$t('m.Training_Auth')" required>
-              <el-select v-model="training.auth">
+              <el-select class="training-auth-select" v-model="training.auth">
                 <el-option
                   :label="$t('m.Public_Training')"
                   value="Public"
@@ -66,6 +71,7 @@
               :required="training.auth != 'Public'"
             >
               <el-input
+                class="training-password-input"
                 v-model="training.privatePwd"
                 :placeholder="$t('m.Training_Password')"
               ></el-input>
@@ -73,7 +79,11 @@
           </el-col>
         </el-row>
       </el-form>
-      <el-button type="primary" @click.native="saveTraining">{{
+      <el-button
+        class="training-save-button"
+        type="primary"
+        @click="saveTraining"
+        >{{
         $t('m.Save')
       }}</el-button>
     </el-card>
@@ -81,10 +91,11 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import { mapGetters } from 'vuex';
 import myMessage from '@/common/message';
-const Editor = () => import('@/components/admin/Editor.vue');
+const Editor = defineAsyncComponent(() => import('@/components/admin/Editor.vue'));
 export default {
   name: 'CreateTraining',
   components: {
@@ -110,10 +121,10 @@ export default {
   watch: {
     $route() {
       if (this.$route.name === 'admin-edit-training') {
-        this.title = this.$i18n.t('m.Edit_Training');
+        this.title = this.$t('m.Edit_Training');
         this.getTraining();
       } else {
-        this.title = this.$i18n.t('m.Create_Training');
+        this.title = this.$t('m.Create_Training');
         this.training = {
           rank: 1000,
           title: '',
@@ -121,6 +132,7 @@ export default {
           privatePwd: '',
           auth: 'Public',
         };
+        this.trainingCategoryId = null;
       }
     },
   },
@@ -133,10 +145,10 @@ export default {
         let data = res.data.data;
         if (!data || !data.length) {
           this.$alert(
-            this.$i18n.t('m.Redirect_To_Category'),
-            this.$i18n.t('m.Redirect'),
+            this.$t('m.Redirect_To_Category'),
+            this.$t('m.Redirect'),
             {
-              confirmButtonText: this.$i18n.t('m.OK'),
+              confirmButtonText: this.$t('m.OK'),
               showClose: false,
               callback: (action) => {
                 this.$router.push({
@@ -148,10 +160,10 @@ export default {
         } else {
           this.trainingCategoryList = data;
           if (this.$route.name === 'admin-edit-training') {
-            this.title = this.$i18n.t('m.Edit_Training');
+            this.title = this.$t('m.Edit_Training');
             this.getTraining();
           } else {
-            this.title = this.$i18n.t('m.Create_Training');
+            this.title = this.$t('m.Create_Training');
           }
         }
       });
@@ -171,40 +183,40 @@ export default {
     saveTraining() {
       if (!this.training.rank && this.training.rank != 0) {
         myMessage.error(
-          this.$i18n.t('m.Training_rank') + ' ' + this.$i18n.t('m.is_required')
+          this.$t('m.Training_rank') + ' ' + this.$t('m.is_required')
         );
         return;
       }
 
       if (!this.training.title) {
         myMessage.error(
-          this.$i18n.t('m.Training_Title') + ' ' + this.$i18n.t('m.is_required')
+          this.$t('m.Training_Title') + ' ' + this.$t('m.is_required')
         );
         return;
       }
       if (!this.training.description) {
         myMessage.error(
-          this.$i18n.t('m.Training_Description') +
+          this.$t('m.Training_Description') +
             ' ' +
-            this.$i18n.t('m.is_required')
+            this.$t('m.is_required')
         );
         return;
       }
 
       if (!this.trainingCategoryId) {
         myMessage.error(
-          this.$i18n.t('m.Training_Category') +
+          this.$t('m.Training_Category') +
             ' ' +
-            this.$i18n.t('m.is_required')
+            this.$t('m.is_required')
         );
         return;
       }
 
       if (this.training.auth != 'Public' && !this.training.privatePwd) {
         myMessage.error(
-          this.$i18n.t('m.Training_Password') +
+          this.$t('m.Training_Password') +
             ' ' +
-            this.$i18n.t('m.is_required')
+            this.$t('m.is_required')
         );
         return;
       }
@@ -239,6 +251,64 @@ export default {
 };
 </script>
 <style scoped>
+.training-editor-card {
+  display: block;
+}
+
+.training-editor-page :deep(.training-form .el-form-item) {
+  margin-bottom: 22px;
+}
+
+.training-editor-page :deep(.training-form .el-form-item__label) {
+  box-sizing: border-box;
+  height: 50px;
+  line-height: 40px;
+  margin: 0;
+  padding: 0 0 10px;
+}
+
+.training-editor-page :deep(.training-form .el-form-item__content) {
+  line-height: 40px;
+  min-height: 40px;
+}
+
+.training-editor-page :deep(.training-form .el-input__wrapper),
+.training-editor-page :deep(.training-form .el-select__wrapper) {
+  box-sizing: border-box;
+  min-height: 40px;
+}
+
+.training-editor-page :deep(.training-form .el-input-number) {
+  height: 40px;
+  line-height: 40px;
+  width: 180px;
+}
+
+.training-editor-page :deep(.training-form .el-input-number .el-input__wrapper) {
+  height: 40px;
+  padding-left: 50px;
+  padding-right: 50px;
+}
+
+.training-editor-page :deep(.training-form .el-input-number__decrease),
+.training-editor-page :deep(.training-form .el-input-number__increase) {
+  box-sizing: border-box;
+  height: 38px;
+  line-height: 38px;
+  width: 40px;
+}
+
+.training-category-select,
+.training-auth-select {
+  width: 217px;
+}
+
+.training-save-button {
+  box-sizing: border-box;
+  height: 40px;
+  padding: 12px 20px;
+}
+
 .userPreview {
   padding-left: 10px;
   padding-top: 20px;

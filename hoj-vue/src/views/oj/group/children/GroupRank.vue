@@ -6,14 +6,15 @@
             <el-input
             :placeholder="$t('m.Rank_Search_Placeholder')"
             v-model="query.searchUser"
-            @keyup.enter.native="filterByUserOrType"
+            @keyup.enter="filterByUserOrType"
             >
-            <el-button
-                slot="append"
-                icon="el-icon-search"
-                class="search-btn"
-                @click="filterByUserOrType"
-            ></el-button>
+            <template #append>
+              <el-button
+                    :icon="legacyElementIcons['el-icon-search']"
+                  class="search-btn"
+                  @click="filterByUserOrType"
+              ></el-button>
+            </template>
             </el-input>
             </span>
         </div>
@@ -37,7 +38,7 @@
         auto-resize
         style="font-weight: 500;"
       >
-        <vxe-table-column type="seq" min-width="50"></vxe-table-column>
+        <vxe-table-column type="seq" title="#" min-width="50"></vxe-table-column>
         <vxe-table-column
           field="username"
           :title="$t('m.User')"
@@ -109,8 +110,8 @@
 
     <Pagination
         :total="total"
-        :page-size.sync="query.limit"
-        :current.sync="query.page"
+        v-model:page-size="query.limit"
+        v-model:current="query.page"
         @on-change="currentChange"
         show-sizer
         @on-page-size-change="onPageSizeChange"
@@ -120,11 +121,12 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import api from '@/common/api';
 import utils from '@/common/utils';
 import { mapGetters } from 'vuex';
-import Avatar from 'vue-avatar';
-const Pagination = () => import('@/components/oj/common/Pagination');
+import Avatar from '@/components/common/Avatar.vue';
+const Pagination = defineAsyncComponent(() => import('@/components/oj/common/Pagination'));
 export default {
   name: 'group-rank',
   components: {
@@ -234,7 +236,7 @@ export default {
     float: right;
 }
 @media screen and (max-width: 768px) {
-  /deep/.el-card__body {
+  :deep(.el-card__body) {
     padding: 0 !important;
   }
   .swtich-type{
