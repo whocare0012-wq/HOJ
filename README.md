@@ -2,9 +2,11 @@
 
 基于 [HimitZH/HOJ](https://github.com/HimitZH/HOJ) 的社区改进版本。原版是 Himit_ZH 等贡献者开发的 Hcode Online Judge；本仓库是 [公开 fork](https://github.com/whocare0012-wq/HOJ)。原有代码仍归原作者及贡献者所有，本 fork 的新增和修改部分由相应贡献者负责。保留原项目的 [MIT 许可证](./LICENSE) 和版权声明。
 
+[![CI](https://github.com/whocare0012-wq/HOJ/actions/workflows/upgrade-ci.yml/badge.svg)](https://github.com/whocare0012-wq/HOJ/actions/workflows/upgrade-ci.yml)
+
 > Blockly 是生成 Python 代码的前端编辑模式，并非新增的独立判题语言。
 
-[English](./README-EN.md) · [部署与更新教程](./docs/docs/deploy/optimized.md) · [原版项目](https://github.com/HimitZH/HOJ)
+[English](./README-EN.md) · [部署与更新教程](./docs/docs/deploy/optimized.md) · [变更记录](./CHANGELOG.md) · [问题反馈](https://github.com/whocare0012-wq/HOJ/issues/new/choose) · [交流讨论](https://github.com/whocare0012-wq/HOJ/discussions) · [原版项目](https://github.com/HimitZH/HOJ)
 
 ## 与原版的主要区别
 
@@ -26,11 +28,29 @@
 - `sandbox/`：判题沙箱源码。
 - `sqlAndsetting/`：建表、通用初始化数据和迁移脚本。
 - `scripts/`：开发与验证脚本；其中本地栈脚本面向隔离测试环境。
-- `docs/`：项目文档。
+- `docs/`：项目文档及[历史升级记录](./docs/upgrade-notes/README.md)。
+
+## 快速验证源码
+
+```bash
+git clone https://github.com/whocare0012-wq/HOJ.git
+cd HOJ/hoj-vue
+npm ci
+npm audit --audit-level=high
+npm run build
+cd ../hoj-springboot
+mvn -B -ntp -pl DataBackup,JudgeServer -am test -DskipTests=false
+```
+
+这些命令验证源码和构建，不会启动完整 OJ。完整站点需要独立的 MySQL、Redis、Nacos、判题服务和私有配置，见下方教程。请勿使用生产题目或账号作为公开示例。
 
 ## 构建与部署
 
 前端要求 Node.js 20.9+；后端使用 JDK 8 与 Maven。构建命令、首次安装、已有站点更新、迁移、验证和回滚见 [部署与更新教程](./docs/docs/deploy/optimized.md)。本仓库没有可直接替换现有生产配置的完整 Compose 文件；不能把原版镜像更新命令当成本 fork 的发布命令。
+
+## 参与和支持
+
+发现错误请提交 [Issue](https://github.com/whocare0012-wq/HOJ/issues/new/choose)，使用问题可在 [Discussions](https://github.com/whocare0012-wq/HOJ/discussions) 交流。代码贡献见 [CONTRIBUTING.md](./CONTRIBUTING.md)，私密漏洞报告见 [SECURITY.md](./SECURITY.md)，其他支持方式见 [SUPPORT.md](./SUPPORT.md)。
 
 ## 公开仓库的数据边界
 

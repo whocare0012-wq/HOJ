@@ -59,8 +59,9 @@ jobs:
           MYSQL_ROOT_PASSWORD: hoj_phase2_only
         ports:
           - 3306:3306
+        # The bootstrap-only MySQL socket is not ready for schema import.
         options: >-
-          --health-cmd="MYSQL_PWD=hoj_phase2_only mysqladmin ping --user=root --silent"
+          --health-cmd="MYSQL_PWD=hoj_phase2_only mysqladmin ping --protocol=tcp --host=127.0.0.1 --port=3306 --user=root --silent"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20

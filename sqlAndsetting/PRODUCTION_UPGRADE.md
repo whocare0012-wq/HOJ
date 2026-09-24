@@ -1,5 +1,10 @@
 # Production database upgrade
 
+For a fresh, empty database, `hoj.sql` now includes the difficulty configuration
+table, default levels, OJ points columns, and points views. It seeds no user
+account. The CI compatibility job imports this file into an isolated MySQL 8
+instance. Never run this destructive seed against an existing database.
+
 Application startup does not modify the database unless
 `STARTUP_DATABASE_INITIALIZATION_ENABLED=true` is set explicitly.
 

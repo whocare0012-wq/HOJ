@@ -2,9 +2,11 @@
 
 A community fork of [HimitZH/HOJ](https://github.com/HimitZH/HOJ), the original Hcode Online Judge by Himit_ZH and other contributors. This repository is a [public GitHub fork](https://github.com/whocare0012-wq/HOJ). Original code remains attributed to its authors; contributors own their respective changes. The original [MIT license](./LICENSE) and copyright notice are retained.
 
+[![CI](https://github.com/whocare0012-wq/HOJ/actions/workflows/upgrade-ci.yml/badge.svg)](https://github.com/whocare0012-wq/HOJ/actions/workflows/upgrade-ci.yml)
+
 > Blockly is a visual frontend mode that generates Python code; it is not a separate judge runtime.
 
-[简体中文](./README.md) · [Deployment and updates (Chinese)](./docs/docs/deploy/optimized.md) · [Original HOJ](https://github.com/HimitZH/HOJ)
+[简体中文](./README.md) · [Deployment and updates (Chinese)](./docs/docs/deploy/optimized.md) · [Changelog](./CHANGELOG.md) · [Report a bug](https://github.com/whocare0012-wq/HOJ/issues/new/choose) · [Discussions](https://github.com/whocare0012-wq/HOJ/discussions) · [Original HOJ](https://github.com/HimitZH/HOJ)
 
 ## Changes relative to the original project
 
@@ -26,11 +28,29 @@ Existing judging languages, contests, groups, discussions, and remote judging co
 - `sandbox/`: judge sandbox source.
 - `sqlAndsetting/`: schema, generic seed data, and migrations.
 - `scripts/`: development and verification tools.
-- `docs/`: project documentation.
+- `docs/`: project documentation and [historical upgrade notes](./docs/upgrade-notes/README.md).
+
+## Quick source check
+
+```bash
+git clone https://github.com/whocare0012-wq/HOJ.git
+cd HOJ/hoj-vue
+npm ci
+npm audit --audit-level=high
+npm run build
+cd ../hoj-springboot
+mvn -B -ntp -pl DataBackup,JudgeServer -am test -DskipTests=false
+```
+
+These commands check and build the source; they do not start the full judge. A complete installation also needs isolated MySQL, Redis, Nacos, judge services, and private configuration. Never use production problem or account data in public examples.
 
 ## Build and deployment
 
 The frontend requires Node.js 20.9+; the backend uses JDK 8 and Maven. See the [deployment and update guide](./docs/docs/deploy/optimized.md) for build, installation, migration, verification, and rollback. This repository does not provide a complete production Compose file ready to replace an existing deployment. Pulling the original project's images will not deploy this fork's code.
+
+## Contributing and support
+
+Report reproducible problems through [Issues](https://github.com/whocare0012-wq/HOJ/issues/new/choose) and ask usage questions in [Discussions](https://github.com/whocare0012-wq/HOJ/discussions). See [CONTRIBUTING.md](./CONTRIBUTING.md), [SUPPORT.md](./SUPPORT.md), and [SECURITY.md](./SECURITY.md) for contributions, help, and private vulnerability reports.
 
 ## Public repository boundary
 

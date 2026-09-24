@@ -1294,6 +1294,24 @@ insert  into `role_auth`(`id`,`auth_id`,`role_id`,`gmt_create`,`gmt_modified`) v
 -- OJ points schema for fresh installations (also available as a standalone upgrade).
 -- MySQL 8.0. Back up all databases before applying. Run with the HOJ database selected.
 -- Re-runnable: historical denominators are captured once, never overwritten on rerun.
+CREATE TABLE IF NOT EXISTS `problem_difficulty_config` (
+  `difficulty_value` int unsigned NOT NULL,
+  `display_text` varchar(20) NOT NULL,
+  `border_color` varchar(7) NOT NULL,
+  `base_points` decimal(10,2) NOT NULL DEFAULT 10,
+  `sort_order` int unsigned NOT NULL DEFAULT 0,
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`difficulty_value`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `problem_difficulty_config`
+  (`difficulty_value`, `display_text`, `border_color`, `base_points`, `sort_order`)
+VALUES
+  (0, '简单', '#19BE6B', 10, 0),
+  (1, '中等', '#2D8CF0', 20, 1),
+  (2, '困难', '#ED3F14', 40, 2);
+
 SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='problem_difficulty_config' AND column_name='base_points'), 'SELECT 1', 'ALTER TABLE problem_difficulty_config ADD base_points DECIMAL(10,2) NULL');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 UPDATE problem_difficulty_config SET base_points=CASE difficulty_value WHEN 0 THEN 10 WHEN 1 THEN 20 WHEN 2 THEN 40 ELSE 10 END WHERE base_points IS NULL;
