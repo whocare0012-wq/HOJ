@@ -11,5 +11,6 @@
 - 补充反馈、贡献和私密漏洞报告入口；公开仓库排除题目包、账号与运维数据。
 - 修复全新 MySQL 8 初始化与 CI 等待时序；更新前端依赖并移除不再使用的旧文档站构建工具链。
 - 清理未被实际服务引用的 Log4j 1.x 管理项，更新 Hutool 与 Swagger UI；其他上游依赖告警仍需逐项评估。
+- 将 MySQL 驱动切换到官方维护的 `com.mysql:mysql-connector-j` 坐标，并更新 jsoup；已在隔离 MySQL 8 环境验证建库与数据库映射兼容性。
 
 原版 HOJ 的功能与历史贡献请参阅 [上游项目](https://github.com/HimitZH/HOJ)。
