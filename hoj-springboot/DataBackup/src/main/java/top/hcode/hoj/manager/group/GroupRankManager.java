@@ -90,10 +90,10 @@ public class GroupRankManager {
                 return new Page<>(currentPage, limit);
             }
             Page<OIRankVO> page = new Page<>(currentPage, limit);
-            return userRecordEntityService.getGroupRankList(page, gid, uidList, rankType, false);
+            return userRecordEntityService.getGroupRankList(page, gid, groupMemberUidList, uidList, rankType, false);
         } else {
             Page<OIRankVO> page = new Page<>(currentPage, limit);
-            return userRecordEntityService.getGroupRankList(page, gid, groupMemberUidList, rankType, true);
+            return userRecordEntityService.getGroupRankList(page, gid, groupMemberUidList, null, rankType, true);
         }
 
     }

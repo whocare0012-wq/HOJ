@@ -4,6 +4,7 @@ package top.hcode.hoj.advice;
 import com.google.protobuf.ServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.exceptions.PersistenceException;
+import org.apache.catalina.connector.ClientAbortException;
 import org.apache.shiro.ShiroException;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authz.AuthorizationException;
@@ -41,6 +42,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * 全局异常处理
@@ -257,8 +259,7 @@ public class GlobalExceptionAdvice {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public CommonResult<Void> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
-        log.error("操作数据库出现异常-------------->{}", getMessage(e));
-        return CommonResult.errorResponse("Server Error! Please try Again later!", ResultStatus.SYSTEM_ERROR);
+        return databaseFailure(e);
     }
 
 
@@ -268,8 +269,7 @@ public class GlobalExceptionAdvice {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(SQLException.class)
     public CommonResult<Void> handleSQLException(SQLException e) {
-        log.error("操作数据库出现异常-------------->{}", getMessage(e));
-        return CommonResult.errorResponse("Operation failed! Error message: " + e.getMessage(), ResultStatus.SYSTEM_ERROR);
+        return databaseFailure(e);
     }
 
     /**
@@ -278,8 +278,34 @@ public class GlobalExceptionAdvice {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(PersistenceException.class)
     public CommonResult<Void> handleBatchUpdateException(PersistenceException e) {
-        log.error("操作数据库出现异常-------------->{}", getMessage(e));
-        return CommonResult.errorResponse("请检查数据是否准确！可能原因：数据库中已有相同的数据导致重复冲突!", ResultStatus.SYSTEM_ERROR);
+        return databaseFailure(e);
+    }
+
+    private CommonResult<Void> databaseFailure(Exception error) {
+        String reference = UUID.randomUUID().toString();
+        String message = "数据库操作失败，请联系管理员";
+        Throwable cause = error;
+        for (int depth = 0; cause != null && depth < 20; depth++, cause = cause.getCause()) {
+            if (cause instanceof SQLException) {
+                int code = ((SQLException) cause).getErrorCode();
+                if (code == 1366) {
+                    message = "内容包含当前数据库无法保存的字符，请联系管理员检查字符集";
+                } else if (code == 1062) {
+                    message = "数据已存在，请检查是否重复";
+                } else if (code == 1451 || code == 1452) {
+                    message = "数据存在关联约束，操作未完成";
+                }
+                break;
+            }
+        }
+        log.error("Database operation failed, reference={}", reference, error);
+        return CommonResult.errorResponse(message + "（错误编号：" + reference + "）", ResultStatus.SYSTEM_ERROR);
+    }
+
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbort(ClientAbortException error) {
+        // The client is gone. Do not try to write another response or an ERROR stack.
+        log.debug("Client disconnected before response completed");
     }
 
 
@@ -289,8 +315,9 @@ public class GlobalExceptionAdvice {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public CommonResult<Void> handleException(Exception e) {
-        log.error("系统通用异常-------------->{}", getMessage(e));
-        return CommonResult.errorResponse("Server Error!", ResultStatus.SYSTEM_ERROR);
+        String reference = UUID.randomUUID().toString();
+        log.error("Unhandled server error, reference={}", reference, e);
+        return CommonResult.errorResponse("Server Error! Reference: " + reference, ResultStatus.SYSTEM_ERROR);
     }
 
 

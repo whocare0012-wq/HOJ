@@ -3,6 +3,7 @@ package top.hcode.hoj.crawler.problem;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import top.hcode.hoj.pojo.entity.problem.Problem;
+import top.hcode.hoj.pojo.entity.problem.ProblemCase;
 import top.hcode.hoj.pojo.entity.problem.Tag;
 import top.hcode.hoj.utils.Constants;
 
@@ -23,6 +24,7 @@ public abstract class ProblemStrategy {
         private Problem problem;
         private List<Tag> tagList;
         private List<String> langIdList;
+        private List<ProblemCase> problemCaseList;
         private Constants.RemoteOJ remoteOJ;
     }
 }

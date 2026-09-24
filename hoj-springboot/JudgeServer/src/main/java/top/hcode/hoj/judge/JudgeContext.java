@@ -50,6 +50,8 @@ public class JudgeContext {
 
         Judge finalJudgeRes = new Judge();
         finalJudgeRes.setSubmitId(judge.getSubmitId());
+        finalJudgeRes.setScoreType(problem.getType()).setScoreMax(problem.getIoScore())
+                .setScoreSnapshotEstimated(false);
         // 如果是编译失败、提交错误或者系统错误就有错误提醒
         if (judgeResult.get("code") == Constants.Judge.STATUS_COMPILE_ERROR.getStatus() ||
                 judgeResult.get("code") == Constants.Judge.STATUS_SYSTEM_ERROR.getStatus() ||

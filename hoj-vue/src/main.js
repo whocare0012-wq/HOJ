@@ -87,6 +87,10 @@ app.use(Element)
 app.component('slide-verify', SlideVerify)
 
 app.config.globalProperties.$axios = axios
+// Keep compatibility with legacy asynchronously loaded components that still
+// call this.$http. This also protects users with an older component chunk in
+// their browser cache after the main application bundle has been updated.
+app.config.globalProperties.$http = axios
 app.config.globalProperties.$markDown = markdownRenderer
 
 app.mount('#app')

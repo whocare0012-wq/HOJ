@@ -39,8 +39,8 @@ export default {
   },
   methods: {
     changeVisible() {
-      this.isOpen = !this.isOpen;
-      this.$emit('changeVisible', this.index, this.isOpen);
+      const nextIsOpen = !this.isOpen;
+      this.$emit('changeVisible', this.index, nextIsOpen);
     },
   },
 };

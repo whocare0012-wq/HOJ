@@ -21,9 +21,12 @@ public class ProblemContext {
         try {
             return problemStrategy.getProblemInfo(problemId, author);
         } catch (IllegalArgumentException e) {
+            log.warn("Failed to get remote problem details: strategy={}, problemId={}, reason={}",
+                    problemStrategy.getClass().getSimpleName(), problemId, e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("获取题目详情失败---------------->{}", e);
+            log.error("Failed to get remote problem details: strategy={}, problemId={}, reason={}",
+                    problemStrategy.getClass().getSimpleName(), problemId, e.getMessage(), e);
             throw e;
         }
     }
@@ -34,9 +37,12 @@ public class ProblemContext {
         try {
             return problemStrategy.getProblemInfoByLogin(problemId, author, username, password);
         } catch (IllegalArgumentException e) {
+            log.warn("Failed to get remote problem details with login: strategy={}, problemId={}, reason={}",
+                    problemStrategy.getClass().getSimpleName(), problemId, e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("获取题目详情失败---------------->{}", e);
+            log.error("Failed to get remote problem details with login: strategy={}, problemId={}, reason={}",
+                    problemStrategy.getClass().getSimpleName(), problemId, e.getMessage(), e);
         }
         return null;
     }

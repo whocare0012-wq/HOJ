@@ -111,24 +111,13 @@ public class RankManager {
 
     private IPage<OIRankVO> getOIRankList(int limit, int currentPage, List<String> uidList) {
 
-        IPage<OIRankVO> data = null;
-        if (uidList != null) {
-            Page<OIRankVO> page = new Page<>(currentPage, limit);
-            if (uidList.size() > 0) {
-                data = userRecordEntityService.getOIRankList(page, uidList);
-            } else {
-                data = page;
-            }
-        } else {
-            String key = Constants.Account.OI_RANK_CACHE.getCode() + "_" + limit + "_" + currentPage;
-            data = (IPage<OIRankVO>) redisUtils.get(key);
-            if (data == null) {
-                Page<OIRankVO> page = new Page<>(currentPage, limit);
-                data = userRecordEntityService.getOIRankList(page, null);
-                redisUtils.set(key, data, cacheRankSecond);
-            }
-        }
-
-        return data;
+        Page<OIRankVO> page = new Page<>(currentPage, limit);
+        if (uidList != null && uidList.isEmpty()) return page;
+        // Counting users must not execute the full historical points aggregation again.
+        QueryWrapper<UserInfo> users = new QueryWrapper<UserInfo>().eq("status", 0);
+        if (uidList != null) users.in("uuid", uidList);
+        page.setSearchCount(false);
+        page.setTotal(userInfoEntityService.count(users));
+        return userRecordEntityService.getOIRankList(page, uidList);
     }
 }

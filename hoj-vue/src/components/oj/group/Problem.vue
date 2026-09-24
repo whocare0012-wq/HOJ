@@ -296,7 +296,10 @@
                 :error="error.languages"
                 required
               >
-                <el-checkbox-group v-model="problemLanguages">
+                <el-checkbox-group
+                  class="language-checkbox-group"
+                  v-model="problemLanguages"
+                >
                   <el-tooltip
                     class="spj-radio"
                     v-for="lang in allLanguage"
@@ -305,7 +308,9 @@
                     :content="lang.description"
                     placement="top-start"
                   >
-                    <el-checkbox :value="lang.name"></el-checkbox>
+                    <el-checkbox :value="lang.name">
+                      {{ lang.name }}
+                    </el-checkbox>
                   </el-tooltip>
                 </el-checkbox-group>
               </el-form-item>
@@ -393,7 +398,7 @@
               class="add-examples"
               @click="addExample()"
               :icon="legacyElementIcons['el-icon-plus']"
-              type="small"
+              size="small"
             >{{ $t('m.Add_Example') }}
             </el-button>
           </div>
@@ -589,6 +594,7 @@
             </el-row>
           </el-form-item>
           <el-row
+            class="judge-samples-row"
             :gutter="20"
             v-if="!problem.isRemote"
           >
@@ -610,7 +616,6 @@
             <el-form-item required>
               <el-radio-group
                 v-model="problem.judgeCaseMode"
-                @change="switchJudgeCaseMode"
               >
                 <el-radio :value="JUDGE_CASE_MODE.DEFAULT">
                   {{ problem.type == 1 ? $t('m.OI_Judge_Case_Default_Mode'): $t('m.ACM_Judge_Case_Default_Mode')}}
@@ -625,17 +630,19 @@
               </el-radio-group>
             </el-form-item>
 
-            <el-switch
-              v-model="problem.isUploadCase"
-              :active-text="$t('m.Use_Upload_File')"
-              :inactive-text="$t('m.Use_Manual_Input')"
-              style="margin: 10px 0"
-            >
-            </el-switch>
+            <el-form-item required>
+              <el-switch
+                v-model="problem.isUploadCase"
+                :active-text="$t('m.Use_Upload_File')"
+                :inactive-text="$t('m.Use_Manual_Input')"
+                style="margin: 10px 0"
+              >
+              </el-switch>
+            </el-form-item>
 
             <div v-show="problem.isUploadCase">
               <el-col :span="24">
-                <el-form-item :error="error.testcase">
+                <el-form-item :error="error.testCase">
                   <el-upload
                     :action="uploadFileUrl+'&mode='+problem.judgeCaseMode"
                     name="file"
@@ -812,7 +819,7 @@
                   class="add-samples"
                   @click="addSample()"
                   :icon="legacyElementIcons['el-icon-plus']"
-                  type="small"
+                  size="small"
                 >{{ $t('m.Add_Sample') }}
                 </el-button>
               </div>
@@ -1113,15 +1120,17 @@ export default {
       this.codeTemplate = data;
     },
     "problem.spjLanguage"(newVal) {
-      if (this.allSpjLanguage.length) {
-        this.spjMode = this.allSpjLanguage.find((item) => {
+      if (this.allSpjLanguage.length && this.problem.judgeMode != "default") {
+        const spjLanguage = this.allSpjLanguage.find((item) => {
           return item.name == this.problem.spjLanguage && item.isSpj == true;
-        })["contentType"];
+        });
+        this.spjMode = spjLanguage ? spjLanguage.contentType : "";
       }
     },
   },
   methods: {
     init() {
+      this.sampleIndex = 1;
       if (this.mode === "edit") {
         api.getGroupProblem(this.pid).then((problemRes) => {
           let data = problemRes.data.data;
@@ -1135,10 +1144,12 @@ export default {
           data.problemId = data.problemId.slice(this.group.shortName.length);
           this.spjRecord.spjLanguage = data.spjLanguage;
           this.spjRecord.spjCode = data.spjCode;
-          this.judgeCaseModeRecord = data.judgeCaseModeRecord;
+          this.judgeCaseModeRecord = data.judgeCaseMode;
           this.problem = data;
           this.problem["examples"] = utils.stringToExamples(data.examples);
-          this.problem["examples"][0]["isOpen"] = true;
+          if (this.problem["examples"].length > 0) {
+            this.problem["examples"][0]["isOpen"] = true;
+          }
           this.testCaseUploaded = true;
           if (this.problem.userExtraFile) {
             this.addUserExtraFile = true;
@@ -1747,7 +1758,7 @@ export default {
         problemDto["samples"] = this.problemSamples;
       }
 
-      if (this.judgeCaseModeRecord != this.problem.judgeCaseModeRecord) {
+      if (this.judgeCaseModeRecord != this.problem.judgeCaseMode) {
         problemDto["changeJudgeCaseMode"] = true;
       } else {
         problemDto["changeJudgeCaseMode"] = false;
@@ -1788,26 +1799,119 @@ export default {
 
 <style scoped>
 :deep(.el-form-item__label) {
+  display: inline-block;
+  height: 40px;
+  margin: 0;
   padding: 0 !important;
+  line-height: 40px;
 }
 .el-form-item {
   margin-bottom: 10px !important;
 }
+:deep(.el-form-item__content) {
+  min-height: 40px;
+  line-height: 40px;
+}
+:deep(.el-input__wrapper) {
+  min-height: 40px;
+  padding: 1px 15px;
+}
+:deep(.el-input__inner) {
+  height: 38px;
+  line-height: 38px;
+}
+:deep(.el-select__wrapper) {
+  min-height: 40px;
+  padding: 4px 15px;
+}
+:deep(.el-radio-group) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  line-height: 40px;
+}
+:deep(.el-radio) {
+  height: 16px;
+  line-height: 16px;
+}
+:deep(.el-checkbox-group) {
+  width: 100%;
+  line-height: 40px;
+}
+:deep(.el-checkbox) {
+  height: 40px;
+  line-height: 40px;
+}
+.language-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.language-checkbox-group :deep(.el-checkbox) {
+  margin-right: 32px;
+}
+:deep(.el-switch) {
+  height: 20px;
+}
+:deep(.el-textarea__inner) {
+  min-height: 117px !important;
+  padding: 5px 15px;
+  line-height: 21px;
+}
+:deep(.el-button:not(.el-button--small)) {
+  min-height: 40px;
+  padding: 12px 20px;
+}
+:deep(.el-button--small) {
+  min-height: 32px;
+  padding: 9px 15px;
+}
+:deep(.markdown-editor .md-editor-toolbar-wrapper) {
+  height: 41px;
+  min-height: 41px;
+}
+:deep(.markdown-editor .md-editor-footer) {
+  display: none;
+}
 .difficulty-select {
   width: 120px;
 }
-.input-new-tag {
-  width: 120px;
+:deep(.input-new-tag) {
+  width: 120px !important;
+}
+:deep(.input-new-tag .el-input__wrapper) {
+  min-height: 28px;
+}
+:deep(.input-new-tag .el-input__inner) {
+  height: 26px;
+  line-height: 26px;
 }
 .button-new-tag {
+  width: 44px;
   height: 24px;
+  min-height: 24px !important;
   line-height: 22px;
-  padding-top: 0;
-  padding-bottom: 0;
+  padding: 0 15px !important;
 }
 
 .accordion {
+  width: 100%;
   margin-bottom: 10px;
+}
+.accordion :deep(.el-button--danger.el-button--small) {
+  min-width: 76px;
+}
+.judge-samples-row {
+  display: block;
+}
+.judge-samples-row :deep(.el-upload-list:empty) {
+  display: none;
+  margin-top: 0;
+}
+.judge-samples-row :deep(.vxe-table.is--empty .vxe-table--body-wrapper),
+.judge-samples-row :deep(.vxe-table.is--empty .vxe-table--empty-placeholder) {
+  height: 48px !important;
+  min-height: 48px !important;
 }
 
 .add-examples {

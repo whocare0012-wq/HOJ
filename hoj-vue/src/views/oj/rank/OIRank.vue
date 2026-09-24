@@ -7,6 +7,7 @@
             <span class="panel-title">{{ $t('m.OI_Ranklist') }}</span>
           </div>
         </template>
+        <el-alert title="OJ 积分 = 各题当前基础积分 × 历史最佳完成比例之和" description="包含 ACM 与 OI 普通提交；同题只计一次。按积分、通过题数排序，两项均相同时并列。难度分值调整后同步更新。" type="info" :closable="false" show-icon />
         <div class="echarts">
           <ECharts
             ref="rankChart"
@@ -51,7 +52,7 @@
         :seq-config="{ seqMethod }"
         style="font-weight: 500;"
       >
-        <vxe-table-column type="seq" title="#" min-width="50"></vxe-table-column>
+        <vxe-table-column field="rankPosition" title="#" min-width="50"></vxe-table-column>
         <vxe-table-column
           field="username"
           :title="$t('m.User')"
@@ -106,9 +107,9 @@
             </el-tag>
           </template>
         </vxe-table-column>
-        <vxe-table-column :title="$t('m.Score')" min-width="80">
+        <vxe-table-column :title="$t('m.UserHome_Score')" min-width="100">
           <template v-slot="{ row }">
-            <span>{{ row.score }}</span>
+            <span>{{ Number(row.score || 0).toFixed(2) }}</span>
           </template>
         </vxe-table-column>
         <vxe-table-column

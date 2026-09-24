@@ -44,23 +44,9 @@
               ><i class="el-icon-s-marketing navbar-icon legacy-navbar-icon"></i
               >{{ $t('m.NavBar_Status') }}</el-menu-item
             >
-            <el-sub-menu index="rank" class="navbar-rank-menu">
-              <template #title
-                ><i class="el-icon-s-data navbar-icon legacy-navbar-icon"></i>{{ $t('m.NavBar_Rank') }}</template
-              >
-              <el-menu-item
-                class="navbar-centered-submenu-item"
-                index="/acm-rank"
-              >{{
-                $t('m.NavBar_ACM_Rank')
-              }}</el-menu-item>
-              <el-menu-item
-                class="navbar-centered-submenu-item"
-                index="/oi-rank"
-              >{{
-                $t('m.NavBar_OI_Rank')
-              }}</el-menu-item>
-            </el-sub-menu>
+            <el-menu-item index="/oi-rank">
+              <i class="el-icon-s-data navbar-icon legacy-navbar-icon"></i>{{ $t('m.NavBar_Rank') }}
+            </el-menu-item>
             <el-menu-item index="/discussion"
               v-if="websiteConfig.openPublicDiscussion"
               ><i class="el-icon-s-comment navbar-icon legacy-navbar-icon"></i
@@ -393,14 +379,10 @@
             <i class="el-icon-s-marketing mobile-drawer-icon"></i>
             <span>{{ $t('m.NavBar_Status') }}</span>
           </el-menu-item>
-          <el-sub-menu index="mobile-rank">
-            <template #title>
-              <i class="el-icon-s-data mobile-drawer-icon"></i>
-              <span>{{ $t('m.NavBar_Rank') }}</span>
-            </template>
-            <el-menu-item index="/acm-rank">{{ $t('m.NavBar_ACM_Rank') }}</el-menu-item>
-            <el-menu-item index="/oi-rank">{{ $t('m.NavBar_OI_Rank') }}</el-menu-item>
-          </el-sub-menu>
+          <el-menu-item index="/oi-rank">
+            <i class="el-icon-s-data mobile-drawer-icon"></i>
+            <span>{{ $t('m.NavBar_Rank') }}</span>
+          </el-menu-item>
           <el-menu-item
             v-if="websiteConfig.openPublicDiscussion"
             index="/discussion"
@@ -896,10 +878,6 @@ export default {
 }
 #header :deep(.el-menu--horizontal > .el-sub-menu > .el-sub-menu__title) {
   padding-left: 15px;
-}
-#header :deep(.el-menu--horizontal > .navbar-rank-menu > .el-sub-menu__title) {
-  padding-left: 19px;
-  padding-right: 36px;
 }
 .el-menu-item:hover, .el-menu .el-menu-item:hover{
   border-bottom: 2px solid #2474b5 !important;

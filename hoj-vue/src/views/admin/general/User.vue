@@ -508,7 +508,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item :label="$t('m.Title_Name')">
+            <el-form-item :label="$t('m.Title_Name')" prop="titleName">
               <el-input v-model="selectUser.titleName" size="small"></el-input>
             </el-form-item>
             <el-form-item
@@ -646,15 +646,24 @@ export default {
             message: this.$t('m.The_username_already_exists'),
           },
           {
-            max: 255,
+            max: 20,
             message: this.$t('m.Username_Check_Max'),
             trigger: 'blur',
           },
         ],
         realname: [
           {
-            max: 255,
+            max: 50,
             trigger: 'blur',
+          },
+        ],
+        titleName: [
+          {
+            validator: (rule, value, callback) => {
+              callback(Array.from(value || '').length > 20
+                ? new Error('头衔不能超过20个字符') : undefined);
+            },
+            trigger: ['blur', 'change'],
           },
         ],
         email: [

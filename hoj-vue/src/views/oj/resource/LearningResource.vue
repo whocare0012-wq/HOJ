@@ -229,16 +229,51 @@
       @closed="clearPreview"
     >
       <div class="preview-body" v-loading="previewLoading">
+        <div v-if="previewError" class="preview-error">
+          <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+          <span>{{ previewError }}</span>
+        </div>
         <img
-          v-if="previewCategory === 'image' && previewUrl"
+          v-else-if="previewCategory === 'image' && previewUrl"
           :src="previewUrl"
           :alt="previewFileName"
+          @load="handlePreviewRendered"
+          @error="handlePreviewRenderError"
         />
         <iframe
-          v-else-if="previewUrl"
+          v-else-if="previewCategory === 'pdf' && previewUrl"
+          class="pdf-preview"
           :src="previewUrl"
           :title="previewFileName"
+          referrerpolicy="no-referrer"
+          @load="handlePreviewRendered"
+          @error="handlePreviewRenderError"
         ></iframe>
+        <vue-office-docx
+          v-else-if="previewCategory === 'word' && previewSource"
+          class="office-preview"
+          :src="previewSource"
+          @rendered="handlePreviewRendered"
+          @error="handlePreviewRenderError"
+        />
+        <vue-office-excel
+          v-else-if="previewCategory === 'excel' && previewSource"
+          class="office-preview"
+          :src="previewSource"
+          @rendered="handlePreviewRendered"
+          @error="handlePreviewRenderError"
+        />
+        <vue-office-pptx
+          v-else-if="previewCategory === 'powerpoint' && previewSource"
+          class="office-preview"
+          :src="previewSource"
+          @rendered="handlePreviewRendered"
+          @error="handlePreviewRenderError"
+        />
+        <pre
+          v-else-if="previewCategory === 'text' && previewSource"
+          class="text-preview"
+        >{{ previewText }}</pre>
       </div>
       <template #footer>
         <el-button @click="previewVisible = false">关闭</el-button>
@@ -260,15 +295,34 @@ import {
   View,
 } from '@element-plus/icons-vue';
 import { ElMessageBox } from 'element-plus';
+import { defineAsyncComponent } from 'vue';
 import { mapGetters } from 'vuex';
 import api from '@/common/api';
 import mMessage from '@/common/message';
 import Pagination from '@/components/oj/common/Pagination.vue';
 
+const VueOfficeDocx = defineAsyncComponent(() =>
+  Promise.all([
+    import('@vue-office/docx'),
+    import('@vue-office/docx/lib/index.css'),
+  ]).then(([module]) => module.default)
+);
+const VueOfficeExcel = defineAsyncComponent(() =>
+  Promise.all([
+    import('@vue-office/excel'),
+    import('@vue-office/excel/lib/index.css'),
+  ]).then(([module]) => module.default)
+);
+const VueOfficePptx = defineAsyncComponent(() =>
+  import('@vue-office/pptx').then((module) => module.default)
+);
 export default {
   name: 'LearningResource',
   components: {
     Pagination,
+    VueOfficeDocx,
+    VueOfficeExcel,
+    VueOfficePptx,
   },
   data() {
     return {
@@ -292,9 +346,13 @@ export default {
       previewVisible: false,
       previewLoading: false,
       previewUrl: '',
+      previewSource: null,
+      previewText: '',
+      previewError: '',
       previewFileName: '',
       previewCategory: '',
       previewRow: null,
+      previewTimeoutId: null,
     };
   },
   computed: {
@@ -455,24 +513,107 @@ export default {
       this.previewCategory = row.category;
       this.previewVisible = true;
       this.previewLoading = true;
+      const previewEndpoint = `/api/learning-resource/files/${row.id}/preview`;
       try {
+        if (row.category === 'pdf') {
+          const ticketResponse = await api.createLearningResourcePreviewTicket(row.id);
+          const ticketResult = ticketResponse?.data;
+          if (ticketResult?.status !== 200 || !ticketResult?.data?.ticket) {
+            throw new Error(ticketResult?.msg || 'Preview ticket request failed');
+          }
+          const ticket = encodeURIComponent(ticketResult.data.ticket);
+          this.previewUrl = `/api/learning-resource-preview/files/${row.id}?ticket=${ticket}`;
+          this.startPreviewTimeout();
+          return;
+        }
+
         const response = await axios.get(
-          `/api/learning-resource/files/${row.id}/preview`,
-          { responseType: 'blob' }
+          previewEndpoint,
+          {
+            responseType: 'blob',
+            timeout: 20000,
+          }
         );
-        this.previewUrl = window.URL.createObjectURL(response.data);
+        if (response.status < 200 || response.status >= 300) {
+          throw new Error(`Preview request failed with status ${response.status}`);
+        }
+        const blob = response.data;
+        if (!(blob instanceof Blob)) {
+          throw new Error('Preview response is not a file');
+        }
+        if (row.category === 'image') {
+          this.previewSource = blob;
+          this.previewUrl = window.URL.createObjectURL(blob);
+          this.startPreviewTimeout();
+        } else if (row.category === 'text') {
+          this.previewSource = blob;
+          this.previewText = await this.readBlobAsText(blob);
+          this.handlePreviewRendered();
+        } else {
+          this.previewSource = await this.readBlobAsArrayBuffer(blob);
+          this.startPreviewTimeout();
+        }
       } catch (error) {
-        this.previewVisible = false;
-        throw error;
-      } finally {
+        this.clearPreviewTimeout();
+        this.previewError = '文件加载失败，请重试或下载后打开';
         this.previewLoading = false;
+        mMessage.error(this.previewError);
+      }
+    },
+    readBlobAsArrayBuffer(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('文件读取失败'));
+        reader.onabort = () => reject(new Error('文件读取已取消'));
+        reader.readAsArrayBuffer(blob);
+      });
+    },
+    readBlobAsText(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.onerror = () => reject(reader.error || new Error('文件读取失败'));
+        reader.onabort = () => reject(new Error('文件读取已取消'));
+        reader.readAsText(blob, 'UTF-8');
+      });
+    },
+    handlePreviewRendered() {
+      this.clearPreviewTimeout();
+      this.previewLoading = false;
+    },
+    handlePreviewRenderError() {
+      this.clearPreviewTimeout();
+      this.previewLoading = false;
+      this.previewError = '该文件无法在线显示，请下载后打开';
+    },
+    startPreviewTimeout() {
+      this.clearPreviewTimeout();
+      this.previewTimeoutId = window.setTimeout(() => {
+        if (!this.previewLoading) {
+          return;
+        }
+        this.previewLoading = false;
+        this.previewError = '文件预览加载超时，请重试或下载后打开';
+      }, 20000);
+    },
+    clearPreviewTimeout() {
+      if (this.previewTimeoutId !== null) {
+        window.clearTimeout(this.previewTimeoutId);
+        this.previewTimeoutId = null;
       }
     },
     clearPreview() {
+      this.clearPreviewTimeout();
       if (this.previewUrl) {
-        window.URL.revokeObjectURL(this.previewUrl);
+        if (this.previewUrl.startsWith('blob:')) {
+          window.URL.revokeObjectURL(this.previewUrl);
+        }
       }
       this.previewUrl = '';
+      this.previewSource = null;
+      this.previewText = '';
+      this.previewError = '';
       this.previewFileName = '';
       this.previewCategory = '';
       this.previewRow = null;
@@ -846,11 +987,53 @@ export default {
   object-fit: contain;
 }
 
-.preview-body iframe {
+.office-preview {
   background: #fff;
-  border: 0;
-  height: 66vh;
+  min-height: 66vh;
+  overflow: auto;
   width: 100%;
+}
+
+.pdf-preview {
+  align-self: stretch;
+  background: #666;
+  height: 66vh;
+  min-height: 66vh;
+  overflow: auto;
+  width: 100%;
+}
+
+.text-preview {
+  align-self: stretch;
+  background: #fff;
+  box-sizing: border-box;
+  color: #303a4d;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  line-height: 1.65;
+  margin: 0;
+  min-height: 66vh;
+  overflow: auto;
+  padding: 24px;
+  tab-size: 4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  width: 100%;
+}
+
+.preview-error {
+  align-items: center;
+  color: #909399;
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+  gap: 12px;
+  justify-content: center;
+  min-height: 66vh;
+}
+
+.preview-error i {
+  color: #e6a23c;
+  font-size: 34px;
 }
 
 @media screen and (max-width: 1360px) {

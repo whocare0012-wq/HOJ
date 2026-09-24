@@ -17,6 +17,9 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition
     }
+    if (to.path === from.path) {
+      return false
+    }
     return { left: 0, top: 0 }
   },
 })

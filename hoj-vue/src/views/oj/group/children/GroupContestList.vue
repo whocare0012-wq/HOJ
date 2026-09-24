@@ -95,7 +95,7 @@
             @click="handleEditProblemPage"
             :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_Admin_Contest_Problem_List') }}</el-button
-          >`
+          >
           <el-button
             v-if="createProblemPage"
             type="primary"
@@ -103,7 +103,7 @@
             @click="handleCreateProblemPage"
             :icon="legacyElementIcons['el-icon-back']"
             >{{ $t('m.Back_Admin_Contest_Problem_List') }}</el-button
-          >`
+          >
         </el-col>
         <el-col
           :md="18"

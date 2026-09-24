@@ -21,7 +21,11 @@ public interface AiAssistantService {
             Integer limit,
             String status);
 
+    CommonResult<Map<String, Object>> getAdminRequest(Long requestId);
+
     CommonResult<Map<String, Object>> updateConfig(Map<String, Object> config);
+
+    CommonResult<Map<String, Object>> getModels(String baseUrl);
 
     CommonResult<Map<String, Object>> createApiKey(Map<String, Object> apiKey);
 

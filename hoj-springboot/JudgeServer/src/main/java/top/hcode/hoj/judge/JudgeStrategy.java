@@ -300,11 +300,9 @@ public class JudgeStrategy {
 
         // OI题目计算得分
         if (!isACM) {
-            // 全对的直接用总分*0.1+2*题目难度
+            // 保存原始评测分数；OJ 积分由当前难度配置和历史完成比例计算。
             if (errorCaseNum == 0 && Constants.JudgeCaseMode.DEFAULT.getMode().equals(judgeCaseMode)) {
-                int oiRankScore = (int) Math.round(totalScore * 0.1 + 2 * problemDifficulty);
                 result.put("score", totalScore);
-                result.put("oiRankScore", oiRankScore);
             } else {
                 int sumScore = 0;
                 if (Constants.JudgeCaseMode.SUBTASK_LOWEST.getMode().equals(judgeCaseMode)) {
@@ -339,10 +337,8 @@ public class JudgeStrategy {
                 if (totalScore != 0 && sumScore > totalScore) {
                     sumScore = totalScore;
                 }
-                //测试点总得分*0.1+2*题目难度*（测试点总得分/题目总分）
-                int oiRankScore = (int) Math.round(sumScore * 0.1 + 2 * problemDifficulty * (sumScore * 1.0 / totalScore));
+                // 子任务分只影响原始分数，难度编号不参与计分。
                 result.put("score", sumScore);
-                result.put("oiRankScore", oiRankScore);
             }
         }
         return result;

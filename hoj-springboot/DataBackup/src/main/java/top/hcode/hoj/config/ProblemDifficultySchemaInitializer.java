@@ -26,6 +26,7 @@ public class ProblemDifficultySchemaInitializer implements ApplicationRunner {
                         "`difficulty_value` int unsigned NOT NULL," +
                         "`display_text` varchar(20) NOT NULL," +
                         "`border_color` varchar(7) NOT NULL," +
+                        "`base_points` decimal(10,2) NOT NULL DEFAULT 10," +
                         "`sort_order` int unsigned NOT NULL DEFAULT 0," +
                         "`gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
                         "`gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
@@ -37,10 +38,10 @@ public class ProblemDifficultySchemaInitializer implements ApplicationRunner {
                         "MODIFY sort_order int unsigned NOT NULL DEFAULT 0");
         jdbcTemplate.update(
                 "INSERT IGNORE INTO problem_difficulty_config " +
-                        "(difficulty_value, display_text, border_color, sort_order) VALUES " +
-                        "(0, '简单', '#19BE6B', 0), " +
-                        "(1, '中等', '#2D8CF0', 1), " +
-                        "(2, '困难', '#ED3F14', 2)");
+                        "(difficulty_value, display_text, border_color, sort_order, base_points) VALUES " +
+                        "(0, '简单', '#19BE6B', 0, 10), " +
+                        "(1, '中等', '#2D8CF0', 1, 20), " +
+                        "(2, '困难', '#ED3F14', 2, 40)");
         log.info("[Problem Difficulty] Schema is ready.");
     }
 }

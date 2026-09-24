@@ -98,6 +98,12 @@ public class Judge implements Serializable {
     @TableField(updateStrategy = FieldStrategy.IGNORED)
     private Integer oiRankScore;
 
+    // Denominator and rule at judging time; never derive history from today's problem maximum.
+    private Integer scoreType;
+    private Integer scoreMax;
+    private Boolean scoreSnapshotEstimated;
+
+
     @ApiModelProperty(value = "vjudge判题在其它oj的提交id")
     private Long vjudgeSubmitId;
 

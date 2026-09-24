@@ -36,7 +36,9 @@ public class OIRankVO implements Serializable {
     private String titleColor;
 
     @ApiModelProperty(value = "OI得分列表")
-    private Integer score;
+    private java.math.BigDecimal score;
+
+    private Long rankPosition;
 
     @ApiModelProperty(value = "总提交数")
     private Integer total;

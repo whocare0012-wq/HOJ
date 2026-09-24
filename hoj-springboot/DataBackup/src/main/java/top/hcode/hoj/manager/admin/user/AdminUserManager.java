@@ -12,6 +12,8 @@ import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 import top.hcode.hoj.common.exception.StatusFailException;
 import top.hcode.hoj.dao.user.UserInfoEntityService;
@@ -67,7 +69,14 @@ public class AdminUserManager {
         return userRoleEntityService.getUserList(limit, currentPage, keyword, onlyAdmin);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void editUser(AdminEditUserDTO adminEditUserDto) throws StatusFailException {
+
+        if (adminEditUserDto == null || StrUtil.isBlank(adminEditUserDto.getUsername())
+                || StrUtil.isBlank(adminEditUserDto.getUid()) || adminEditUserDto.getType() == null
+                || adminEditUserDto.getStatus() == null || adminEditUserDto.getSetNewPwd() == null) {
+            throw new StatusFailException("用户信息不完整，请刷新后重试");
+        }
 
         String username = adminEditUserDto.getUsername();
         String uid = adminEditUserDto.getUid();
@@ -78,6 +87,13 @@ public class AdminUserManager {
         int status = adminEditUserDto.getStatus();
         boolean setNewPwd = adminEditUserDto.getSetNewPwd();
 
+        if (type < 1000 || type > 1008 || status < 0 || status > 1) {
+            throw new StatusFailException("用户角色或状态不合法");
+        }
+        if (setNewPwd && StrUtil.isBlank(password)) {
+            throw new StatusFailException("新密码不能为空");
+        }
+
         String titleName = adminEditUserDto.getTitleName();
         String titleColor = adminEditUserDto.getTitleColor();
 
@@ -85,11 +101,11 @@ public class AdminUserManager {
             throw new StatusFailException("真实姓名的长度不能超过50位");
         }
 
-        if (!StringUtils.isEmpty(titleName) && titleName.length() > 20) {
-            throw new StatusFailException("头衔的长度建议不要超过20位");
+        if (titleName != null && titleName.codePointCount(0, titleName.length()) > 20) {
+            throw new StatusFailException("头衔不能超过20个字符");
         }
 
-        if (!StringUtils.isEmpty(password) && (password.length() < 6 || password.length() > 20)) {
+        if (setNewPwd && (password.length() < 6 || password.length() > 20)) {
             throw new StatusFailException("密码长度建议为6~20位！");
         }
 
@@ -121,27 +137,42 @@ public class AdminUserManager {
             userInfoUpdateWrapper.set("password", userPasswordService.encode(password));
         }
         boolean updateUserInfo = userInfoEntityService.update(userInfoUpdateWrapper);
+        if (!updateUserInfo) {
+            throw new StatusFailException("更新失败，用户不存在或数据已变化");
+        }
 
         QueryWrapper<UserRole> userRoleQueryWrapper = new QueryWrapper<>();
         userRoleQueryWrapper.eq("uid", uid);
         UserRole userRole = userRoleEntityService.getOne(userRoleQueryWrapper, false);
+        if (userRole == null || userRole.getRoleId() == null) {
+            throw new StatusFailException("更新失败，用户角色记录不存在");
+        }
         boolean changeUserRole = false;
         int oldType = userRole.getRoleId().intValue();
         if (userRole.getRoleId().intValue() != type) {
             userRole.setRoleId((long) type);
             changeUserRole = userRoleEntityService.updateById(userRole);
-            if (type == 1000 || oldType == 1000) {
-                // 新增或者去除超级管理员需要删除缓存
-                String cacheKey = Constants.Account.SUPER_ADMIN_UID_LIST_CACHE.getCode();
-                redisUtils.del(cacheKey);
+            if (!changeUserRole) {
+                throw new StatusFailException("更新用户角色失败");
             }
         }
-        if (updateUserInfo && setNewPwd) {
-            // 需要重新登录
-            userRoleEntityService.deleteCache(uid, true);
-        } else if (changeUserRole) {
-            // 需要重新授权
-            userRoleEntityService.deleteCache(uid, false);
+
+        final boolean roleChanged = changeUserRole;
+        Runnable refreshCaches = () -> {
+            if (roleChanged && (type == 1000 || oldType == 1000)) {
+                redisUtils.del(Constants.Account.SUPER_ADMIN_UID_LIST_CACHE.getCode());
+            }
+            userRoleEntityService.deleteCache(uid, setNewPwd || status == 1);
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    refreshCaches.run();
+                }
+            });
+        } else {
+            refreshCaches.run();
         }
 
         if (changeUserRole) {

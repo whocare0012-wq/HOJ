@@ -57,10 +57,14 @@ public class UserHomeVO {
     private Integer rating;
 
     @ApiModelProperty(value = "OI得分列表")
-    private List<Integer> scoreList;
+    private List<java.math.BigDecimal> scoreList;
+
+    private List<OjPointsDetailVO> pointsDetails;
 
     @ApiModelProperty(value = "已解决题目列表")
     private List<String> solvedList;
+
+    private Integer solvedCount;
 
     @ApiModelProperty(value = "难度=>[P1000,P1001]")
     private Map<Integer, List<UserHomeProblemVO>> solvedGroupByDifficulty;

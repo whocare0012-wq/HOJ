@@ -12,14 +12,14 @@
     <el-card>
       <div class="recent-login">
         <el-tooltip
-          :content="$filters.localtime(profile.recentLoginTime)"
+          :content="profile.recentLoginTime ? $filters.localtime(profile.recentLoginTime) : '暂无登录记录'"
           placement="top"
         >
           <el-tag type="success" effect="plain" size="default">
             <i class="fa fa-circle recent-login-icon" aria-hidden="true"></i>
             <span>
               {{ $t('m.Recent_login_time')
-              }}{{ $filters.fromNow(profile.recentLoginTime) }}
+              }}{{ profile.recentLoginTime ? $filters.fromNow(profile.recentLoginTime) : '暂无记录' }}
             </span>
           </el-tag>
         </el-tooltip>
@@ -97,7 +97,7 @@
                 <i class="fa fa-check-circle" aria-hidden="true"></i>
                 {{ $t('m.UserHome_Solved') }}
               </p>
-              <p class="data-number">{{ profile.solvedList.length }}</p>
+              <p class="data-number">{{ profile.solvedCount == null ? profile.solvedList.length : profile.solvedCount }}</p>
             </el-card>
           </el-col>
           <el-col :md="6" :sm="24">
@@ -340,13 +340,7 @@ export default {
       myMessage.success(this.$t('m.Update_Successfully'));
     },
     getSumScore(scoreList) {
-      if (scoreList) {
-        var sum = 0;
-        for (let i = 0; i < scoreList.length; i++) {
-          sum += scoreList[i];
-        }
-        return sum;
-      }
+      return ((scoreList || []).reduce((sum, v) => sum + Math.round(Number(v) * 100), 0) / 100).toFixed(2);
     },
     nicknameColor(nickname) {
       let typeArr = ['', 'success', 'info', 'danger', 'warning'];

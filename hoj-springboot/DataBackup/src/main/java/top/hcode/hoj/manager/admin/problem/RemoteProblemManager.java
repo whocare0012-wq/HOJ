@@ -13,6 +13,7 @@ import top.hcode.hoj.dao.judge.RemoteJudgeAccountEntityService;
 import top.hcode.hoj.pojo.entity.judge.RemoteJudgeAccount;
 import top.hcode.hoj.pojo.entity.problem.*;
 import top.hcode.hoj.dao.problem.*;
+import top.hcode.hoj.utils.Constants;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -42,6 +43,9 @@ public class RemoteProblemManager {
 
     @Autowired
     private ProblemLanguageEntityService problemLanguageEntityService;
+
+    @Autowired
+    private ProblemCaseEntityService problemCaseEntityService;
 
     @Autowired
     private RemoteJudgeAccountEntityService remoteJudgeAccountEntityService;
@@ -97,10 +101,24 @@ public class RemoteProblemManager {
     public Problem adminAddOtherOJProblem(ProblemStrategy.RemoteProblemInfo remoteProblemInfo, String OJName) {
 
         Problem problem = remoteProblemInfo.getProblem();
+        boolean isAtCoderLocalProblem = Constants.RemoteOJ.ATCODER.getName().equalsIgnoreCase(OJName);
+        List<ProblemCase> problemCaseList = remoteProblemInfo.getProblemCaseList();
+        if (isAtCoderLocalProblem) {
+            if (CollectionUtils.isEmpty(problemCaseList)) {
+                throw new IllegalArgumentException("AtCoder sample test cases must not be empty.");
+            }
+            problem.setIsRemote(false)
+                    .setJudgeMode(Constants.JudgeMode.DEFAULT.getMode())
+                    .setJudgeCaseMode(Constants.JudgeCaseMode.DEFAULT.getMode())
+                    .setIsUploadCase(false)
+                    .setCaseVersion(String.valueOf(System.currentTimeMillis()));
+        }
         boolean addProblemResult = problemEntityService.save(problem);
         // 为新的其它oj题目添加对应的language
         QueryWrapper<Language> languageQueryWrapper = new QueryWrapper<>();
-        if (OJName.equals("GYM")) {
+        if (isAtCoderLocalProblem) {
+            languageQueryWrapper.eq("oj", "ME");
+        } else if (OJName.equals("GYM")) {
             languageQueryWrapper.eq("oj", "CF");
         } else {
             languageQueryWrapper.eq("oj", OJName);
@@ -119,6 +137,12 @@ public class RemoteProblemManager {
             }
         }
         boolean addProblemLanguageResult = problemLanguageEntityService.saveOrUpdateBatch(problemLanguageList);
+
+        boolean addProblemCaseResult = true;
+        if (isAtCoderLocalProblem) {
+            problemCaseList.forEach(problemCase -> problemCase.setPid(problem.getId()));
+            addProblemCaseResult = problemCaseEntityService.saveBatch(problemCaseList);
+        }
 
         boolean addProblemTagResult = true;
         List<Tag> addTagList = remoteProblemInfo.getTagList();
@@ -165,7 +189,15 @@ public class RemoteProblemManager {
                     .setPid(problem.getId()));
         }
 
-        if (addProblemResult && addProblemTagResult && addProblemLanguageResult) {
+        if (addProblemResult && addProblemTagResult && addProblemLanguageResult && addProblemCaseResult) {
+            if (isAtCoderLocalProblem) {
+                problemEntityService.initHandTestCaseSynchronously(
+                        problem.getJudgeMode(),
+                        problem.getJudgeCaseMode(),
+                        problem.getCaseVersion(),
+                        problem.getId(),
+                        problemCaseList);
+            }
             return problem;
         } else {
             return null;

@@ -406,7 +406,7 @@
             class="add-examples"
             @click="addExample()"
             :icon="legacyElementIcons['el-icon-plus']"
-            type="small"
+            size="small"
           >{{ $t('m.Add_Example') }}
           </el-button>
         </div>
@@ -628,7 +628,6 @@
           >
             <el-radio-group
               v-model="problem.judgeCaseMode"
-              @change="switchJudgeCaseMode"
             >
               <el-radio :value="JUDGE_CASE_MODE.DEFAULT">
                 {{ problem.type == 1 ? $t('m.OI_Judge_Case_Default_Mode'): $t('m.ACM_Judge_Case_Default_Mode')}}
@@ -655,7 +654,7 @@
 
           <div v-show="problem.isUploadCase">
             <el-col :span="24">
-              <el-form-item :error="error.testcase">
+              <el-form-item :error="error.testCase">
                 <el-upload
                   :action="uploadFileUrl+'?mode='+problem.judgeCaseMode"
                   name="file"
@@ -833,7 +832,7 @@
                 class="add-samples"
                 @click="addSample()"
                 :icon="legacyElementIcons['el-icon-plus']"
-                type="small"
+                size="small"
               >{{ $t('m.Add_Sample') }}
               </el-button>
             </div>
@@ -1144,9 +1143,10 @@ export default {
 
     "problem.spjLanguage"(newVal) {
       if (this.allSpjLanguage.length && this.problem.judgeMode != "default") {
-        this.spjMode = this.allSpjLanguage.find((item) => {
+        const spjLanguage = this.allSpjLanguage.find((item) => {
           return item.name == this.problem.spjLanguage && item.isSpj == true;
-        })["contentType"];
+        });
+        this.spjMode = spjLanguage ? spjLanguage.contentType : "";
       }
     },
   },
@@ -1172,7 +1172,7 @@ export default {
           data.spjLanguage = data.spjLanguage || "C";
           this.spjRecord.spjLanguage = data.spjLanguage;
           this.spjRecord.spjCode = data.spjCode;
-          this.judgeCaseModeRecord = data.judgeCaseModeRecord;
+          this.judgeCaseModeRecord = data.judgeCaseMode;
           this.problem = data;
           this.problem["examples"] = utils.stringToExamples(data.examples);
           if (this.problem["examples"].length > 0) {
@@ -1766,9 +1766,10 @@ export default {
         for (let lang of this.allLanguage) {
           if (problemLanguageList[i].name == lang.name) {
             problemLanguageList[i] = lang;
-            if (this.codeTemplate[lang.name].status) {
-              if(this.codeTemplate[lang.name].code == null 
-                || this.codeTemplate[lang.name].code.length == 0){
+            const codeTemplate = this.codeTemplate[lang.name];
+            if (codeTemplate && codeTemplate.status) {
+              if(codeTemplate.code == null
+                || codeTemplate.code.length == 0){
                   myMessage.error(
                     lang.name +
                       "：" +
@@ -1777,11 +1778,11 @@ export default {
                   return;
               }
               this.problemCodeTemplate.push({
-                id: this.codeTemplate[lang.name].id,
+                id: codeTemplate.id,
                 pid: this.pid,
-                code: this.codeTemplate[lang.name].code,
+                code: codeTemplate.code,
                 lid: lang.id,
-                status: this.codeTemplate[lang.name].status,
+                status: codeTemplate.status,
               });
             }
             break;
@@ -1838,7 +1839,7 @@ export default {
         problemDto["samples"] = this.problemSamples;
       }
 
-      if (this.judgeCaseModeRecord != this.problem.judgeCaseModeRecord) {
+      if (this.judgeCaseModeRecord != this.problem.judgeCaseMode) {
         problemDto["changeJudgeCaseMode"] = true;
       } else {
         problemDto["changeJudgeCaseMode"] = false;

@@ -55,6 +55,8 @@ import java.util.stream.Collectors;
  */
 @Component
 public class JudgeManager {
+    private static final int TEST_JUDGE_INTERVAL_SECONDS = 1;
+
     @Autowired
     private JudgeEntityService judgeEntityService;
 
@@ -173,8 +175,9 @@ public class JudgeManager {
 
         String lockKey = Constants.Account.TEST_JUDGE_LOCK.getCode() + userRolesVo.getUid();
         SwitchConfig switchConfig = nacosSwitchConfig.getSwitchConfig();
-        if (switchConfig.getDefaultSubmitInterval() > 0) {
-            if (!redisUtils.isWithinRateLimit(lockKey, switchConfig.getDefaultSubmitInterval())) {
+        int testJudgeInterval = resolveTestJudgeInterval(switchConfig.getDefaultSubmitInterval());
+        if (testJudgeInterval > 0) {
+            if (!redisUtils.isWithinRateLimit(lockKey, testJudgeInterval)) {
                 throw new StatusForbiddenException("对不起，您使用在线调试过于频繁，请稍后再尝试！");
             }
         }
@@ -210,6 +213,11 @@ public class JudgeManager {
         return uniqueKey;
     }
 
+    static int resolveTestJudgeInterval(Integer defaultSubmitInterval) {
+        return defaultSubmitInterval != null && defaultSubmitInterval > 0
+                ? TEST_JUDGE_INTERVAL_SECONDS
+                : 0;
+    }
 
     public TestJudgeVO getTestJudgeResult(String testJudgeKey) throws StatusFailException {
         TestJudgeRes testJudgeRes = (TestJudgeRes) redisUtils.get(testJudgeKey);

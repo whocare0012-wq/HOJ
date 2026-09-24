@@ -13,6 +13,7 @@ import top.hcode.hoj.service.admin.user.AdminUserService;
 
 import java.util.List;
 import java.util.Map;
+import javax.validation.Valid;
 
 
 /**
@@ -41,7 +42,7 @@ public class AdminUserController {
     @PutMapping("/edit-user")
     @RequiresPermissions("user_admin")
     @RequiresAuthentication
-    public CommonResult<Void> editUser(@RequestBody AdminEditUserDTO adminEditUserDto) {
+    public CommonResult<Void> editUser(@Valid @RequestBody AdminEditUserDTO adminEditUserDto) {
         return adminUserService.editUser(adminEditUserDto);
     }
 

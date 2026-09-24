@@ -34,7 +34,8 @@ public interface UserRecordMapper extends BaseMapper<UserRecord> {
 
     IPage<OIRankVO> getGroupRankList(Page<OIRankVO> page,
                                      @Param("gid") Long gid,
-                                     @Param("uidList") List<String> uidList,
+                                     @Param("memberUidList") List<String> memberUidList,
+                                     @Param("searchUidList") List<String> searchUidList,
                                      @Param("rankType") String rankType);
 
 }

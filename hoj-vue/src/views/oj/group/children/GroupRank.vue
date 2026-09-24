@@ -30,6 +30,7 @@
         </div>
     </el-card>
     <vxe-table
+        class="rank-table"
         :data="dataRank"
         :loading="loadingTable"
         align="center"
@@ -38,7 +39,8 @@
         auto-resize
         style="font-weight: 500;"
       >
-        <vxe-table-column type="seq" title="#" min-width="50"></vxe-table-column>
+        <vxe-table-column :visible="query.type === 0" type="seq" title="#" min-width="50"></vxe-table-column>
+        <vxe-table-column :visible="query.type === 1" field="rankPosition" title="#" min-width="50"></vxe-table-column>
         <vxe-table-column
           field="username"
           :title="$t('m.User')"
@@ -83,7 +85,7 @@
             </el-tag>
           </template>
         </vxe-table-column>
-        <vxe-table-column field="ac" :title="$t('m.AC')" min-width="80">
+        <vxe-table-column :visible="query.type === 0" field="ac" :title="$t('m.AC')" min-width="80">
           <template v-slot="{ row }">
             <span>
               <a
@@ -94,11 +96,16 @@
             </span>
           </template>
         </vxe-table-column>
-        <vxe-table-column :title="$t('m.Total')" min-width="100" field="total">
+        <vxe-table-column :visible="query.type === 0" :title="$t('m.Total')" min-width="100" field="total">
         </vxe-table-column>
-        <vxe-table-column :title="$t('m.Score')" min-width="80">
+        <vxe-table-column :visible="query.type === 1" :title="$t('m.UserHome_Score')" min-width="100">
           <template v-slot="{ row }">
-            <span>{{ row.score }}</span>
+            <span>{{ Number(row.score || 0).toFixed(2) }}</span>
+          </template>
+        </vxe-table-column>
+        <vxe-table-column :visible="query.type === 1" :title="$t('m.AC') + '/' + $t('m.Total')" min-width="100">
+          <template v-slot="{ row }">
+            <a class="rank-ac-link" @click="goUserACStatus(row.username)">{{ row.ac }}</a><span>/{{ row.total }}</span>
           </template>
         </vxe-table-column>
         <vxe-table-column :title="$t('m.Rating')" min-width="80">
@@ -116,6 +123,7 @@
         show-sizer
         @on-page-size-change="onPageSizeChange"
         :layout="'prev, pager, next, sizes'"
+        legacy-size
     ></Pagination>
     </div>
 </template>
@@ -145,6 +153,7 @@ export default {
       total: 0,
       loadingTable: false,
       dataRank: [],
+      rankRequestId: 0,
     };
   },
   mounted() {
@@ -152,16 +161,17 @@ export default {
   },
   methods: {
     init(){
-      let route = this.$route.query;
-      this.query.searchUser = route.searchUser || '';
+      const route = this.$route.query;
+      this.query.searchUser = typeof route.searchUser === 'string' ? route.searchUser : '';
       this.query.gid = this.$route.params.groupID;
-      this.query.page = route.page || 1;
-      this.query.limit = route.limit || 30;
-      this.query.type = route.type || 0;
+      this.query.page = Math.max(1, Number.parseInt(route.page, 10) || 1);
+      this.query.limit = Math.max(1, Number.parseInt(route.limit, 10) || 30);
+      this.query.type = Number(route.type) === 1 ? 1 : 0;
       this.getRankData();
     },
     onPageSizeChange(pageSize) {
       this.query.limit = pageSize;
+      this.query.page = 1;
       this.handleRouter();
     },
     currentChange(page) {
@@ -175,19 +185,30 @@ export default {
     handleRouter(){
        this.$router.push({
         path: this.$route.path,
-        query: this.query,
+        query: {
+          page: this.query.page,
+          limit: this.query.limit,
+          type: this.query.type,
+          searchUser: this.query.searchUser?.trim() || undefined,
+        },
       });
     },
     getRankData() {
+      const requestId = ++this.rankRequestId;
       this.loadingTable = true;
+      this.total = 0;
+      this.dataRank = [];
+      const searchUser = this.query.searchUser.trim() || null;
       api
-        .getGroupRank(this.query.page, this.query.limit, this.query.gid, this.query.type, this.query.searchUser)
+        .getGroupRank(this.query.page, this.query.limit, this.query.gid, this.query.type, searchUser)
         .then((res) => {
+          if (requestId !== this.rankRequestId) return;
           this.loadingTable = false;
           this.total = res.data.data.total;
           this.dataRank = res.data.data.records;
         })
         .catch(() => {
+          if (requestId !== this.rankRequestId) return;
           this.loadingTable = false;
         });
     },
@@ -203,6 +224,7 @@ export default {
     goUserACStatus(username) {
       this.$router.push({
         name: 'GroupSubmissionList',
+        params: { groupID: this.$route.params.groupID },
         query: {
           username,
           status: 0
@@ -232,6 +254,10 @@ export default {
 </script>
 
 <style scoped>
+.rank-ac-link {
+  color: rgb(87, 163, 243);
+  cursor: pointer;
+}
 .swtich-type{
     float: right;
 }

@@ -49,8 +49,8 @@ const getters = {
 
 const mutations = {
   changeUserInfo(state, {userInfo}) {
-    state.userInfo = userInfo
-    storage.set('userInfo',userInfo)
+    state.userInfo = userInfo || {}
+    storage.set('userInfo', state.userInfo)
   },
   changeUserToken(state,token){
     state.token = token
@@ -78,7 +78,10 @@ const mutations = {
     state.unreadMessage[needSubstractMsg.name] = state.unreadMessage[needSubstractMsg.name]-needSubstractMsg.num;
   },
   changeUserAuthInfo(state, {roles}){
-    state.userInfo.roleList = roles;
+    if (!state.userInfo || typeof state.userInfo !== 'object') {
+      state.userInfo = {};
+    }
+    state.userInfo.roleList = Array.isArray(roles) ? roles : [];
     storage.set('userInfo', state.userInfo);
   }
 }
@@ -105,14 +108,19 @@ const actions = {
       needSubstractMsg: needSubstractMsg
     })
   },
-  refreshUserAuthInfo({commit,dispatch}){
-    return new Promise((resolve, reject) => {
-      api.getUserAuthInfo().then((res) => {
-        commit('changeUserAuthInfo', {roles: res.data.data.roles})
-        resolve(res)
-      })
-    }, err => {
-      reject(err)
+  refreshUserAuthInfo({commit}){
+    return api.getUserAuthInfo().then((res) => {
+      const data = res && res.data ? res.data.data : null;
+      const roles = data && Array.isArray(data.roles) ? data.roles : [];
+      if (roles.length === 0) {
+        commit('clearUserInfoAndToken');
+        return Promise.reject(new Error('Invalid user authentication state'));
+      }
+      commit('changeUserAuthInfo', {roles})
+      return res
+    }).catch((err) => {
+      commit('clearUserInfoAndToken');
+      return Promise.reject(err);
     })
   }
 }

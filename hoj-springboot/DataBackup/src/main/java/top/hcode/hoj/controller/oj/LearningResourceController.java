@@ -21,19 +21,28 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import top.hcode.hoj.common.result.CommonResult;
 import top.hcode.hoj.service.oj.LearningResourceService;
+import top.hcode.hoj.utils.RedisUtils;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/learning-resource")
 @RequiresAuthentication
 public class LearningResourceController {
 
+    private static final String PREVIEW_TICKET_PREFIX = "learning_resource:preview_ticket:";
+    private static final long PREVIEW_TICKET_TTL_SECONDS = 300L;
+
     @Resource
     private LearningResourceService learningResourceService;
+
+    @Resource
+    private RedisUtils redisUtils;
 
     @GetMapping("/folders")
     @RequiresAuthentication
@@ -95,6 +104,33 @@ public class LearningResourceController {
     @RequiresAuthentication
     public ResponseEntity<FileSystemResource> previewFile(@PathVariable Long fileId) {
         return resourceResponse(fileId, true);
+    }
+
+    @PostMapping("/files/{fileId}/preview-ticket")
+    @RequiresAuthentication
+    public CommonResult<Map<String, Object>> createPreviewTicket(
+            @PathVariable Long fileId) {
+        LearningResourceService.ResourceFile resourceFile =
+                learningResourceService.getResourceFile(fileId, true);
+        if (resourceFile == null
+                || !MediaType.APPLICATION_PDF_VALUE.equalsIgnoreCase(
+                        resourceFile.getContentType())) {
+            return CommonResult.errorResponse("该文件无法在线预览！");
+        }
+
+        String ticket = UUID.randomUUID().toString().replace("-", "");
+        boolean saved = redisUtils.set(
+                PREVIEW_TICKET_PREFIX + ticket,
+                String.valueOf(fileId),
+                PREVIEW_TICKET_TTL_SECONDS);
+        if (!saved) {
+            return CommonResult.errorResponse("预览链接生成失败，请稍后重试！");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("ticket", ticket);
+        result.put("expiresIn", PREVIEW_TICKET_TTL_SECONDS);
+        return CommonResult.successResponse(result, "预览链接生成成功");
     }
 
     @GetMapping("/files/{fileId}/download")

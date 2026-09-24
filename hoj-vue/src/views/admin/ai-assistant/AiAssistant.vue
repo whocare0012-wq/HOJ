@@ -6,7 +6,7 @@
           <h2>AI 设置</h2>
           <p>管理模型连接、API Key 轮换、用户每日次数和当前请求队列。</p>
         </div>
-        <el-button :icon="Refresh" @click="loadOverview">刷新</el-button>
+        <el-button :icon="Refresh" @click="loadOverview(true, false)">刷新</el-button>
       </div>
     </el-card>
 
@@ -46,20 +46,33 @@
           <el-input
             v-model.trim="config.baseUrl"
             placeholder="https://api.openai.com/v1"
+            @change="loadModels(false)"
           />
         </el-form-item>
         <el-form-item label="模型">
-          <el-select
-            v-model="config.model"
-            allow-create
-            filterable
-            default-first-option
-            placeholder="选择或输入模型名称"
-          >
-            <el-option label="gpt-4o-mini" value="gpt-4o-mini" />
-            <el-option label="gpt-4o" value="gpt-4o" />
-            <el-option label="deepseek-chat" value="deepseek-chat" />
-          </el-select>
+          <div class="model-select-row">
+            <el-select
+              v-model="config.model"
+              allow-create
+              filterable
+              default-first-option
+              :loading="loadingModels"
+              placeholder="请先拉取并选择模型"
+            >
+              <el-option
+                v-for="model in modelOptions"
+                :key="model"
+                :label="model"
+                :value="model"
+              />
+            </el-select>
+            <el-button
+              :loading="loadingModels"
+              @click="loadModels(false)"
+            >
+              拉取模型
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="每位用户每天使用次数">
           <el-input-number
@@ -212,24 +225,32 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="requestDialogVisible" title="AI 请求详情" width="650px">
+    <el-dialog
+      v-model="requestDialogVisible"
+      title="AI 请求详情"
+      width="760px"
+      destroy-on-close
+      @closed="selectedRequest = null"
+    >
       <template v-if="selectedRequest">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="用户">{{ selectedRequest.username }}</el-descriptions-item>
-          <el-descriptions-item label="题目">
-            {{ selectedRequest.problemDisplayId }} {{ selectedRequest.problemTitle }}
-          </el-descriptions-item>
-          <el-descriptions-item label="类型">
-            {{ requestTypeLabel(selectedRequest.requestType) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            {{ requestStatusLabel(selectedRequest.status) }}
-          </el-descriptions-item>
-        </el-descriptions>
-        <h4>请求内容预览</h4>
-        <pre class="request-detail-block">{{ selectedRequest.requestPreview || '无' }}</pre>
-        <h4>返回结果</h4>
-        <pre class="request-detail-block">{{ selectedRequest.responsePreview || selectedRequest.errorMessage || '尚无结果' }}</pre>
+        <div v-loading="requestDetailLoading">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="用户">{{ selectedRequest.username }}</el-descriptions-item>
+            <el-descriptions-item label="题目">
+              {{ selectedRequest.problemDisplayId }} {{ selectedRequest.problemTitle }}
+            </el-descriptions-item>
+            <el-descriptions-item label="类型">
+              {{ requestTypeLabel(selectedRequest.requestType) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="状态">
+              {{ requestStatusLabel(selectedRequest.status) }}
+            </el-descriptions-item>
+          </el-descriptions>
+          <h4>完整请求内容</h4>
+          <pre class="request-detail-block">{{ selectedRequest.requestContent || selectedRequest.requestPreview || '无' }}</pre>
+          <h4>完整返回结果</h4>
+          <pre class="request-detail-block">{{ selectedRequest.responseContent || selectedRequest.responsePreview || selectedRequest.errorMessage || '尚无结果' }}</pre>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -286,7 +307,9 @@ export default {
       loading: false,
       savingConfig: false,
       savingKey: false,
+      loadingModels: false,
       config: defaultConfig(),
+      modelOptions: [],
       counts: { queued: 0, processing: 0, success: 0, failed: 0 },
       apiKeys: [],
       requests: { records: [], total: 0, currentPage: 1, limit: 10 },
@@ -294,19 +317,23 @@ export default {
       keyDialogVisible: false,
       keyForm: defaultKeyForm(),
       requestDialogVisible: false,
+      requestDetailLoading: false,
       selectedRequest: null,
       refreshTimer: null,
     };
   },
   mounted() {
-    this.loadOverview();
-    this.refreshTimer = window.setInterval(() => this.loadOverview(false), 5000);
+    this.loadOverview(true, true);
+    this.refreshTimer = window.setInterval(
+      () => this.loadOverview(false, false),
+      5000
+    );
   },
   beforeUnmount() {
     if (this.refreshTimer) window.clearInterval(this.refreshTimer);
   },
   methods: {
-    loadOverview(showLoading = true) {
+    loadOverview(showLoading = true, syncConfig = false) {
       if (showLoading) this.loading = true;
       return api
         .admin_getAiAssistantOverview({
@@ -316,7 +343,10 @@ export default {
         })
         .then((response) => {
           const data = response.data.data || {};
-          this.config = { ...defaultConfig(), ...(data.config || {}) };
+          if (syncConfig) {
+            this.config = { ...defaultConfig(), ...(data.config || {}) };
+            this.modelOptions = this.config.model ? [this.config.model] : [];
+          }
           this.counts = { ...this.counts, ...(data.counts || {}) };
           this.apiKeys = data.apiKeys || [];
           this.requests = { ...this.requests, ...(data.requests || {}) };
@@ -325,13 +355,45 @@ export default {
           this.loading = false;
         });
     },
+    loadModels(silent = false) {
+      if (!this.config.baseUrl) {
+        if (!silent) myMessage.warning('请先填写 API 基础链接');
+        return Promise.resolve();
+      }
+      this.loadingModels = true;
+      return api
+        .admin_getAiAssistantModels(this.config.baseUrl)
+        .then((response) => {
+          const models = response.data.data?.models || [];
+          this.modelOptions = models;
+          if (!this.config.model && models.length > 0) {
+            this.config.model = models[0];
+          }
+          if (!silent) {
+            myMessage.success(`已获取 ${models.length} 个模型`);
+          }
+        })
+        .finally(() => {
+          this.loadingModels = false;
+        });
+    },
     saveConfig() {
       this.savingConfig = true;
       api
         .admin_updateAiAssistantConfig(this.config)
-        .then(() => {
+        .then((response) => {
+          this.config = {
+            ...defaultConfig(),
+            ...(response.data.data || {}),
+          };
+          if (
+            this.config.model &&
+            !this.modelOptions.includes(this.config.model)
+          ) {
+            this.modelOptions.unshift(this.config.model);
+          }
           myMessage.success('AI 设置保存成功');
-          this.loadOverview(false);
+          return this.loadOverview(false, false);
         })
         .finally(() => {
           this.savingConfig = false;
@@ -391,8 +453,20 @@ export default {
       this.loadOverview();
     },
     showRequest(row) {
-      this.selectedRequest = row;
+      this.selectedRequest = { ...row };
       this.requestDialogVisible = true;
+      this.requestDetailLoading = true;
+      api
+        .admin_getAiAssistantRequest(row.id)
+        .then((response) => {
+          this.selectedRequest = {
+            ...this.selectedRequest,
+            ...(response.data.data || {}),
+          };
+        })
+        .finally(() => {
+          this.requestDetailLoading = false;
+        });
     },
     requestTypeLabel(type) {
       return type === 'CODE_REVIEW' ? '代码排错' : '解题思路';
@@ -498,6 +572,16 @@ export default {
 .config-form :deep(.el-input-number) {
   width: 100%;
 }
+.model-select-row {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+.model-select-row :deep(.el-select) {
+  flex: 1;
+  min-width: 0;
+}
 .queue-header {
   gap: 18px;
 }
@@ -521,7 +605,7 @@ export default {
   color: #4b5563;
   line-height: 1.65;
   margin: 8px 0 18px;
-  max-height: 230px;
+  max-height: 360px;
   overflow: auto;
   padding: 12px;
   white-space: pre-wrap;

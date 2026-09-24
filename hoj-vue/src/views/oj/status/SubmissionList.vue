@@ -213,7 +213,7 @@
                       :class="getStatusColor(row.status)"
                       >
                       <i
-                        class="el-icon-loading"
+                        class="el-icon-loading judge-status-loading-icon"
                         v-if="
                       row.status == JUDGE_STATUS_RESERVE['Pending'] ||
                         row.status == JUDGE_STATUS_RESERVE['Compiling'] ||
@@ -293,14 +293,7 @@
                     <div>
                       {{ $t('m.Problem_Score') }}：{{
                         row.score != null ? row.score : $t('m.Unknown')
-                      }}<br />{{ $t('m.OI_Rank_Score') }}：{{
-                        row.oiRankScore != null
-                          ? row.oiRankScore
-                          : $t('m.Unknown')
-                      }}<br />
-                      {{
-                        $t('m.OI_Rank_Calculation_Rule')
-                      }}：(score*0.1+difficulty*2)
+                      }}<br />OJ 积分按当前难度与历史最佳完成比例计算。
                     </div>
                   </template>
                   <el-tag
@@ -1142,6 +1135,9 @@ export default {
   font-size: 12px;
   line-height: 26px;
   vertical-align: middle;
+}
+.judge-status-loading-icon {
+  margin-right: 6px;
 }
 :deep(.submission-score-tag.el-tag--primary) {
   color: #409eff !important;

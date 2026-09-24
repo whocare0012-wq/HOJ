@@ -9,7 +9,7 @@ const SubmissionList = () => import('@/views/oj/status/SubmissionList.vue')
 const SubmissionDetails = () => import('@/views/oj/status/SubmissionDetails.vue')
 const ContestList = () => import('@/views/oj/contest/ContestList.vue')
 const Problem = () => import('@/views/oj/problem/Problem.vue')
-const ACMRank = () => import('@/views/oj/rank/ACMRank.vue')
+const BlocklyStandalone = () => import('@/views/oj/problem/BlocklyStandalone.vue')
 const OIRank = () => import('@/views/oj/rank/OIRank.vue')
 const ContestDetails = () => import('@/views/oj/contest/ContestDetails.vue')
 const ACMScoreBoard = () => import('@/views/oj/contest/outside/ACMScoreBoard.vue')
@@ -71,6 +71,12 @@ const ojRoutes = [
     name: 'ProblemDetails',
     component: Problem,
     meta: { title: 'Problem Details' }
+  },
+  {
+    path: '/blockly/editor',
+    name: 'BlocklyStandalone',
+    component: BlocklyStandalone,
+    meta: { title: 'Blockly Editor' }
   },
   {
     name: 'TrainingFullProblemDetails',
@@ -241,14 +247,13 @@ const ojRoutes = [
   {
     path: '/acm-rank',
     name: 'ACM Rank',
-    component: ACMRank,
-    meta: { title: 'ACM Rank' }
+    redirect: to => ({ path: '/oi-rank', query: to.query, hash: to.hash })
   },
   {
     path: '/oi-rank',
     name: 'OI Rank',
     component: OIRank,
-    meta: { title: 'OI Rank' }
+    meta: { title: 'OJ 积分排名' }
   },
   {
     path: '/reset-password',

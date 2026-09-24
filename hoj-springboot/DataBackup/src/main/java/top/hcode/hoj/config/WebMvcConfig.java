@@ -41,14 +41,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${cors-allowed-origins:http://localhost,http://127.0.0.1}")
     private String corsAllowedOrigins;
 
+    @Value("${cors-allowed-origin-patterns:}")
+    private String corsAllowedOriginPatterns;
+
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilterRegistration() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> allowedOrigins = Arrays.stream(corsAllowedOrigins.split(","))
-                .map(String::trim)
-                .filter(origin -> !origin.isEmpty())
-                .collect(Collectors.toList());
-        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedOrigins(parseCorsValues(corsAllowedOrigins));
+        configuration.setAllowedOriginPatterns(parseCorsValues(corsAllowedOriginPatterns));
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
@@ -68,6 +68,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 new FilterRegistrationBean<>(new CorsFilter(source));
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return registration;
+    }
+
+    private List<String> parseCorsValues(String configuredValues) {
+        return Arrays.stream(configuredValues.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .collect(Collectors.toList());
     }
 
     // 前端直接通过/public/img/图片名称即可拿到

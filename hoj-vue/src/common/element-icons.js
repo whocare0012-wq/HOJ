@@ -31,6 +31,7 @@ import {
   Search,
   Share,
   Tickets,
+  TopRight,
   Tools,
   Upload,
   UploadFilled,
@@ -72,6 +73,7 @@ export default {
   'el-icon-share': Share,
   'el-icon-s-tools': Tools,
   'el-icon-tickets': Tickets,
+  'el-icon-top-right': TopRight,
   'el-icon-upload': Upload,
   'el-icon-upload2': UploadFilled,
   'el-icon-user-solid': UserFilled

@@ -41,7 +41,7 @@ public class DailyCheckInServiceImpl implements DailyCheckInService {
     private static final ZoneId CHINA_ZONE = ZoneId.of("Asia/Shanghai");
     private static final int ADVICE_PROFILE_COUNT = 40;
     private static final int CHECKED_IN_ADVICE_OFFSET = 11;
-    private static final int DISPLAY_ADVICE_COUNT = 2;
+    private static final int DISPLAY_ADVICE_COUNT = 1;
     private static final int MIN_CONFIGURED_POOL_SIZE = 1;
     private static final int MAX_CONFIGURED_POOL_SIZE = 50;
     private static final String RECOMMENDED = "recommended";

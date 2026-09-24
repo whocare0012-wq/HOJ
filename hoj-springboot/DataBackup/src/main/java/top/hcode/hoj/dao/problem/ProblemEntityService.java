@@ -5,6 +5,7 @@ import top.hcode.hoj.pojo.dto.ProblemDTO;
 import top.hcode.hoj.pojo.vo.ImportProblemVO;
 import top.hcode.hoj.pojo.vo.ProblemVO;
 import top.hcode.hoj.pojo.entity.problem.Problem;
+import top.hcode.hoj.pojo.entity.problem.ProblemCase;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.HashMap;
@@ -27,6 +28,12 @@ public interface ProblemEntityService extends IService<Problem> {
     boolean adminUpdateProblem(ProblemDTO problemDto);
 
     boolean adminAddProblem(ProblemDTO problemDto);
+
+    void initHandTestCase(String judgeMode, String judgeCaseMode, String version,
+                          Long problemId, List<ProblemCase> problemCaseList);
+
+    void initHandTestCaseSynchronously(String judgeMode, String judgeCaseMode, String version,
+                                       Long problemId, List<ProblemCase> problemCaseList);
 
     ImportProblemVO buildExportProblem(Long pid, List<HashMap<String, Object>> problemCaseList, HashMap<Long, String> languageMap, HashMap<Long, String> tagMap);
 }

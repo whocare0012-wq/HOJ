@@ -34,10 +34,21 @@ public class AiAssistantAdminController {
         return aiAssistantService.getAdminOverview(currentPage, limit, status);
     }
 
+    @GetMapping("/requests/{id}")
+    public CommonResult<Map<String, Object>> getRequest(@PathVariable Long id) {
+        return aiAssistantService.getAdminRequest(id);
+    }
+
     @PutMapping("/config")
     public CommonResult<Map<String, Object>> updateConfig(
             @RequestBody Map<String, Object> config) {
         return aiAssistantService.updateConfig(config);
+    }
+
+    @GetMapping("/models")
+    public CommonResult<Map<String, Object>> getModels(
+            @RequestParam String baseUrl) {
+        return aiAssistantService.getModels(baseUrl);
     }
 
     @PostMapping("/api-keys")

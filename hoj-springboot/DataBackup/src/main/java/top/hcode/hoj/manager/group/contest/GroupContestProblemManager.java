@@ -16,6 +16,7 @@ import top.hcode.hoj.dao.group.GroupEntityService;
 import top.hcode.hoj.dao.judge.JudgeEntityService;
 import top.hcode.hoj.dao.problem.ProblemEntityService;
 import top.hcode.hoj.manager.admin.contest.AdminContestProblemManager;
+import top.hcode.hoj.manager.admin.contest.ContestProblemRemovalService;
 import top.hcode.hoj.pojo.dto.ContestProblemDTO;
 import top.hcode.hoj.pojo.dto.ProblemDTO;
 import top.hcode.hoj.pojo.entity.contest.Contest;
@@ -64,6 +65,9 @@ public class GroupContestProblemManager {
 
     @Autowired
     private ProblemValidator problemValidator;
+
+    @Autowired
+    private ContestProblemRemovalService contestProblemRemovalService;
 
     public HashMap<String, Object> getContestProblemList(Integer limit, Integer currentPage, String keyword, Long cid, Integer problemType, String oj) throws StatusNotFoundException, StatusForbiddenException {
         AccountProfile userRolesVo = (AccountProfile) SecurityUtils.getSubject().getPrincipal();
@@ -257,16 +261,7 @@ public class GroupContestProblemManager {
             throw new StatusForbiddenException("对不起，您无权限操作！");
         }
 
-        QueryWrapper<ContestProblem> contestProblemQueryWrapper = new QueryWrapper<>();
-        contestProblemQueryWrapper.eq("cid", cid).eq("pid", pid);
-        boolean isOk = contestProblemEntityService.remove(contestProblemQueryWrapper);
-        if (isOk) {
-            UpdateWrapper<Judge> judgeUpdateWrapper = new UpdateWrapper<>();
-            judgeUpdateWrapper.eq("cid", cid).eq("pid", pid);
-            judgeEntityService.remove(judgeUpdateWrapper);
-        } else {
-            throw new StatusFailException("删除失败！");
-        }
+        contestProblemRemovalService.remove(pid, cid);
     }
 
     public void addProblemFromPublic(ContestProblemDTO contestProblemDto) throws StatusNotFoundException, StatusForbiddenException, StatusFailException {

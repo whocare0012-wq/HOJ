@@ -167,36 +167,55 @@
                 {{ checkInStatus.fortuneDescription }}
               </div>
 
-              <div class="daily-fortune-advice-grid">
-                <div class="daily-fortune-advice-column">
-                  <div
-                    v-for="(item, index) in checkInStatus.recommendedItems"
-                    :key="`recommended-${index}-${item.title}`"
-                    class="daily-fortune-advice-item"
-                  >
-                    <div class="daily-fortune-advice-title recommended">
-                      <strong>{{ $t('m.Recommended') }}：</strong>{{ item.title }}
-                    </div>
-                    <div v-if="item.description" class="daily-fortune-advice-description">
-                      {{ item.description }}
-                    </div>
-                  </div>
+              <div
+                class="daily-fortune-advice-grid"
+                :class="{ 'is-single-message': isGreatLuck }"
+              >
+                <div
+                  v-if="isGreatLuck"
+                  class="daily-fortune-special-advice recommended"
+                >
+                  {{ $t('m.Everything_Is_Auspicious') }}
                 </div>
+                <template v-else>
+                  <div class="daily-fortune-advice-column">
+                    <div
+                      v-if="isGreatBadLuck"
+                      class="daily-fortune-special-advice avoid"
+                    >
+                      {{ $t('m.Nothing_Is_Advisable') }}
+                    </div>
+                    <template v-else>
+                      <div
+                        v-for="(item, index) in checkInStatus.recommendedItems.slice(0, 1)"
+                        :key="`recommended-${index}-${item.title}`"
+                        class="daily-fortune-advice-item"
+                      >
+                        <div class="daily-fortune-advice-title recommended">
+                          <strong>{{ $t('m.Recommended') }}：</strong>{{ item.title }}
+                        </div>
+                        <div v-if="item.description" class="daily-fortune-advice-description">
+                          {{ item.description }}
+                        </div>
+                      </div>
+                    </template>
+                  </div>
 
-                <div class="daily-fortune-advice-column">
-                  <div
-                    v-for="(item, index) in checkInStatus.avoidItems"
-                    :key="`avoid-${index}-${item.title}`"
-                    class="daily-fortune-advice-item"
-                  >
-                    <div class="daily-fortune-advice-title avoid">
-                      <strong>{{ $t('m.Avoid') }}：</strong>{{ item.title }}
-                    </div>
-                    <div v-if="item.description" class="daily-fortune-advice-description">
-                      {{ item.description }}
+                  <div class="daily-fortune-advice-column">
+                    <div
+                      v-for="(item, index) in checkInStatus.avoidItems.slice(0, 1)"
+                      :key="`avoid-${index}-${item.title}`"
+                      class="daily-fortune-advice-item"
+                    >
+                      <div class="daily-fortune-advice-title avoid">
+                        <strong>{{ $t('m.Avoid') }}：</strong>{{ item.title }}
+                      </div>
+                      <div v-if="item.description" class="daily-fortune-advice-description">
+                        {{ item.description }}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </template>
               </div>
 
               <div class="daily-check-in-streak">
@@ -828,6 +847,12 @@ export default {
       }
       return "fortune-tone-unlucky";
     },
+    isGreatLuck() {
+      return this.checkInStatus.fortuneType === "great_luck";
+    },
+    isGreatBadLuck() {
+      return this.checkInStatus.fortuneType === "great_bad_luck";
+    },
   },
   watch: {
     isAuthenticated(isAuthenticated) {
@@ -884,7 +909,7 @@ export default {
   padding-bottom: 13px;
 }
 .daily-check-in-card > :deep(.el-card__body) {
-  padding: 24px 28px;
+  padding: 14px 18px;
 }
 .daily-check-in-card > :deep(.el-card__header) {
   padding-bottom: 0 !important;
@@ -894,7 +919,7 @@ export default {
   margin-right: 8px;
 }
 .daily-check-in-content {
-  min-height: 332px;
+  min-height: 0;
 }
 .daily-check-in-header {
   align-items: center;
@@ -922,17 +947,17 @@ export default {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  min-height: 332px;
-  padding: 24px 34px 20px;
+  min-height: 0;
+  padding: 14px 20px 12px;
 }
 .daily-fortune-owner {
   align-items: baseline;
   display: flex;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   gap: 5px;
   justify-content: center;
-  line-height: 26px;
+  line-height: 20px;
   text-align: center;
 }
 .daily-fortune-owner > strong {
@@ -940,18 +965,18 @@ export default {
   overflow-wrap: anywhere;
 }
 .daily-fortune-level {
-  font-size: 42px;
+  font-size: 34px;
   font-weight: 700;
   letter-spacing: 5px;
-  line-height: 56px;
-  margin-top: 8px;
+  line-height: 38px;
+  margin-top: 2px;
   text-align: center;
 }
 .daily-fortune-summary {
   color: #8a8f99;
-  font-size: 14px;
-  line-height: 20px;
-  margin-top: 2px;
+  font-size: 13px;
+  line-height: 18px;
+  margin-top: 5px;
   text-align: center;
 }
 .fortune-tone-lucky {
@@ -965,23 +990,41 @@ export default {
 }
 .daily-fortune-advice-grid {
   display: grid;
-  gap: 26px;
+  gap: 18px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 18px;
+  margin-top: 16px;
+}
+.daily-fortune-advice-grid.is-single-message {
+  grid-template-columns: minmax(0, 1fr);
 }
 .daily-fortune-advice-column {
+  align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 6px;
+  justify-content: center;
   min-width: 0;
 }
+.daily-fortune-special-advice {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 30px;
+  text-align: center;
+}
+.daily-fortune-special-advice.recommended {
+  color: #f5222d;
+}
+.daily-fortune-special-advice.avoid {
+  color: #202124;
+}
 .daily-fortune-advice-item {
-  min-height: 52px;
+  min-height: 0;
   text-align: center;
 }
 .daily-fortune-advice-title {
-  font-size: 16px;
-  line-height: 22px;
+  font-size: 14px;
+  line-height: 20px;
   overflow-wrap: anywhere;
 }
 .daily-fortune-advice-title.recommended {
@@ -995,22 +1038,22 @@ export default {
 }
 .daily-fortune-advice-description {
   color: #8a8f99;
-  font-size: 13px;
-  line-height: 20px;
-  margin-top: 6px;
+  font-size: 12px;
+  line-height: 17px;
+  margin-top: 2px;
   overflow-wrap: anywhere;
 }
 .daily-check-in-streak {
   color: #8a8f99;
-  font-size: 15px;
-  line-height: 22px;
+  font-size: 14px;
+  line-height: 20px;
   margin-top: auto;
-  padding-top: 18px;
+  padding-top: 8px;
   text-align: center;
 }
 .daily-check-in-streak > strong {
   color: #5e6470;
-  font-size: 17px;
+  font-size: 16px;
 }
 .daily-check-in-login-prompt {
   align-items: center;
@@ -1022,7 +1065,7 @@ export default {
   font-size: 16px;
   gap: 12px;
   justify-content: center;
-  min-height: 332px;
+  min-height: 200px;
 }
 .daily-check-in-login-prompt > i {
   color: #409eff;
@@ -1201,25 +1244,25 @@ li {
 
 @media screen and (max-width: 768px) {
   .daily-check-in-card > :deep(.el-card__body) {
-    padding: 18px 14px;
+    padding: 14px 12px;
   }
   .daily-check-in-header {
     gap: 12px;
   }
   .daily-fortune-panel {
     min-height: 0;
-    padding: 20px 18px;
+    padding: 16px 14px;
   }
   .daily-fortune-level {
-    font-size: 34px;
-    line-height: 48px;
+    font-size: 30px;
+    line-height: 40px;
   }
   .daily-fortune-advice-grid {
-    gap: 20px;
+    gap: 10px;
     grid-template-columns: 1fr;
   }
   .daily-check-in-login-prompt {
-    min-height: 250px;
+    min-height: 180px;
   }
   .contest-status {
     text-align: center;

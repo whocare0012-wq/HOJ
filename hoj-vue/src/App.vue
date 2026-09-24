@@ -37,9 +37,6 @@
               <p>
                 <a @click="goRoute('/status')">{{ $t('m.Judging_Queue') }}</a>
               </p>
-              <p>
-                <a @click="goRoute('/developer')">{{ $t('m.System_Info') }}</a>
-              </p>
             </el-col>
             <el-col class="hr-none">
               <el-divider></el-divider>
@@ -57,7 +54,6 @@
                   $t('m.Open_Source')
                 }}</a>
               </p>
-              <p class="mb-1"><a @click="goRoute('/#')">API</a></p>
             </el-col>
             <el-col class="hr-none">
               <el-divider></el-divider>
@@ -72,13 +68,6 @@
                   class="fa fa-info-circle"
                   aria-hidden="true"
                 ></i><a @click="goRoute('/introduction')"> {{ $t('m.NavBar_About') }}</a>
-              </p>
-              <p>
-                <i class="el-icon-document"></i>
-                <a
-                  href="https://docs.hdoi.cn"
-                  target="_blank"
-                > {{ $t('m.Help') }}</a>
               </p>
             </el-col>
           </el-row>
@@ -235,59 +224,6 @@ export default {
     getLanguageLabelByValue(value){
       return getLangLabelByValue(value);
     },
-    findWheelScroller(target, deltaY) {
-      let element = target instanceof Element ? target : target?.parentElement;
-      while (element && element !== document.documentElement) {
-        if (element === document.body) {
-          break;
-        }
-        const style = window.getComputedStyle(element);
-        const canOverflow = /^(auto|scroll|overlay)$/.test(style.overflowY);
-        if (canOverflow && element.scrollHeight > element.clientHeight + 1) {
-          const canScrollDown =
-            deltaY > 0 &&
-            element.scrollTop + element.clientHeight < element.scrollHeight - 1;
-          const canScrollUp = deltaY < 0 && element.scrollTop > 0;
-          if (canScrollDown || canScrollUp) {
-            return element;
-          }
-        }
-        element = element.parentElement;
-      }
-      return null;
-    },
-    handleViewportWheel(event) {
-      if (
-        event.ctrlKey ||
-        event.metaKey ||
-        Math.abs(event.deltaY) <= Math.abs(event.deltaX)
-      ) {
-        return;
-      }
-      const deltaY =
-        event.deltaMode === 1
-          ? event.deltaY * 16
-          : event.deltaMode === 2
-            ? event.deltaY * window.innerHeight
-            : event.deltaY;
-      const scroller = this.findWheelScroller(event.target, deltaY);
-      const initialScrollerTop = scroller?.scrollTop;
-      const initialPageTop = window.scrollY;
-      window.setTimeout(() => {
-        if (event.defaultPrevented) {
-          return;
-        }
-        if (scroller) {
-          if (scroller.scrollTop === initialScrollerTop) {
-            scroller.scrollTop += deltaY;
-          }
-          return;
-        }
-        if (window.scrollY === initialPageTop) {
-          window.scrollBy(0, deltaY);
-        }
-      }, 0);
-    }
   },
   watch: {
     $route(newVal, oldVal) {
@@ -329,7 +265,7 @@ export default {
     }
 
     if(this.isAuthenticated){
-      this.$store.dispatch("refreshUserAuthInfo");
+      this.$store.dispatch("refreshUserAuthInfo").catch(() => {});
     }
 
     this.showFooter = !(this.$route.name == 'ProblemDetails'|| utils.isFocusModePage(this.$route.name));
@@ -342,16 +278,9 @@ export default {
     this.autoChangeLanguge();
     this.getWebsiteConfig();
     this.getProblemDifficulties().catch(() => {});
-    window.addEventListener("wheel", this.handleViewportWheel, {
-      capture: true,
-      passive: true,
-    });
   },
   beforeUnmount() {
     window.removeEventListener("visibilitychange", this.autoRefreshUserInfo);
-    window.removeEventListener("wheel", this.handleViewportWheel, {
-      capture: true,
-    });
   },
 };
 </script>

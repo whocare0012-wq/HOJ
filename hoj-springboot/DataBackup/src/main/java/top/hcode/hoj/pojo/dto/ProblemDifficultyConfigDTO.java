@@ -10,4 +10,6 @@ public class ProblemDifficultyConfigDTO {
     private String displayText;
 
     private String borderColor;
+
+    private java.math.BigDecimal basePoints;
 }

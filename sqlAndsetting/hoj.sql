@@ -776,7 +776,7 @@ CREATE TABLE `user_info` (
   `email` varchar(320) DEFAULT NULL COMMENT '邮箱',
   `avatar` varchar(255) DEFAULT NULL COMMENT '头像地址',
   `signature` mediumtext COMMENT '个性签名',
-  `title_name` varchar(255) DEFAULT NULL COMMENT '头衔、称号',
+  `title_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头衔、称号',
   `title_color` varchar(255) DEFAULT NULL COMMENT '头衔、称号的颜色',
   `status` int(11) NOT NULL DEFAULT '0' COMMENT '0可用，1不可用',
   `gmt_create` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -1287,8 +1287,60 @@ insert  into `role`(`id`,`role`,`description`,`status`,`gmt_create`,`gmt_modifie
 
 insert  into `role_auth`(`id`,`auth_id`,`role_id`,`gmt_create`,`gmt_modified`) values (1,1,1000,'2020-10-25 00:18:17','2020-10-25 00:18:17'),(2,2,1000,'2020-10-25 00:18:38','2021-05-15 07:17:35'),(3,3,1000,'2020-10-25 00:18:48','2021-05-15 07:17:44'),(4,4,1000,'2021-05-15 07:17:56','2021-05-15 07:17:56'),(5,5,1000,'2021-05-15 07:18:20','2021-05-15 07:18:20'),(6,6,1000,'2021-05-15 07:18:29','2021-05-15 07:18:29'),(7,7,1000,'2021-05-15 07:18:42','2021-05-15 07:18:42'),(8,8,1000,'2021-05-15 07:18:59','2021-05-15 07:18:59'),(9,9,1000,'2021-05-15 07:19:07','2021-05-15 07:19:07'),(10,10,1000,'2021-05-15 07:19:10','2021-05-15 07:19:10'),(11,11,1000,'2021-05-15 07:19:13','2021-05-15 07:19:13'),(12,12,1000,'2021-05-15 07:19:18','2021-05-15 07:19:30'),(13,1,1001,'2021-05-15 07:19:29','2021-05-15 07:20:02'),(14,2,1001,'2021-05-15 07:20:25','2021-05-15 07:20:25'),(15,3,1001,'2021-05-15 07:20:33','2021-05-15 07:20:33'),(16,8,1001,'2021-05-15 07:21:56','2021-05-15 07:21:56'),(17,9,1001,'2021-05-15 07:22:03','2021-05-15 07:22:03'),(18,10,1001,'2021-05-15 07:22:10','2021-05-15 07:22:10'),(19,11,1001,'2021-05-15 07:22:17','2021-05-15 07:22:17'),(20,12,1001,'2021-05-15 07:22:21','2021-05-15 07:22:21'),(21,2,1002,'2021-05-15 07:22:40','2021-05-15 07:22:40'),(22,8,1002,'2021-05-15 07:23:49','2021-05-15 07:23:49'),(23,9,1002,'2021-05-15 07:24:10','2021-05-15 07:24:10'),(24,10,1002,'2021-05-15 07:24:14','2021-05-15 07:24:14'),(25,11,1002,'2021-05-15 07:24:19','2021-05-15 07:24:19'),(26,12,1002,'2021-05-15 07:24:23','2021-05-15 07:24:23'),(27,8,1003,'2021-05-15 07:32:56','2021-05-15 07:32:56'),(28,9,1003,'2021-05-15 07:33:01','2021-05-15 07:33:01'),(29,10,1003,'2021-05-15 07:33:05','2021-05-15 07:33:05'),(30,11,1003,'2021-05-15 07:33:09','2021-05-15 07:33:09'),(31,12,1003,'2021-05-15 07:33:22','2021-05-15 07:33:22'),(32,2,1004,'2021-05-15 07:33:38','2021-05-15 07:33:38'),(33,9,1004,'2021-05-15 07:34:27','2021-05-15 07:34:27'),(34,10,1004,'2021-05-15 07:34:31','2021-05-15 07:34:31'),(35,11,1004,'2021-05-15 07:34:42','2021-05-15 07:34:42'),(36,12,1004,'2021-05-15 07:34:47','2021-05-15 07:34:47'),(37,2,1005,'2021-05-15 07:35:11','2021-05-15 07:35:11'),(38,9,1005,'2021-05-15 07:35:46','2021-05-15 07:35:46'),(39,10,1005,'2021-05-15 07:36:01','2021-05-15 07:36:01'),(40,9,1006,'2021-05-15 07:40:09','2021-05-15 07:40:09'),(41,10,1006,'2021-05-15 07:40:16','2021-05-15 07:40:16'),(42,11,1006,'2021-05-15 07:40:30','2021-05-15 07:40:30'),(43,12,1006,'2021-05-15 07:40:37','2021-05-15 07:40:37'),(44,9,1007,'2021-05-15 07:40:54','2021-05-15 07:40:54'),(45,10,1007,'2021-05-15 07:41:04','2021-05-15 07:41:04'),(46,1,1008,'2021-06-12 23:16:10','2021-06-12 23:16:10'),(47,2,1008,'2021-06-12 23:16:15','2021-06-12 23:16:15'),(48,3,1008,'2021-06-12 23:16:19','2021-06-12 23:16:19'),(49,8,1008,'2021-06-12 23:16:24','2021-06-12 23:16:24'),(50,9,1008,'2021-06-12 23:16:45','2021-06-12 23:16:45'),(51,10,1008,'2021-06-12 23:16:48','2021-06-12 23:16:48'),(52,11,1008,'2021-06-12 23:16:52','2021-06-12 23:16:52'),(53,12,1008,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(54,13,1000,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(55,13,1001,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(56,13,1002,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(57,13,1008,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(58,14,1000,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(59,14,1001,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(60,14,1002,'2021-06-12 23:16:58','2021-06-12 23:16:58'),(61,14,1008,'2021-06-12 23:16:58','2021-06-12 23:16:58');
 
-insert  into `user_info`(`uuid`,`username`,`password`,`gmt_create`,`gmt_modified`) values('1','root','9f09812f6e5165b85e258c48901d4d74',NOW(),NOW());
+-- No user accounts or password hashes are included in the public seed.
+-- Register the initial administrator privately and grant the root role as described in docs/docs/deploy/optimized.md.
 
-insert  into `user_record`(`uid`,`gmt_create`,`gmt_modified`) values('1',NOW(),NOW());
 
-insert  into `user_role`(`uid`,`role_id`,`gmt_create`,`gmt_modified`) values('1',00000000000000001000,NOW(),NOW());
+-- OJ points schema for fresh installations (also available as a standalone upgrade).
+-- MySQL 8.0. Back up all databases before applying. Run with the HOJ database selected.
+-- Re-runnable: historical denominators are captured once, never overwritten on rerun.
+SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='problem_difficulty_config' AND column_name='base_points'), 'SELECT 1', 'ALTER TABLE problem_difficulty_config ADD base_points DECIMAL(10,2) NULL');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+UPDATE problem_difficulty_config SET base_points=CASE difficulty_value WHEN 0 THEN 10 WHEN 1 THEN 20 WHEN 2 THEN 40 ELSE 10 END WHERE base_points IS NULL;
+ALTER TABLE problem_difficulty_config MODIFY base_points DECIMAL(10,2) NOT NULL DEFAULT 10;
+SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='judge' AND column_name='score_type'), 'SELECT 1', 'ALTER TABLE judge ADD score_type INT NULL, ADD score_max INT NULL, ADD score_snapshot_estimated TINYINT(1) NOT NULL DEFAULT 0');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+UPDATE judge j JOIN problem p ON p.id=j.pid
+SET j.score_type=p.type,j.score_max=p.io_score,j.score_snapshot_estimated=1,j.gmt_modified=j.gmt_modified
+WHERE j.score_type IS NULL;
+
+-- Cover the normalized progress scan without repeatedly fetching submission code/text rows.
+SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='judge' AND index_name='idx_oj_points'), 'SELECT 1', 'CREATE INDEX idx_oj_points ON judge(cid,gid,uid,pid,status,score_type,score_max,score,score_snapshot_estimated)');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+CREATE TABLE IF NOT EXISTS oj_points_change_log (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ operator_uid VARCHAR(32) NULL,
+ target_type VARCHAR(20) NOT NULL,
+ target_id BIGINT NOT NULL,
+ target_name VARCHAR(255) NOT NULL,
+ old_value DECIMAL(10,2) NULL,
+ new_value DECIMAL(10,2) NULL,
+ affected_problems BIGINT NOT NULL DEFAULT 0,
+ affected_users BIGINT NOT NULL DEFAULT 0,
+ gmt_create DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ INDEX idx_points_log_created (gmt_create)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Only completed, valid results can earn points. Contest submissions never enter this view.
+CREATE OR REPLACE VIEW oj_submission_progress AS
+SELECT j.uid,j.pid,j.gid,j.status,j.score_snapshot_estimated,
+ CASE WHEN j.status=0 THEN CAST(1 AS DECIMAL(30,16))
+      WHEN j.score_type=1 AND j.score_max>0 AND j.score IS NOT NULL
+       AND j.status IN (-3,-1,1,2,3,8)
+      THEN LEAST(1,GREATEST(0,CAST(j.score AS DECIMAL(30,16))/j.score_max))
+      ELSE CAST(0 AS DECIMAL(30,16)) END AS completion_ratio
+FROM judge j WHERE j.cid=0;
+
+CREATE OR REPLACE VIEW oj_problem_points AS
+SELECT s.uid,s.pid,s.gid,s.completion_ratio,s.accepted,
+ (s.completion_ratio>s.confirmed_ratio) AS estimated,
+ COALESCE(d.base_points,0) AS base_points,
+ ROUND(COALESCE(d.base_points,0)*s.completion_ratio,2) AS points
+FROM (
+ SELECT uid,pid,gid,MAX(completion_ratio) AS completion_ratio,
+  MAX(status=0) AS accepted,
+  MAX(CASE WHEN score_snapshot_estimated=0 OR status=0 THEN completion_ratio ELSE 0 END) AS confirmed_ratio
+ FROM oj_submission_progress GROUP BY uid,pid,gid
+) s JOIN problem p ON p.id=s.pid
+LEFT JOIN problem_difficulty_config d ON d.difficulty_value=p.difficulty;

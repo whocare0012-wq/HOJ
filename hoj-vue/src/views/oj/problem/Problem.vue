@@ -200,7 +200,7 @@
                             problemData.problem.ioScore,
                             problemData.problem.difficulty
                           )
-                        }}(0.1*{{ $t('m.Score') }}+2*{{ $t('m.Level') }})
+                        }}（通过后获得）
                       </span>
                       <br />
                     </template>
@@ -414,14 +414,7 @@
                               <div>
                                 {{ $t('m.Problem_Score') }}：{{
                                   row.score != null ? row.score : $t('m.Unknown')
-                                }}<br />{{ $t('m.OI_Rank_Score') }}：{{
-                                  row.oiRankScore != null
-                                    ? row.oiRankScore
-                                    : $t('m.Unknown')
-                                }}<br />
-                                {{
-                                  $t('m.OI_Rank_Calculation_Rule')
-                                }}：(score*0.1+difficulty*2)
+                                }}<br />OJ 积分按当前难度与历史最佳完成比例计算。
                               </div>
                             </template>
                             <el-tag
@@ -602,6 +595,10 @@
               v-model:value="code"
               :languages="problemData.languages"
               v-model:language="language"
+              v-model:blocklyState="blocklyState"
+              :workspaceKey="blocklyWorkspaceKey"
+              @update:blocklyState="onBlocklyStateChange"
+              @update:value="onEditorCodeChange"
               v-model:theme="theme"
               v-model:height="height"
               v-model:fontSize="fontSize"
@@ -610,6 +607,7 @@
               @changeTheme="onChangeTheme"
               @changeLang="onChangeLang"
               @getUserLastAccepetedCode="getUserLastAccepetedCode"
+              @openBlocklyWindow="openBlocklyWindow"
               @switchFocusMode="switchFocusMode"
               v-model:openFocusMode="openFocusMode"
               v-model:openTestCaseDrawer="openTestCaseDrawer"
@@ -689,7 +687,7 @@
                           || this.result.status == JUDGE_STATUS_RESERVE['Compiling'] 
                           || this.result.status == JUDGE_STATUS_RESERVE['Judging'] 
                           || this.result.status == JUDGE_STATUS_RESERVE['Submitting']">
-                            <i class="el-icon-loading"></i> {{ submissionStatus.text }}
+                            <i class="el-icon-loading judge-status-loading-icon"></i>{{ submissionStatus.text }}
                           </template>
                           <template v-else-if="this.result.status == JUDGE_STATUS_RESERVE.ac">
                             <i class="el-icon-success"> {{ submissionStatus.text }}</i>
@@ -927,6 +925,10 @@ export default {
       submitting: false,
       code: "",
       language: "",
+      blocklyState: null,
+      blocklyCode: "",
+      textCodeBeforeBlockly: "",
+      textLanguageBeforeBlockly: "",
       isRemote: false,
       theme: "solarized",
       fontSize: "14px",
@@ -1033,6 +1035,10 @@ export default {
     },
     initProblemCodeAndSetting() {
       this.code = "";
+      this.blocklyState = null;
+      this.blocklyCode = "";
+      this.textCodeBeforeBlockly = "";
+      this.textLanguageBeforeBlockly = "";
       // 获取缓存中的该题的做题代码，代码语言，代码风格
       let problemCodeAndSetting = storage.get(
         buildProblemCodeAndSettingKey(
@@ -1043,6 +1049,10 @@ export default {
       if (problemCodeAndSetting) {
         this.language = problemCodeAndSetting.language;
         this.code = problemCodeAndSetting.code;
+        this.blocklyState = problemCodeAndSetting.blocklyState || null;
+        this.blocklyCode = problemCodeAndSetting.blocklyCode || "";
+        this.textCodeBeforeBlockly = problemCodeAndSetting.textCodeBeforeBlockly || "";
+        this.textLanguageBeforeBlockly = problemCodeAndSetting.textLanguageBeforeBlockly || "";
         this.theme = problemCodeAndSetting.theme;
         this.fontSize = problemCodeAndSetting.fontSize;
         this.tabSize = problemCodeAndSetting.tabSize;
@@ -1399,6 +1409,14 @@ export default {
           this.isRemote = result.problem.isRemote;
           this.changePie(result.problemCount);
 
+          const languageAvailable = this.language === 'Blockly'
+            ? !this.isRemote && this.problemData.languages.includes('Python3')
+            : this.problemData.languages.includes(this.language);
+          if (!languageAvailable && this.problemData.languages.length) {
+            this.language = this.problemData.languages[0];
+            this.code = '';
+          }
+
           // 在beforeRouteEnter中修改了, 说明本地有code，无需加载template
           if (this.code !== "") {
             return;
@@ -1406,7 +1424,8 @@ export default {
           if (this.problemData.languages.length != 0) {
             if (
               !this.language ||
-              this.problemData.languages.indexOf(this.language) == -1
+              (this.language !== 'Blockly' &&
+                this.problemData.languages.indexOf(this.language) == -1)
             ) {
               this.language = this.problemData.languages[0];
             }
@@ -1515,6 +1534,21 @@ export default {
     },
 
     onChangeLang(newLang) {
+      if (newLang === 'Blockly') {
+        this.textLanguageBeforeBlockly = this.language;
+        this.textCodeBeforeBlockly = this.code;
+        this.language = 'Blockly';
+        this.code = this.blocklyCode;
+        return;
+      }
+      if (this.language === 'Blockly') {
+        this.blocklyCode = this.code;
+        this.code = newLang === this.textLanguageBeforeBlockly
+          ? this.textCodeBeforeBlockly
+          : (this.problemData.codeTemplate[newLang] || '');
+        this.language = newLang;
+        return;
+      }
       if (this.code == this.problemData.codeTemplate[this.language]) {
         //原语言模板未变化，只改变语言
         if (this.problemData.codeTemplate[newLang]) {
@@ -1524,6 +1558,38 @@ export default {
         }
       }
       this.language = newLang;
+    },
+    onBlocklyStateChange(state) {
+      this.blocklyState = state;
+      this.persistBlocklyDraft();
+    },
+    onEditorCodeChange(code) {
+      if (this.language !== 'Blockly') return;
+      this.code = code;
+      this.blocklyCode = code;
+      this.persistBlocklyDraft();
+    },
+    persistBlocklyDraft() {
+      if (this.language !== 'Blockly') return;
+      storage.set(this.blocklyWorkspaceKey, {
+        code: this.code,
+        language: 'Blockly',
+        blocklyState: this.blocklyState,
+        blocklyCode: this.blocklyCode,
+        textCodeBeforeBlockly: this.textCodeBeforeBlockly,
+        textLanguageBeforeBlockly: this.textLanguageBeforeBlockly,
+        theme: this.theme,
+        fontSize: this.fontSize,
+        tabSize: this.tabSize,
+      });
+    },
+    openBlocklyWindow() {
+      const draft = `hojBlocklyWindowDraft:${this.$route.fullPath}`;
+      storage.set(draft, { state: this.blocklyState });
+      const url = this.$router.resolve({ name: 'BlocklyStandalone', query: { draft } }).href;
+      const opened = window.open(url, '_blank');
+      if (opened) opened.opener = null;
+      else myMessage.error(this.$t('m.Blockly_Window_Blocked'));
     },
     onChangeTheme(newTheme) {
       this.theme = newTheme;
@@ -1539,6 +1605,13 @@ export default {
         }
       )
         .then(() => {
+          if (this.language === 'Blockly') {
+            this.blocklyState = null;
+            this.blocklyCode = '';
+            this.code = '';
+            this.persistBlocklyDraft();
+            return;
+          }
           let codeTemplate = this.problemData.codeTemplate;
           if (codeTemplate && codeTemplate[this.language]) {
             this.code = codeTemplate[this.language];
@@ -1652,6 +1725,11 @@ export default {
     },
 
     submitCode() {
+      if (this.language === 'Blockly' &&
+          (this.isRemote || !this.problemData.languages.includes('Python3'))) {
+        myMessage.error(this.$t('m.Blockly_Unavailable'));
+        return;
+      }
       if (this.code.trim() === "") {
         myMessage.error(this.$t("m.Code_can_not_be_empty"));
         return;
@@ -1673,7 +1751,7 @@ export default {
       this.submitting = true;
       let data = {
         pid: this.problemID, // 如果是比赛题目就为display_id
-        language: this.language,
+        language: this.language === 'Blockly' ? 'Python3' : this.language,
         code: this.code,
         cid: this.contestID,
         tid: this.trainingID,
@@ -1791,7 +1869,8 @@ export default {
       });
     },
     calcOIRankScore(score, difficulty) {
-      return Math.round(0.1 * score + 2 * difficulty);
+      const level = PROBLEM_LEVEL[String(difficulty)];
+      return level && level.basePoints != null ? Number(level.basePoints).toFixed(2) : '待配置';
     },
 
     onCopy(event) {
@@ -1854,6 +1933,10 @@ export default {
         {
           code: this.code,
           language: this.language,
+          blocklyState: this.blocklyState,
+          blocklyCode: this.blocklyCode,
+          textCodeBeforeBlockly: this.textCodeBeforeBlockly,
+          textLanguageBeforeBlockly: this.textLanguageBeforeBlockly,
           theme: this.theme,
           fontSize: this.fontSize,
           tabSize: this.tabSize,
@@ -1869,6 +1952,12 @@ export default {
     }
   },
   computed: {
+    blocklyWorkspaceKey() {
+      return buildProblemCodeAndSettingKey(
+        this.$route.params.problemID,
+        this.$route.params.contestID
+      );
+    },
     ...mapGetters([
       "problemSubmitDisabled",
       "contestRuleType",
@@ -2296,6 +2385,9 @@ a {
 }
 .submission-status i::before {
   margin-right: 4px;
+}
+.submission-status .judge-status-loading-icon {
+  margin-right: 6px;
 }
 .submission-status:hover {
   cursor: pointer;

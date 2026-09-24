@@ -23,6 +23,23 @@ public class ProblemDifficultyAdminController {
     @Resource
     private ProblemDifficultyService problemDifficultyService;
 
+    @Resource private top.hcode.hoj.service.oj.OjPointsService ojPointsService;
+
+    @org.springframework.web.bind.annotation.PostMapping("/preview")
+    @RequiresAuthentication
+    @RequiresRoles(value = {"root", "problem_admin"}, logical = Logical.OR)
+    public CommonResult<java.util.Map<String,Object>> preview(@RequestBody List<ProblemDifficultyConfigDTO> difficulties) {
+        try { return CommonResult.successResponse(ojPointsService.preview(difficulties)); }
+        catch (IllegalArgumentException e) { return CommonResult.errorResponse(e.getMessage()); }
+    }
+
+    @GetMapping("/history")
+    @RequiresAuthentication
+    @RequiresRoles(value = {"root", "problem_admin"}, logical = Logical.OR)
+    public CommonResult<java.util.List<java.util.Map<String,Object>>> history() {
+        return CommonResult.successResponse(ojPointsService.history());
+    }
+
     @GetMapping
     @RequiresAuthentication
     @RequiresRoles(value = {"root", "problem_admin"}, logical = Logical.OR)

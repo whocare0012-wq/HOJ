@@ -99,8 +99,19 @@
                   :key="contest.title"
                   :style="getborderColor(contest)"
                 >
-                  <el-row type="flex" justify="space-between" align="middle">
-                    <el-col :xs="10" :sm="4" :md="3" :lg="2">
+                  <el-row
+                    class="contest-list-row"
+                    type="flex"
+                    justify="space-between"
+                    align="middle"
+                  >
+                    <el-col
+                      class="contest-trophy-column"
+                      :xs="10"
+                      :sm="4"
+                      :md="3"
+                      :lg="2"
+                    >
                       <template v-if="contest.type == 0">
                         <el-image
                         :src="acmSrc"
@@ -256,11 +267,11 @@
                       </ul>
                     </el-col>
                     <el-col
+                      class="contest-status-column"
                       :xs="4"
                       :sm="4"
                       :md="2"
                       :lg="2"
-                      style="text-align: center"
                     >
                       <el-tag
                         effect="dark"
@@ -493,34 +504,52 @@ export default {
 }
 
 #contest-list > li {
-  padding: 5px;
-  margin-left: -20px;
-  margin-top: 10px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  margin: 0;
   width: 100%;
   border-bottom: 1px solid rgba(187, 187, 187, 0.5);
   list-style: none;
 }
-#contest-list .trophy {
-  height: 70px;
-  margin-left: 10px;
-  margin-right: -20px;
+#contest-list {
+  margin: 0;
+  padding: 0;
 }
-@media screen and (max-width: 1500px) and (min-width: 1200px){
-  #contest-list .trophy {
-    width: 100% !important;
-  }
-  #contest-list .contest-main{
-    margin-left: 20px;
-  }
+#contest-list .contest-list-row {
+  align-items: center;
+  display: grid !important;
+  gap: 14px;
+  grid-template-columns: 86px minmax(0, 1fr) auto;
+  min-height: 78px;
+  width: 100%;
+}
+#contest-list .contest-list-row > .el-col {
+  flex: none;
+  float: none;
+  max-width: none;
+  width: auto;
+}
+#contest-list .contest-trophy-column {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+#contest-list .trophy {
+  display: block;
+  height: 58px;
+  margin: 0;
+  object-fit: contain;
+  width: 82px !important;
 }
 #contest-list .contest-main {
+  min-width: 0;
   text-align: left;
 }
 #contest-list .contest-main .title {
-  font-size: 1.25rem;
-  line-height: 30px;
-  padding-left: 8px;
-  margin-bottom: 0;
+  font-size: 1.125rem;
+  line-height: 25px;
+  margin: 0 0 4px;
+  padding-left: 0;
 }
 #contest-list .contest-main .title i {
   margin-left: 5px;
@@ -537,14 +566,24 @@ export default {
   border-bottom: 1px solid #2d8cf0;
 }
 #contest-list .contest-main .detail {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
   font-size: 0.875rem;
+  gap: 5px 12px;
   line-height: 21px;
+  margin: 0;
+  padding-bottom: 0;
   padding-left: 0;
-  padding-bottom: 10px;
 }
 #contest-list .contest-main li {
   display: inline-block;
-  padding: 10px 0 0 10px;
+  padding: 0;
+}
+#contest-list .contest-status-column {
+  justify-self: end;
+  text-align: center;
+  white-space: nowrap;
 }
 #contest-list .contest-main :deep(.el-button--small) {
   min-height: 28px;
@@ -574,5 +613,27 @@ export default {
   height: 36px;
   line-height: 36px;
   padding: 0 20px;
+}
+@media screen and (max-width: 768px) {
+  #contest-list > li {
+    padding: 10px 8px;
+  }
+  #contest-list .contest-list-row {
+    gap: 8px 12px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    min-height: 0;
+  }
+  #contest-list .trophy {
+    height: 46px;
+    width: 60px !important;
+  }
+  #contest-list .contest-main .title {
+    font-size: 1rem;
+    line-height: 22px;
+  }
+  #contest-list .contest-status-column {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
 </style>

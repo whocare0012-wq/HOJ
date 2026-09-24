@@ -54,6 +54,8 @@ public class ProblemEntityServiceImpl extends ServiceImpl<ProblemMapper, Problem
     @Autowired
     private ProblemMapper problemMapper;
 
+    @Autowired private top.hcode.hoj.service.oj.OjPointsService ojPointsService;
+
     @Autowired
     private JudgeEntityService judgeEntityService;
 
@@ -112,6 +114,8 @@ public class ProblemEntityServiceImpl extends ServiceImpl<ProblemMapper, Problem
     public boolean adminUpdateProblem(ProblemDTO problemDto) {
 
         Problem problem = problemDto.getProblem();
+        Problem pointsPreviousProblem = problemMapper.selectOne(new QueryWrapper<Problem>()
+                .select("id", "difficulty").eq("id", problem.getId()).last("FOR UPDATE"));
         if (Constants.JudgeMode.DEFAULT.getMode().equals(problemDto.getJudgeMode())) {
             problem.setSpjLanguage(null).setSpjCode(null);
         }
@@ -379,6 +383,10 @@ public class ProblemEntityServiceImpl extends ServiceImpl<ProblemMapper, Problem
 
         // 更新problem表
         boolean problemUpdateResult = problemMapper.updateById(problem) == 1;
+        if (problemUpdateResult && pointsPreviousProblem != null) {
+            ojPointsService.logProblem(problem.getId(), problem.getProblemId(),
+                    pointsPreviousProblem.getDifficulty(), problem.getDifficulty());
+        }
 
         if (problemUpdateResult && checkProblemCase && deleteLanguagesFromProblemResult && deleteTagsFromProblemResult
                 && addLanguagesToProblemResult && addTagsToProblemResult && deleteTemplate && saveOrUpdateCodeTemplate) {
@@ -646,12 +654,30 @@ public class ProblemEntityServiceImpl extends ServiceImpl<ProblemMapper, Problem
 
 
     // 初始化手动输入上传的测试数据，写成json文件
+    @Override
     @Async
     public void initHandTestCase(String judgeMode,
                                  String judgeCaseMode,
                                  String version,
                                  Long problemId,
                                  List<ProblemCase> problemCaseList) {
+        writeHandTestCase(judgeMode, judgeCaseMode, version, problemId, problemCaseList);
+    }
+
+    @Override
+    public void initHandTestCaseSynchronously(String judgeMode,
+                                              String judgeCaseMode,
+                                              String version,
+                                              Long problemId,
+                                              List<ProblemCase> problemCaseList) {
+        writeHandTestCase(judgeMode, judgeCaseMode, version, problemId, problemCaseList);
+    }
+
+    private void writeHandTestCase(String judgeMode,
+                                   String judgeCaseMode,
+                                   String version,
+                                   Long problemId,
+                                   List<ProblemCase> problemCaseList) {
 
         JSONObject result = new JSONObject();
         result.set("mode", judgeMode);

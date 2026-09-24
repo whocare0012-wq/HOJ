@@ -11,6 +11,38 @@ import i18n from '@/i18n'
 // // 配置NProgress进度条选项  —— 动画效果
 // NProgress.configure({ ease: 'ease', speed: 1000,showSpinner: false})
 const isMobile = /ipad|iphone|midp|rv:1.2.3.4|ucweb|android|windows ce|windows mobile/.test(navigator.userAgent.toLowerCase());
+let refreshingUserAuth = null;
+
+function requireLogin(config) {
+  store.commit('clearUserInfoAndToken');
+  if (config.headers['Url-Type'] === 'admin') {
+    router.push("/admin/login")
+  } else {
+    store.commit('changeModalStatus', { mode: 'Login', visible: true });
+  }
+}
+
+function refreshUserAuth(config) {
+  const isAdminApi = config.url.startsWith('/api/admin');
+  if (config.url === '/api/get-user-auth-info') {
+    requireLogin(config);
+    return;
+  }
+  if (!refreshingUserAuth) {
+    refreshingUserAuth = store.dispatch('refreshUserAuthInfo')
+      .then(() => {
+        if (isAdminApi) {
+          router.push("/admin")
+        }
+      })
+      .catch(() => {
+        requireLogin(config);
+      })
+      .finally(() => {
+        refreshingUserAuth = null;
+      });
+  }
+}
 
 
 // 请求超时时间
@@ -100,12 +132,7 @@ axios.interceptors.response.use(
               });
             }
           }
-          if (error.response.config.headers['Url-Type'] === 'admin') {
-            router.push("/admin/login")
-          } else {
-            store.commit('changeModalStatus', { mode: 'Login', visible: true });
-          }
-          store.commit('clearUserInfoAndToken');
+          requireLogin(error.response.config);
           break;
         // 403
         // 无权限访问或操作的请求
@@ -121,12 +148,7 @@ axios.interceptors.response.use(
               });
             }
           }
-          let isAdminApi = error.response.config.url.startsWith('/api/admin');
-          store.dispatch('refreshUserAuthInfo').then((res)=>{
-            if(isAdminApi){
-              router.push("/admin")
-            }
-          })
+          refreshUserAuth(error.response.config);
           break;
         // 404请求不存在
         case 404:
@@ -270,6 +292,10 @@ const ojApi = {
 
   deleteLearningResourceFile(fileId) {
     return ajax(`/api/learning-resource/files/${fileId}`, 'delete')
+  },
+
+  createLearningResourcePreviewTicket(fileId) {
+    return ajax(`/api/learning-resource/files/${fileId}/preview-ticket`, 'post')
   },
 
   // 用户账户的相关请求
@@ -762,6 +788,11 @@ const ojApi = {
   },
   changeUserInfo(data) {
     return ajax("/api/change-userInfo", 'post', {
+      data
+    })
+  },
+  uploadAvatar(data) {
+    return ajax('/api/file/upload-avatar', 'post', {
       data
     })
   },
@@ -1622,6 +1653,16 @@ const adminApi = {
     })
   },
 
+  admin_getAiAssistantRequest(id) {
+    return ajax(`/api/admin/ai-assistant/requests/${id}`, 'get')
+  },
+
+  admin_getAiAssistantModels(baseUrl) {
+    return ajax('/api/admin/ai-assistant/models', 'get', {
+      params: { baseUrl }
+    })
+  },
+
   admin_updateAiAssistantConfig(data) {
     return ajax('/api/admin/ai-assistant/config', 'put', {
       data
@@ -1644,6 +1685,8 @@ const adminApi = {
     return ajax(`/api/admin/ai-assistant/api-keys/${id}`, 'delete')
   },
 
+  admin_previewProblemPoints(data) { return ajax('/api/admin/problem-difficulties/preview', 'post', { data }); },
+  admin_getProblemPointsHistory() { return ajax('/api/admin/problem-difficulties/history', 'get'); },
   admin_getProblemDifficulties() {
     return ajax('/api/admin/problem-difficulties', 'get')
   },

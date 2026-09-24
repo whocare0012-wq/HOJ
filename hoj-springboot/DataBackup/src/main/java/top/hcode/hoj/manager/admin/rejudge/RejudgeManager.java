@@ -205,7 +205,7 @@ public class RejudgeManager {
     public Judge manualJudge(Long submitId, Integer status, Integer score) throws StatusFailException {
         QueryWrapper<Judge> judgeQueryWrapper = new QueryWrapper<>();
         judgeQueryWrapper
-                .select("submit_id", "status", "judger", "cid", "gid", "pid", "uid")
+                .select("submit_id", "status", "judger", "cid", "gid", "pid", "uid", "score_type", "score_max")
                 .eq("submit_id", submitId);
         Judge judge = judgeEntityService.getOne(judgeQueryWrapper);
         if (judge == null) {
@@ -229,21 +229,16 @@ public class RejudgeManager {
                 .eq("submit_id", judge.getSubmitId());
         Integer oiRankScore = null;
         if (score != null) {
-            Problem problem = problemEntityService.getById(judge.getPid());
-            if (problem != null && Objects.equals(problem.getType(), Constants.Contest.TYPE_OI.getCode())
-                    && problem.getIoScore() != null) {
-                if (score > problem.getIoScore()) {
-                    score = problem.getIoScore();
-                } else if (score < 0) {
-                    score = 0;
-                }
-                oiRankScore = (int) Math.round(problem.getDifficulty() * 2 + 0.1 * score);
-                judgeUpdateWrapper.set("score", score)
-                        .set("oi_rank_score", oiRankScore);
+            if (Objects.equals(judge.getScoreType(), Constants.Contest.TYPE_OI.getCode())
+                    && judge.getScoreMax() != null && judge.getScoreMax() > 0) {
+                score = Math.max(0, Math.min(score, judge.getScoreMax()));
+                judgeUpdateWrapper.set("score", score);
             } else {
                 score = null;
             }
         }
+        // Global points are derived from raw results and the current difficulty configuration.
+        judgeUpdateWrapper.set("oi_rank_score", null);
 
         boolean isUpdateOK = judgeEntityService.update(judgeUpdateWrapper);
         if (!isUpdateOK) {

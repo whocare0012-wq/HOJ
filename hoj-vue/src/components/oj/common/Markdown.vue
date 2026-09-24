@@ -19,6 +19,24 @@
 <script>
 import pdfLogoImage from '@/assets/pdf-logo.svg'
 
+function normalizeLatexDelimiters(content) {
+  return content
+    .split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/g)
+    .map((segment, index) => {
+      if (index % 2 === 1) {
+        return segment;
+      }
+      return segment
+        .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) =>
+          `\n\n$$\n${formula.trim()}\n$$\n\n`
+        )
+        .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) =>
+          `$${formula}$`
+        );
+    })
+    .join('');
+}
+
 export default {
   name: "Markdown",
   props: {
@@ -29,6 +47,10 @@ export default {
     content: {
       require: true,
       type: String,
+    },
+    normalizeLatex: {
+      default: false,
+      type: Boolean,
     },
   },
   data(){
@@ -41,7 +63,10 @@ export default {
       if (this.content == null || this.content == undefined) {
         return "";
       }
-      let res = this.$markDown.render(this.content);
+      const content = this.normalizeLatex
+        ? normalizeLatexDelimiters(this.content)
+        : this.content;
+      let res = this.$markDown.render(content);
       // 获取pdf链接生成预览模块
       res = res.replace(
         /<a.*?href="(.*?.pdf)".*?>(.*?)<\/a>/gi,

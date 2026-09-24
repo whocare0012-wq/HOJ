@@ -57,6 +57,9 @@ public class AdminContestProblemManager {
     @Autowired
     private ContestEntityService contestEntityService;
 
+    @Autowired
+    private ContestProblemRemovalService contestProblemRemovalService;
+
     public HashMap<String, Object> getProblemList(Integer limit, Integer currentPage, String keyword,
                                                   Long cid, Integer problemType, String oj) {
         if (currentPage == null || currentPage < 1) currentPage = 1;
@@ -165,16 +168,11 @@ public class AdminContestProblemManager {
         }
     }
 
-    public void deleteProblem(Long pid, Long cid) {
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteProblem(Long pid, Long cid) throws StatusFailException {
         //  比赛id不为null，表示就是从比赛列表移除而已
         if (cid != null) {
-            QueryWrapper<ContestProblem> contestProblemQueryWrapper = new QueryWrapper<>();
-            contestProblemQueryWrapper.eq("cid", cid).eq("pid", pid);
-            contestProblemEntityService.remove(contestProblemQueryWrapper);
-            // 把该题目在比赛的提交全部删掉
-            UpdateWrapper<Judge> judgeUpdateWrapper = new UpdateWrapper<>();
-            judgeUpdateWrapper.eq("cid", cid).eq("pid", pid);
-            judgeEntityService.remove(judgeUpdateWrapper);
+            contestProblemRemovalService.remove(pid, cid);
 
             // 获取当前登录的用户
             AccountProfile userRolesVo = (AccountProfile) SecurityUtils.getSubject().getPrincipal();
@@ -185,7 +183,17 @@ public class AdminContestProblemManager {
              /*
                 problem的id为其他表的外键的表中的对应数据都会被一起删除！
               */
-            problemEntityService.removeById(pid);
+            if (pid == null || problemEntityService.getOne(new QueryWrapper<Problem>()
+                    .eq("id", pid).last("FOR UPDATE")) == null) {
+                throw new StatusFailException("删除失败，题目不存在");
+            }
+            if (contestProblemEntityService.count(new QueryWrapper<ContestProblem>().eq("pid", pid)) > 0
+                    || judgeEntityService.count(new QueryWrapper<Judge>().eq("pid", pid)) > 0) {
+                throw new StatusFailException("该题已关联比赛或已有提交，不能删除；请使用隐藏功能");
+            }
+            if (!problemEntityService.removeById(pid)) {
+                throw new StatusFailException("删除失败，题目不存在或已被删除");
+            }
             FileUtil.del(Constants.File.TESTCASE_BASE_FOLDER.getPath() + File.separator + "problem_" + pid);
 
             // 获取当前登录的用户

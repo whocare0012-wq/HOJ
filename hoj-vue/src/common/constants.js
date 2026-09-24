@@ -210,6 +210,7 @@ export function applyProblemLevelConfig(difficulties) {
         'ja-JP': displayText,
         'ko-KR': displayText,
       },
+      basePoints: difficulty.basePoints,
       color: borderColor,
       borderColor,
     }

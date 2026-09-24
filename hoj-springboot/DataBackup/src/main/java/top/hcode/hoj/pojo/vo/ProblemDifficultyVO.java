@@ -11,6 +11,8 @@ public class ProblemDifficultyVO {
 
     private String borderColor;
 
+    private java.math.BigDecimal basePoints;
+
     private Integer sortOrder;
 
     private Long problemCount;

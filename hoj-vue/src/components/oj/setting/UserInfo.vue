@@ -321,12 +321,7 @@ export default {
         );
         form.append('image', file);
         this.loadingUploadBtn = true;
-        this.$http({
-          method: 'post',
-          url: '/api/file/upload-avatar',
-          data: form,
-          headers: { 'content-type': 'multipart/form-data' },
-        }).then(
+        api.uploadAvatar(form).then(
           (res) => {
             this.loadingUploadBtn = false;
             myMessage.success(this.$t('m.Upload_Avatar_Successfully'));

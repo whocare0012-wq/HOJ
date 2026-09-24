@@ -11,9 +11,6 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -70,6 +67,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j(topic = "hoj")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "hoj.scheduled-jobs.enabled", havingValue = "true", matchIfMissing = true)
 public class ScheduleServiceImpl implements ScheduleService {
 
     @Autowired
@@ -106,7 +104,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     private AdminNoticeManager adminNoticeManager;
 
     @Resource
-    private ApplicationContext applicationContext;
+    private CodeforcesRatingSync codeforcesRatingSync;
 
     /**
      * @MethodName deleteAvatar
@@ -246,57 +244,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 //    @Scheduled(cron = "0/5 * * * * *")
     @Override
     public void getCodeforcesRating() {
-        String codeforcesUserInfoAPI = "https://codeforces.com/api/user.info?handles=%s";
-        QueryWrapper<UserInfo> userInfoQueryWrapper = new QueryWrapper<>();
-        // 查询cf_username不为空的数据
-        userInfoQueryWrapper.isNotNull("cf_username");
-        List<UserInfo> userInfoList = userInfoEntityService.list(userInfoQueryWrapper);
-        for (UserInfo userInfo : userInfoList) {
-            // 获取cf名字
-            String cfUsername = userInfo.getCfUsername();
-            // 获取uuid
-            String uuid = userInfo.getUuid();
-            // 格式化api
-            String ratingAPI = String.format(codeforcesUserInfoAPI, cfUsername);
-            try {
-                // 连接api，获取json格式对象
-                ScheduleServiceImpl service = applicationContext.getBean(ScheduleServiceImpl.class);
-                JSONObject resultObject = service.getCFUserInfo(ratingAPI);
-                // 获取状态码
-                String status = resultObject.getStr("status");
-                // 如果查无此用户，则跳过
-                if ("FAILED".equals(status)) {
-                    continue;
-                }
-                // 用户信息存放在result列表中的第0个
-                JSONObject cfUserInfo = resultObject.getJSONArray("result").getJSONObject(0);
-                // 获取cf的分数
-                Integer cfRating = cfUserInfo.getInt("rating", null);
-                UpdateWrapper<UserRecord> userRecordUpdateWrapper = new UpdateWrapper<>();
-                // 将对应的cf分数修改
-                userRecordUpdateWrapper.eq("uid", uuid).set("rating", cfRating);
-                boolean result = userRecordEntityService.update(userRecordUpdateWrapper);
-                if (!result) {
-                    log.error("插入UserRecord表失败------------------------------->");
-                }
-
-            } catch (Exception e) {
-                log.error("爬虫爬取Codeforces Rating分数异常----------------------->{}", e.getMessage());
-            }
-            try {
-                TimeUnit.SECONDS.sleep(2);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        log.info("获取Codeforces Rating成功！");
-    }
-
-    @Retryable(value = Exception.class,
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 1000, multiplier = 1.4))
-    public JSONObject getCFUserInfo(String url) throws Exception {
-        return JsoupUtils.getJsonFromConnection(JsoupUtils.getConnectionFromUrl(url, null, null));
+        codeforcesRatingSync.runScheduled();
     }
 
 

@@ -25,6 +25,7 @@ public class ProblemDifficultyServiceImpl implements ProblemDifficultyService {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
+    @Resource private top.hcode.hoj.service.oj.OjPointsService ojPointsService;
 
     @Override
     public CommonResult<List<ProblemDifficultyVO>> getProblemDifficulties() {
@@ -37,7 +38,7 @@ public class ProblemDifficultyServiceImpl implements ProblemDifficultyService {
             List<ProblemDifficultyConfigDTO> difficulties) {
         try {
             List<Integer> existingValues = jdbcTemplate.queryForList(
-                    "SELECT difficulty_value FROM problem_difficulty_config",
+                    "SELECT difficulty_value FROM problem_difficulty_config ORDER BY difficulty_value FOR UPDATE",
                     Integer.class);
             validateDifficulties(difficulties, existingValues);
 
@@ -69,26 +70,32 @@ public class ProblemDifficultyServiceImpl implements ProblemDifficultyService {
 
             for (int index = 0; index < difficulties.size(); index++) {
                 ProblemDifficultyConfigDTO difficulty = difficulties.get(index);
+                if (difficulty.getDifficultyValue() != null) {
+                    java.math.BigDecimal before = jdbcTemplate.queryForObject(
+                        "SELECT base_points FROM problem_difficulty_config WHERE difficulty_value=?",
+                        java.math.BigDecimal.class, difficulty.getDifficultyValue());
+                    ojPointsService.logDifficulty(difficulty.getDifficultyValue(),difficulty.getDisplayText(),before,difficulty.getBasePoints());
+                }
                 String displayText = difficulty.getDisplayText().trim();
                 String borderColor = difficulty.getBorderColor().toUpperCase();
                 if (difficulty.getDifficultyValue() == null) {
                     difficulty.setDifficultyValue(nextDifficultyValue++);
                     jdbcTemplate.update(
                             "INSERT INTO problem_difficulty_config " +
-                                    "(difficulty_value, display_text, border_color, sort_order) " +
-                                    "VALUES (?, ?, ?, ?)",
+                                    "(difficulty_value, display_text, border_color, sort_order, base_points) " +
+                                    "VALUES (?, ?, ?, ?, ?)",
                             difficulty.getDifficultyValue(),
                             displayText,
                             borderColor,
-                            index);
+                            index, difficulty.getBasePoints());
                 } else {
                     jdbcTemplate.update(
                             "UPDATE problem_difficulty_config " +
-                                    "SET display_text = ?, border_color = ?, sort_order = ? " +
+                                    "SET display_text = ?, border_color = ?, sort_order = ?, base_points = ? " +
                                     "WHERE difficulty_value = ?",
                             displayText,
                             borderColor,
-                            index,
+                            index, difficulty.getBasePoints(),
                             difficulty.getDifficultyValue());
                 }
             }
@@ -113,6 +120,7 @@ public class ProblemDifficultyServiceImpl implements ProblemDifficultyService {
             if (difficulty == null) {
                 throw new IllegalArgumentException("难度配置不能为空");
             }
+            top.hcode.hoj.service.oj.OjPointsService.validatePoints(difficulty.getBasePoints());
             Integer difficultyValue = difficulty.getDifficultyValue();
             if (difficultyValue != null) {
                 if (difficultyValue < 0) {
@@ -165,17 +173,18 @@ public class ProblemDifficultyServiceImpl implements ProblemDifficultyService {
     private List<ProblemDifficultyVO> listDifficulties() {
         return jdbcTemplate.query(
                 "SELECT c.difficulty_value, c.display_text, c.border_color, " +
-                        "c.sort_order, COUNT(p.id) AS problem_count " +
+                        "c.sort_order, c.base_points, COUNT(p.id) AS problem_count " +
                         "FROM problem_difficulty_config c " +
                         "LEFT JOIN problem p ON p.difficulty = c.difficulty_value " +
                         "GROUP BY c.difficulty_value, c.display_text, " +
-                        "c.border_color, c.sort_order " +
+                        "c.border_color, c.sort_order, c.base_points " +
                         "ORDER BY c.sort_order ASC, c.difficulty_value ASC",
                 (resultSet, rowNum) -> {
                     ProblemDifficultyVO difficulty = new ProblemDifficultyVO();
                     difficulty.setDifficultyValue(resultSet.getInt("difficulty_value"));
                     difficulty.setDisplayText(resultSet.getString("display_text"));
                     difficulty.setBorderColor(resultSet.getString("border_color"));
+                    difficulty.setBasePoints(resultSet.getBigDecimal("base_points"));
                     difficulty.setSortOrder(resultSet.getInt("sort_order"));
                     difficulty.setProblemCount(resultSet.getLong("problem_count"));
                     return difficulty;

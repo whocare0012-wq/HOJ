@@ -84,7 +84,7 @@ public class BeforeDispatchInitManager {
         AccountProfile userRolesVo = (AccountProfile) SecurityUtils.getSubject().getPrincipal();
 
         QueryWrapper<Problem> problemQueryWrapper = new QueryWrapper<>();
-        problemQueryWrapper.select("id", "problem_id", "auth", "is_group", "gid");
+        problemQueryWrapper.select("id", "problem_id", "auth", "is_group", "gid", "type", "io_score");
         problemQueryWrapper.eq("problem_id", problemId);
         Problem problem = problemEntityService.getOne(problemQueryWrapper, false);
 
@@ -113,6 +113,8 @@ public class BeforeDispatchInitManager {
                 .setDisplayPid(problem.getProblemId());
 
         // 将新提交数据插入数据库
+        judge.setScoreType(problem.getType()).setScoreMax(problem.getIoScore())
+                .setScoreSnapshotEstimated(false);
         judgeEntityService.save(judge);
 
         trainingManager.checkAndSyncTrainingRecord(problem.getId(), judge.getSubmitId(), judge.getUid());
@@ -173,6 +175,8 @@ public class BeforeDispatchInitManager {
 
         judge.setDisplayPid(problem.getProblemId());
         // 将新提交数据插入数据库
+        judge.setScoreType(problem.getType()).setScoreMax(problem.getIoScore())
+                .setScoreSnapshotEstimated(false);
         judgeEntityService.save(judge);
 
         // 同时初始化写入contest_record表
@@ -232,6 +236,8 @@ public class BeforeDispatchInitManager {
                 .setGid(training.getGid());
 
         // 将新提交数据插入数据库
+        judge.setScoreType(problem.getType()).setScoreMax(problem.getIoScore())
+                .setScoreSnapshotEstimated(false);
         judgeEntityService.save(judge);
 
         // 非私有训练不记录

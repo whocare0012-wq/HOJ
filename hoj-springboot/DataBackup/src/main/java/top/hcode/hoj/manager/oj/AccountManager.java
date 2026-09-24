@@ -154,6 +154,7 @@ public class AccountManager {
 
         List<UserAcproblem> acProblemList = userAcproblemEntityService.list(queryWrapper);
         List<Long> pidList = acProblemList.stream().map(UserAcproblem::getPid).collect(Collectors.toList());
+        userHomeInfo.setSolvedCount((int) pidList.stream().distinct().count());
 
         List<String> disPlayIdList = new LinkedList<>();
 
@@ -161,6 +162,8 @@ public class AccountManager {
             QueryWrapper<Problem> problemQueryWrapper = new QueryWrapper<>();
             problemQueryWrapper.select("id", "problem_id", "difficulty");
             problemQueryWrapper.in("id", pidList);
+            // Keep earned totals while withholding restricted problem identities on public profiles.
+            problemQueryWrapper.eq("auth", 1);
             List<Problem> problems = problemEntityService.list(problemQueryWrapper);
             Map<Integer, List<UserHomeProblemVO>> map = problems.stream()
                     .map(this::convertProblemVO)

@@ -20,7 +20,7 @@
               size="small"
             >
               <el-option
-                v-for="item in languages"
+                v-for="item in editorLanguages"
                 :key="item"
                 :value="item"
               >{{ item }}
@@ -54,6 +54,16 @@
               </el-button>
             </el-tooltip>
           </span>
+          <span v-if="language === 'Blockly'">
+            <el-tooltip :content="$t('m.Blockly_Open_Window')" placement="top">
+              <el-button
+                :icon="legacyElementIcons['el-icon-top-right']"
+                :aria-label="$t('m.Blockly_Open_Window')"
+                size="small"
+                @click="$emit('openBlocklyWindow')"
+              ></el-button>
+            </el-tooltip>
+          </span>
         </div>
       </el-col>
       <el-col
@@ -63,7 +73,7 @@
         :lg="8"
       >
         <div class="select-row fl-right">
-          <span>
+          <span v-if="language !== 'Blockly'">
             <el-tooltip
               :content="$t('m.Upload_file')"
               placement="bottom"
@@ -261,7 +271,16 @@
         </div>
       </el-col>
     </el-row>
+    <BlocklyWorkspace
+      v-if="language === 'Blockly'"
+      :key="workspaceKey"
+      :state="blocklyState"
+      :height="height"
+      @update:state="$emit('update:blocklyState', $event)"
+      @generated="$emit('update:value', $event)"
+    />
     <div
+      v-else
       :style="'line-height: 1.5;font-size:'+fontSize"
       @click="closeTestCaseDrawerFromEditor"
     >
@@ -280,7 +299,7 @@
       :modal="false"
       :close-on-click-modal="false"
       :lock-scroll="false"
-      size="372px"
+      size="auto"
       :with-header="false"
       modal-class="test-judge-overlay"
       body-class="test-judge-drawer-body"
@@ -324,7 +343,7 @@
           <el-input
             type="textarea"
             class="mt-10"
-            :rows="7"
+            :rows="5"
             show-word-limit
             resize="none"
             maxlength="1000"
@@ -499,6 +518,7 @@
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import utils from "@/common/utils";
 import api from "@/common/api";
 import myMessage from "@/common/message";
@@ -563,6 +583,7 @@ export default {
   name: "CodeMirror",
   components: {
     codemirror,
+    BlocklyWorkspace: defineAsyncComponent(() => import('@/components/oj/common/BlocklyWorkspace.vue')),
   },
   props: {
     value: {
@@ -579,6 +600,8 @@ export default {
       type: String,
       default: "C",
     },
+    blocklyState: { type: Object, default: null },
+    workspaceKey: { type: String, default: '' },
     height:{
       type:Number,
       default: 550
@@ -720,7 +743,7 @@ export default {
       this.$emit("update:value", newCode);
     },
     onLangChange(newVal) {
-      this.editor?.setOption("mode", this.mode[newVal]);
+      if (newVal !== 'Blockly') this.editor?.setOption("mode", this.mode[newVal]);
       this.$emit("changeLang", newVal);
     },
     onThemeChange(newTheme) {
@@ -806,12 +829,12 @@ export default {
       }
       let data = {
         pid: this.pid,
-        language: this.language,
+        language: this.language === 'Blockly' ? 'Python3' : this.language,
         code: this.value,
         type: this.type,
         userInput: this.userInput,
         expectedOutput: this.expectedOutput,
-        mode: this.mode[this.language],
+        mode: this.mode[this.language === 'Blockly' ? 'Python3' : this.language],
         isRemoteJudge: this.isRemoteJudge,
       };
       this.testJudgeLoding = true;
@@ -887,6 +910,12 @@ export default {
     },
   },
   computed: {
+    editorLanguages() {
+      if (!this.isRemoteJudge && this.languages.includes('Python3')) {
+        return [...this.languages, 'Blockly'];
+      }
+      return this.languages;
+    },
     editor() {
       // get current editor object
       return this.$refs.myEditor?.editor || null;
@@ -990,18 +1019,17 @@ export default {
 }
 :deep(.test-judge-drawer) {
   pointer-events: auto;
+  max-height: min(360px, 48vh);
 }
 :deep(.test-judge-drawer-body) {
+  flex: 0 0 auto;
   padding: 0;
   border: 1px solid rgb(240, 240, 240);
-  overflow: hidden;
+  max-height: min(360px, 48vh);
+  overflow-y: auto;
 }
 .test-judge-panel {
   position: relative;
-  height: 100%;
-}
-.test-judge-tabs {
-  height: 100%;
 }
 .test-judge-actions {
   position: absolute;
@@ -1074,7 +1102,7 @@ export default {
 }
 @media screen and (max-width: 768px) {
   :deep(.test-judge-drawer) {
-    height: min(372px, 70%) !important;
+    max-height: min(340px, 50vh);
   }
   .select-row span {
     margin-right: 2px;
@@ -1095,11 +1123,9 @@ export default {
   }
 }
 .test-judge-tabs :deep(.el-tabs__content) {
-  position: absolute;
-  top: 40px;
-  bottom: 2px;
-  left: 0;
-  right: 0;
+  flex-grow: 0;
+  position: relative;
+  max-height: calc(min(360px, 48vh) - 42px);
   overflow-y: auto;
 }
 :deep(.el-card__header) {

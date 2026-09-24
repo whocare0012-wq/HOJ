@@ -46,6 +46,8 @@ public class LearningResourceServiceImpl implements LearningResourceService {
     private static final Set<String> TEXT_EXTENSIONS = new HashSet<>(
             Arrays.asList("txt", "md", "csv", "json", "xml", "log", "c", "cpp",
                     "cc", "java", "py", "js", "ts", "css", "yml", "yaml"));
+    private static final Set<String> OFFICE_PREVIEW_EXTENSIONS = new HashSet<>(
+            Arrays.asList("docx", "xls", "xlsx", "pptx"));
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -407,6 +409,18 @@ public class LearningResourceServiceImpl implements LearningResourceService {
         if ("pdf".equals(ext)) {
             return "application/pdf";
         }
+        if ("docx".equals(ext)) {
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        }
+        if ("xls".equals(ext)) {
+            return "application/vnd.ms-excel";
+        }
+        if ("xlsx".equals(ext)) {
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        }
+        if ("pptx".equals(ext)) {
+            return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        }
         if (TEXT_EXTENSIONS.contains(ext)) {
             return "text/plain;charset=UTF-8";
         }
@@ -419,7 +433,8 @@ public class LearningResourceServiceImpl implements LearningResourceService {
         String ext = extension(name);
         return IMAGE_EXTENSIONS.contains(ext)
                 || "pdf".equals(ext)
-                || TEXT_EXTENSIONS.contains(ext);
+                || TEXT_EXTENSIONS.contains(ext)
+                || OFFICE_PREVIEW_EXTENSIONS.contains(ext);
     }
 
     private String previewContentType(String name, String contentType) {

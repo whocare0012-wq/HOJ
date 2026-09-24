@@ -1,6 +1,7 @@
 <template>
   <teleport to="body">
     <div
+      v-if="statusResolved && enabled"
       class="ai-assistant-floating"
       :class="{ 'is-dragging': dragging }"
       :style="floatingStyle"
@@ -11,7 +12,10 @@
         :class="panelClasses"
         aria-label="AI 助手"
       >
-        <header class="ai-assistant-header" @pointerdown="startDrag">
+        <header
+          class="ai-assistant-header"
+          @pointerdown="!resultExpanded && startDrag($event)"
+        >
           <div class="ai-assistant-title">
             <BotMessageSquare class="ai-bot-icon" />
             <strong>AI 助手</strong>
@@ -22,7 +26,7 @@
             class="ai-assistant-close"
             aria-label="关闭 AI 助手"
             @pointerdown.stop
-            @click.stop="expanded = false"
+            @click.stop="closePanel"
           >
             <el-icon><Close /></el-icon>
           </button>
@@ -70,17 +74,33 @@
 
           <div v-if="latestRequest" class="ai-result-card">
             <div class="ai-result-heading">
-              <div>
+              <div class="ai-result-title">
                 <el-icon><ChatLineRound /></el-icon>
                 <strong>{{ requestTypeLabel(latestRequest.requestType) }}</strong>
               </div>
-              <el-tag
-                size="small"
-                effect="plain"
-                :type="requestStatusType(latestRequest.status)"
-              >
-                {{ requestStatusLabel(latestRequest) }}
-              </el-tag>
+              <div class="ai-result-actions">
+                <el-button
+                  v-if="latestRequest.responseContent"
+                  class="ai-result-size-button"
+                  text
+                  size="small"
+                  @pointerdown.stop
+                  @click.stop="toggleResultSize"
+                >
+                  <el-icon>
+                    <ScaleToOriginal v-if="resultExpanded" />
+                    <FullScreen v-else />
+                  </el-icon>
+                  {{ resultExpanded ? '缩小' : '展开' }}
+                </el-button>
+                <el-tag
+                  size="small"
+                  effect="plain"
+                  :type="requestStatusType(latestRequest.status)"
+                >
+                  {{ requestStatusLabel(latestRequest) }}
+                </el-tag>
+              </div>
             </div>
             <div
               v-if="latestRequest.status === 'QUEUED'"
@@ -104,13 +124,18 @@
               v-else-if="latestRequest.responseContent"
               class="ai-result-content"
             >
-              {{ latestRequest.responseContent }}
+              <Markdown
+                :content="latestRequest.responseContent"
+                :is-avoid-xss="true"
+                :normalize-latex="true"
+              />
             </div>
           </div>
         </div>
       </section>
 
       <button
+        v-show="!resultExpanded"
         type="button"
         class="ai-assistant-orb"
         aria-label="打开 AI 助手"
@@ -130,12 +155,15 @@ import {
   Calendar,
   ChatLineRound,
   Close,
+  FullScreen,
   MagicStick,
+  ScaleToOriginal,
   Search,
 } from '@element-plus/icons-vue';
 import { BotMessageSquare } from '@lucide/vue';
 import api from '@/common/api';
 import myMessage from '@/common/message';
+import Markdown from '@/components/oj/common/Markdown.vue';
 
 const POSITION_STORAGE_KEY = 'hoj-ai-assistant-position';
 const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'REJECTED'];
@@ -147,8 +175,11 @@ export default {
     Calendar,
     ChatLineRound,
     Close,
+    FullScreen,
     BotMessageSquare,
     MagicStick,
+    Markdown,
+    ScaleToOriginal,
     Search,
   },
   props: {
@@ -176,6 +207,7 @@ export default {
   data() {
     return {
       expanded: false,
+      resultExpanded: false,
       dragging: false,
       dragMoved: false,
       suppressNextClick: false,
@@ -186,10 +218,12 @@ export default {
       dailyLimit: 0,
       enabled: false,
       configured: false,
+      statusResolved: false,
       statusLoading: false,
       submitting: false,
       latestRequest: null,
       pollTimer: null,
+      statusTimer: null,
     };
   },
   computed: {
@@ -203,6 +237,7 @@ export default {
       return {
         'opens-right': this.position.x < 400,
         'opens-down': this.position.y < 460,
+        'is-result-expanded': this.resultExpanded,
       };
     },
     statusMessage() {
@@ -228,16 +263,29 @@ export default {
     'problem.id'() {
       this.stopPolling();
       this.latestRequest = null;
+      this.expanded = false;
+      this.resultExpanded = false;
+      this.statusResolved = false;
       this.loadStatus();
+    },
+    'latestRequest.responseContent'(content) {
+      if (!content) {
+        this.resultExpanded = false;
+      }
     },
   },
   mounted() {
     this.restorePosition();
     this.loadStatus();
+    this.statusTimer = window.setInterval(() => this.loadStatus(true), 30000);
     window.addEventListener('resize', this.keepInViewport);
   },
   beforeUnmount() {
     this.stopPolling();
+    if (this.statusTimer) {
+      window.clearInterval(this.statusTimer);
+      this.statusTimer = null;
+    }
     this.removeDragListeners();
     window.removeEventListener('resize', this.keepInViewport);
   },
@@ -326,11 +374,20 @@ export default {
         this.loadStatus();
       }
     },
-    loadStatus() {
+    closePanel() {
+      this.expanded = false;
+      this.resultExpanded = false;
+    },
+    toggleResultSize() {
+      this.resultExpanded = !this.resultExpanded;
+    },
+    loadStatus(background = false) {
       if (!this.problem?.id) {
         return;
       }
-      this.statusLoading = true;
+      if (!background) {
+        this.statusLoading = true;
+      }
       api
         .getAiAssistantStatus({
           problemId: this.problem.id,
@@ -344,6 +401,12 @@ export default {
           this.remaining = Number(data.remaining || 0);
           this.dailyLimit = Number(data.dailyLimit || 0);
           this.latestRequest = data.latestRequest || null;
+          if (!this.enabled) {
+            this.expanded = false;
+            this.resultExpanded = false;
+            this.stopPolling();
+            return;
+          }
           if (
             this.latestRequest &&
             !TERMINAL_STATUSES.includes(this.latestRequest.status)
@@ -356,7 +419,10 @@ export default {
           this.configured = false;
         })
         .finally(() => {
-          this.statusLoading = false;
+          this.statusResolved = true;
+          if (!background) {
+            this.statusLoading = false;
+          }
         });
     },
     buildProblemPayload(requestType) {
@@ -449,6 +515,7 @@ export default {
 <style scoped>
 .ai-assistant-floating {
   position: fixed;
+  pointer-events: none;
   z-index: 3000;
 }
 .ai-assistant-floating.is-dragging {
@@ -466,8 +533,20 @@ export default {
   height: 74px;
   justify-content: center;
   padding: 0;
+  pointer-events: auto;
   touch-action: none;
+  transform: scale(0.65);
+  transform-origin: center;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
   width: 74px;
+}
+.ai-assistant-orb:hover,
+.ai-assistant-orb:focus-visible,
+.ai-assistant-floating.is-dragging .ai-assistant-orb {
+  box-shadow: 0 12px 32px rgba(22, 136, 255, 0.46);
+  transform: scale(1);
 }
 .ai-assistant-orb:active,
 .ai-assistant-header:active {
@@ -486,6 +565,7 @@ export default {
   box-shadow: 0 12px 34px rgba(39, 112, 197, 0.25);
   max-height: min(590px, calc(100vh - 116px));
   overflow: visible;
+  pointer-events: auto;
   position: absolute;
   right: 0;
   width: min(370px, calc(100vw - 32px));
@@ -521,6 +601,20 @@ export default {
   border-top: 1px solid #d8e6f6;
   bottom: auto;
   top: -9px;
+}
+.ai-assistant-panel.is-result-expanded {
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  left: 16px;
+  max-height: none;
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  width: auto;
+}
+.ai-assistant-panel.is-result-expanded::after {
+  display: none;
 }
 .ai-assistant-header {
   align-items: center;
@@ -561,6 +655,7 @@ export default {
 }
 .ai-assistant-body {
   max-height: calc(min(590px, 100vh - 116px) - 68px);
+  overflow-anchor: none;
   overflow-y: auto;
   padding: 0 18px 20px;
 }
@@ -651,11 +746,17 @@ export default {
   justify-content: space-between;
   padding: 11px 13px;
 }
-.ai-result-heading > div {
+.ai-result-title,
+.ai-result-actions {
   align-items: center;
-  color: #1688ff;
   display: flex;
   gap: 7px;
+}
+.ai-result-title {
+  color: #1688ff;
+}
+.ai-result-size-button {
+  margin-right: 2px;
 }
 .ai-result-content,
 .ai-result-placeholder,
@@ -666,8 +767,46 @@ export default {
   max-height: 240px;
   overflow-y: auto;
   padding: 14px;
-  white-space: pre-wrap;
   word-break: break-word;
+}
+.ai-result-placeholder,
+.ai-result-error {
+  white-space: pre-wrap;
+}
+.ai-result-content :deep(.markdown-body) {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  overflow-wrap: anywhere;
+}
+.ai-result-content :deep(.markdown-body > :first-child) {
+  margin-top: 0;
+}
+.ai-result-content :deep(.markdown-body > :last-child) {
+  margin-bottom: 0;
+}
+.ai-result-content :deep(.katex-display) {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 3px;
+}
+.ai-assistant-panel.is-result-expanded .ai-assistant-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  max-height: none;
+  min-height: 0;
+}
+.ai-assistant-panel.is-result-expanded .ai-result-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.ai-assistant-panel.is-result-expanded .ai-result-content {
+  flex: 1;
+  max-height: none;
+  min-height: 260px;
 }
 .ai-result-placeholder {
   color: #7a8596;
@@ -678,6 +817,12 @@ export default {
 :global(body.ai-assistant-dragging) {
   cursor: grabbing !important;
   user-select: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-assistant-orb {
+    transition: none;
+  }
 }
 
 @media (max-width: 767px) {
@@ -694,6 +839,16 @@ export default {
   }
   .ai-assistant-panel.opens-down {
     top: 74px;
+  }
+  .ai-assistant-panel.is-result-expanded {
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    top: 8px;
+  }
+  .ai-result-heading {
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 </style>

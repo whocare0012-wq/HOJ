@@ -1,7 +1,8 @@
 <template>
   <codemirror
-    v-model="currentValue"
+    :value="currentValue"
     :options="options"
+    @change="handleEditorChange"
     ref="editor"
   ></codemirror>
 </template>
@@ -29,9 +30,10 @@ import 'codemirror/addon/hint/anyword-hint.js';
 
 export default {
   name: 'CodeMirror',
+  emits: ['update:modelValue', 'change', 'input'],
   data() {
     return {
-      currentValue: '',
+      currentValue: this.modelValue,
       options: {
         mode: 'text/x-c++src',
         lineNumbers: true,
@@ -55,7 +57,7 @@ export default {
     codemirror,
   },
   props: {
-    value: {
+    modelValue: {
       type: String,
       default: '',
     },
@@ -65,7 +67,6 @@ export default {
     },
   },
   mounted() {
-    this.currentValue = this.value;
     this.$refs.editor.editor.setOption('mode', this.mode);
     this.$refs.editor.editor.on('inputRead', (instance, changeObj) => {
       if (/\w|\./g.test(changeObj.text[0]) && changeObj.origin !== 'complete') {
@@ -78,19 +79,24 @@ export default {
     });
   },
   watch: {
-    value(val) {
+    modelValue(val) {
       if (this.currentValue !== val) {
         this.currentValue = val;
       }
     },
-    currentValue(newVal, oldVal) {
-      if (newVal !== oldVal) {
-        this.$emit('change', newVal);
-        this.$emit('input', newVal);
-      }
-    },
     mode(newVal) {
       this.$refs.editor.editor.setOption('mode', newVal);
+    },
+  },
+  methods: {
+    handleEditorChange(newValue) {
+      if (this.currentValue === newValue) {
+        return;
+      }
+      this.currentValue = newValue;
+      this.$emit('update:modelValue', newValue);
+      this.$emit('change', newValue);
+      this.$emit('input', newValue);
     },
   },
 };
