@@ -28,7 +28,7 @@ Existing judging languages, contests, groups, discussions, and remote judging co
 - `sandbox/`: judge sandbox source.
 - `sqlAndsetting/`: schema, generic seed data, and migrations.
 - `scripts/`: development and verification tools.
-- `docs/`: project documentation and [historical upgrade notes](./docs/upgrade-notes/README.md).
+- `docs/`: [project documentation](./docs/README.md) and [historical upgrade notes](./docs/upgrade-notes/README.md).
 
 ## Quick source check
 

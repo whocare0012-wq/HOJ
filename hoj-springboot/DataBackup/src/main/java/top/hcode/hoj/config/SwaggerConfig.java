@@ -10,7 +10,7 @@ import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
 
 import java.util.ArrayList;
 
@@ -20,7 +20,7 @@ import java.util.ArrayList;
  * @Description:
  */
 @Configuration
-@EnableSwagger2 // 开启swagger2
+@EnableSwagger2WebMvc // 开启 Swagger 2 的 Web MVC 文档
 @Profile({"dev", "test"}) // 只允许开发环境访问
 public class SwaggerConfig {
     @Bean //配置swagger的docket的bean势力
@@ -45,17 +45,17 @@ public class SwaggerConfig {
     //配置swagger信息
     private ApiInfo apiInfo() {
         //作者信息
-        Contact contact = new Contact("Himit_ZH",
-                "https://docs.hdoi.cn",
-                "372347736@qq.com");
+        Contact contact = new Contact("HOJ Optimized Edition maintainers",
+                "https://github.com/whocare0012-wq/HOJ/issues",
+                "");
         return new ApiInfo(
-                "HOJ-Backend的API文档",
-                "HCODE ONLINE JUDGE(HOJ)的后端接口文档",
+                "HOJ Optimized Edition Backend API",
+                "基于 HimitZH/HOJ 的在线评测系统后端接口文档",
                 "v4.4",
-                "https://docs.hdoi.cn",
+                "https://github.com/whocare0012-wq/HOJ",
                 contact,
                 "MIT",
-                "http://www.apache.org/licenses/LICENSE-2.0",
+                "https://opensource.org/license/mit",
                 new ArrayList());
     }
 }

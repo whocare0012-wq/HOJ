@@ -28,7 +28,7 @@
 - `sandbox/`：判题沙箱源码。
 - `sqlAndsetting/`：建表、通用初始化数据和迁移脚本。
 - `scripts/`：开发与验证脚本；其中本地栈脚本面向隔离测试环境。
-- `docs/`：项目文档及[历史升级记录](./docs/upgrade-notes/README.md)。
+- `docs/`：[项目文档](./docs/README.md)及[历史升级记录](./docs/upgrade-notes/README.md)。
 
 ## 快速验证源码
 
