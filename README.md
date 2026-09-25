@@ -6,7 +6,7 @@
 
 > Blockly 是生成 Python 代码的前端编辑模式，并非新增的独立判题语言。
 
-[English](./README-EN.md) · [部署与更新教程](./docs/docs/deploy/optimized.md) · [变更记录](./CHANGELOG.md) · [问题反馈](https://github.com/whocare0012-wq/HOJ/issues/new/choose) · [交流讨论](https://github.com/whocare0012-wq/HOJ/discussions) · [原版项目](https://github.com/HimitZH/HOJ)
+[English](./README-EN.md) · [部署步骤](#部署步骤) · [变更记录](./CHANGELOG.md) · [问题反馈](https://github.com/whocare0012-wq/HOJ/issues/new/choose) · [交流讨论](https://github.com/whocare0012-wq/HOJ/discussions) · [原版项目](https://github.com/HimitZH/HOJ)
 
 ## 与原版的主要区别
 
@@ -19,7 +19,7 @@
 | 题目导入与数据安全 | 原有远程评测和管理功能 | 调整 AtCoder 导入为本地题目并使用题面样例；完善比赛题目移除时的数据保护与相关校验 |
 | 运行维护 | 原版部署说明 | 补充本地验证脚本、数据库迁移和更谨慎的分服务更新流程 |
 
-以上仅列出本版实现中可找到对应代码的改动。原版已有的语言、评测模式、比赛、团队、讨论和远程评测功能归功于原项目。功能在具体环境中仍须按部署教程验证。
+以上仅列出本版实现中可找到对应代码的改动。原版已有的语言、评测模式、比赛、团队、讨论和远程评测功能归功于原项目。功能仍须在实际部署环境中验证。
 
 ## 代码结构
 
@@ -30,23 +30,23 @@
 - `scripts/`：开发与验证脚本；其中本地栈脚本面向隔离测试环境。
 - `docs/`：[项目文档](./docs/README.md)及[历史升级记录](./docs/upgrade-notes/README.md)。
 
-## 快速验证源码
+## 部署步骤
 
-```bash
-git clone https://github.com/whocare0012-wq/HOJ.git
-cd HOJ/hoj-vue
-npm ci
-npm audit --audit-level=high
-npm run build
-cd ../hoj-springboot
-mvn -B -ntp -pl DataBackup,JudgeServer -am test -DskipTests=false
-```
+1. 准备 JDK 8、Maven、Node.js 20.9+、Docker 和 Compose v2，获取源码并构建：
 
-这些命令验证源码和构建，不会启动完整 OJ。完整站点需要独立的 MySQL、Redis、Nacos、判题服务和私有配置，见下方教程。请勿使用生产题目或账号作为公开示例。
+   ```bash
+   git clone https://github.com/whocare0012-wq/HOJ.git
+   cd HOJ/hoj-springboot
+   mvn -B -ntp -pl DataBackup,JudgeServer -am package -DskipTests=true
+   cd ../hoj-vue
+   npm ci
+   npm run build
+   ```
 
-## 构建与部署
-
-前端要求 Node.js 20.9+；后端使用 JDK 8 与 Maven。构建命令、首次安装、已有站点更新、迁移、验证和回滚见 [部署与更新教程](./docs/docs/deploy/optimized.md)。本仓库没有可直接替换现有生产配置的完整 Compose 文件；不能把原版镜像更新命令当成本 fork 的发布命令。
+2. 在独立部署目录配置 MySQL 8、Redis、Nacos、后端、JudgeServer、sandbox 和前端。将构建出的 `hoj-springboot/DataBackup/target/hoj-backend-4.6.jar`、`hoj-springboot/JudgeServer/target/hoj-judgeServer-4.6.jar` 和 `hoj-vue/dist/` 放入自己的镜像或挂载目录，并配置持久化卷、域名、HTTPS 和私有密钥。本仓库没有可直接运行的生产 Compose；可参考 [HOJ-Deploy](https://github.com/HimitZH/HOJ-Deploy) 的服务结构，但原版镜像不包含本版改动。
+3. **仅首次安装且数据库为空时**，导入 `sqlAndsetting/hoj.sql`；在私有副本中替换 `sqlAndsetting/nacos.sql` 的默认密码和地址后再导入。已有站点只执行所需增量迁移，不要重新导入 `hoj.sql`。
+4. 核对部署配置、挂载和网络后，在自己的部署目录启动 HOJ 服务；打开站点并实际提交一道题，确认前端、后端和判题正常。
+5. 更新已有站点时，先保存旧产物；涉及后端或数据库时先做新的 MySQL 全库备份，再按变更范围更新对应的 HOJ 服务。保留现有 Nginx 配置、证书和其他项目容器，更新后重复第 4 步的检查。
 
 ## 参与和支持
 
