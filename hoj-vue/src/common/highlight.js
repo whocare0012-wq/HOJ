@@ -1,4 +1,4 @@
-import hljs from 'highlight.js'
+import hljs from '@/common/hljs'
 import 'highlight.js/styles/atom-one-light.css'
 
 export default {

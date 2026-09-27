@@ -901,6 +901,31 @@ import AiProblemAssistant from "@/components/oj/problem/AiProblemAssistant.vue";
 // 只显示这些状态的图形占用
 const filtedStatus = ["wa", "ce", "ac", "pa", "tle", "mle", "re", "pe"];
 
+const BLOCKLY_WINDOW_DRAFT_PREFIX = "hojBlocklyWindowDraft:";
+const BLOCKLY_WINDOW_DRAFT_TTL = 30 * 24 * 60 * 60 * 1000;
+
+// 每道题打开独立积木窗口都会留下一份草稿，清理 30 天未更新的；无时间戳的旧草稿保留不动
+function pruneBlocklyWindowDrafts() {
+  try {
+    const expiredBefore = Date.now() - BLOCKLY_WINDOW_DRAFT_TTL;
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(BLOCKLY_WINDOW_DRAFT_PREFIX)) continue;
+      let updatedAt;
+      try {
+        updatedAt = storage.get(key)?.updatedAt;
+      } catch (error) {
+        continue;
+      }
+      if (typeof updatedAt === "number" && updatedAt < expiredBefore) {
+        storage.remove(key);
+      }
+    }
+  } catch (error) {
+    console.error("Blockly window draft cleanup failed", error);
+  }
+}
+
 export default {
   name: "ProblemDetails",
   components: {
@@ -1571,21 +1596,37 @@ export default {
     },
     persistBlocklyDraft() {
       if (this.language !== 'Blockly') return;
-      storage.set(this.blocklyWorkspaceKey, {
-        code: this.code,
-        language: 'Blockly',
-        blocklyState: this.blocklyState,
-        blocklyCode: this.blocklyCode,
-        textCodeBeforeBlockly: this.textCodeBeforeBlockly,
-        textLanguageBeforeBlockly: this.textLanguageBeforeBlockly,
-        theme: this.theme,
-        fontSize: this.fontSize,
-        tabSize: this.tabSize,
-      });
+      // 积木每次改动会连续触发状态和代码两次更新，合并后再写入 localStorage；
+      // 写入键在此刻确定，避免切换题目后把旧题草稿写到新题下
+      const key = this.blocklyWorkspaceKey;
+      clearTimeout(this.blocklyPersistTimer);
+      this.blocklyPersistTimer = setTimeout(() => {
+        this.blocklyPersistTimer = null;
+        try {
+          storage.set(key, {
+            code: this.code,
+            language: 'Blockly',
+            blocklyState: this.blocklyState,
+            blocklyCode: this.blocklyCode,
+            textCodeBeforeBlockly: this.textCodeBeforeBlockly,
+            textLanguageBeforeBlockly: this.textLanguageBeforeBlockly,
+            theme: this.theme,
+            fontSize: this.fontSize,
+            tabSize: this.tabSize,
+          });
+        } catch (error) {
+          console.error('Blockly draft save failed', error);
+        }
+      }, 300);
     },
     openBlocklyWindow() {
       const draft = `hojBlocklyWindowDraft:${this.$route.fullPath}`;
-      storage.set(draft, { state: this.blocklyState });
+      pruneBlocklyWindowDrafts();
+      try {
+        storage.set(draft, { state: this.blocklyState, updatedAt: Date.now() });
+      } catch (error) {
+        console.error('Blockly window draft save failed', error);
+      }
       const url = this.$router.resolve({ name: 'BlocklyStandalone', query: { draft } }).href;
       const opened = window.open(url, '_blank');
       if (opened) opened.opener = null;
@@ -1928,6 +1969,9 @@ export default {
     },
     beforeLeaveDo(cid){
       clearInterval(this.refreshStatus);
+      // 下面会立即保存完整草稿，取消尚未执行的积木草稿写入
+      clearTimeout(this.blocklyPersistTimer);
+      this.blocklyPersistTimer = null;
       storage.set(
         buildProblemCodeAndSettingKey(this.problemID, cid),
         {

@@ -54,7 +54,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import Cropper from 'cropperjs'
-import hljs from 'highlight.js'
+import hljs from '@/common/hljs'
 import {
   MdEditor,
   NormalToolbar,

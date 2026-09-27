@@ -11,7 +11,7 @@ import markdownItSub from 'markdown-it-sub'
 import markdownItSup from 'markdown-it-sup'
 import markdownItTaskLists from 'markdown-it-task-lists'
 import markdownItKatex from '@iktakahiro/markdown-it-katex'
-import hljs from 'highlight.js'
+import hljs from '@/common/hljs'
 
 const markdownOptions = {
   html: true,

@@ -26,6 +26,30 @@ import i18n from '@/i18n'
 
 let ojBlocksRegistered = false
 
+const BLOCKLY_LOCALES = {
+  'zh-CN': zhHans, 'zh-TW': zhHant, 'en-US': en, 'ja-JP': ja, 'ko-KR': ko,
+}
+
+// Blockly.Msg 键 -> 站点 i18n 键
+const OJ_BLOCK_MESSAGES = {
+  OJ_READ_LINE: 'Blockly_Read_Line', OJ_READ_INT: 'Blockly_Read_Int',
+  OJ_READ_INT_LIST: 'Blockly_Read_Int_List', OJ_READ_FLOAT: 'Blockly_Read_Float',
+  OJ_READ_FLOAT_LIST: 'Blockly_Read_Float_List', OJ_READ_ALL_INTS: 'Blockly_Read_All_Ints',
+  OJ_NEXT_WORD: 'Blockly_Next_Word', OJ_NEXT_INT: 'Blockly_Next_Int',
+  OJ_NEXT_FLOAT: 'Blockly_Next_Float', OJ_NEXT_CHAR: 'Blockly_Next_Char',
+  OJ_HAS_NEXT: 'Blockly_Has_Next', OJ_TOKEN_TIP: 'Blockly_Token_Tip',
+  OJ_READ_MATRIX: 'Blockly_Read_Matrix', OJ_SPLIT_INTS: 'Blockly_Split_Ints',
+  OJ_PRINT_LIST: 'Blockly_Print_List', OJ_PRINT_PAIR: 'Blockly_Print_Pair',
+  OJ_PRINT_TRIPLE: 'Blockly_Print_Triple', OJ_PRINT_NO_NEWLINE: 'Blockly_Print_No_Newline',
+  OJ_PRINT_TRAILING_SPACE: 'Blockly_Print_Trailing_Space', OJ_PRINT_LINES: 'Blockly_Print_Lines',
+  OJ_PRINT_SEPARATOR: 'Blockly_Print_Separator', OJ_PRINT_FIXED: 'Blockly_Print_Fixed',
+  OJ_PRINT_BLANK: 'Blockly_Print_Blank', OJ_CPP_DIV: 'Blockly_Cpp_Div',
+  OJ_CPP_MOD: 'Blockly_Cpp_Mod', OJ_BITWISE_BINARY: 'Blockly_Bitwise_Binary',
+  OJ_BITWISE_NOT: 'Blockly_Bitwise_Not', OJ_TO_INT: 'Blockly_To_Int',
+  OJ_TO_FLOAT: 'Blockly_To_Float', OJ_TO_STRING: 'Blockly_To_String',
+  OJ_CHAR_CODE: 'Blockly_Char_Code', OJ_CODE_CHAR: 'Blockly_Code_Char',
+}
+
 const TOKEN_SCANNER_DEFINITION = [
   'class _HojTokenScanner:',
   '    def __init__(self):',
@@ -275,14 +299,19 @@ function registerOjBlocks() {
       `def ${generator.FUNCTION_NAME_PLACEHOLDER_}(a, b):\n  a = int(a)\n  b = int(b)\n  return a - ${division}(a, b) * b\n`)
     return [`${remainder}(${left}, ${right})`, Order.FUNCTION_CALL]
   }
+  // 操作数按运算符优先级取值，由生成器按需加括号，避免 ~(a + b) 生成为 ~a + b
   pythonGenerator.forBlock.oj_bitwise_binary = (block, generator) => {
-    const left = valueOr(block, generator, 'LEFT', '0')
-    const right = valueOr(block, generator, 'RIGHT', '0')
-    const operations = { AND: '&', OR: '|', XOR: '^', LSHIFT: '<<', RSHIFT: '>>' }
-    return [`(${left} ${operations[block.getFieldValue('OP')]} ${right})`, Order.ATOMIC]
+    const operations = {
+      AND: ['&', Order.BITWISE_AND], OR: ['|', Order.BITWISE_OR], XOR: ['^', Order.BITWISE_XOR],
+      LSHIFT: ['<<', Order.BITWISE_SHIFT], RSHIFT: ['>>', Order.BITWISE_SHIFT],
+    }
+    const [operator, order] = operations[block.getFieldValue('OP')]
+    const left = generator.valueToCode(block, 'LEFT', order) || '0'
+    const right = generator.valueToCode(block, 'RIGHT', order) || '0'
+    return [`${left} ${operator} ${right}`, order]
   }
   pythonGenerator.forBlock.oj_bitwise_not = (block, generator) => [
-    `(~${valueOr(block, generator, 'VALUE', '0')})`, Order.ATOMIC,
+    `~${generator.valueToCode(block, 'VALUE', Order.BITWISE_NOT) || '0'}`, Order.BITWISE_NOT,
   ]
   pythonGenerator.forBlock.oj_to_int = (block, generator) => [
     `int(${valueOr(block, generator, 'VALUE', '0')})`, Order.FUNCTION_CALL,
@@ -313,42 +342,7 @@ export default {
     return { code: '', workspace: null, resizeObserver: null, restoring: false }
   },
   mounted() {
-    const locales = {
-      'zh-CN': zhHans, 'zh-TW': zhHant, 'en-US': en, 'ja-JP': ja, 'ko-KR': ko,
-    }
-    Blockly.setLocale(locales[i18n.locale.value] || en)
-    Blockly.Msg.OJ_READ_LINE = this.$t('m.Blockly_Read_Line')
-    Blockly.Msg.OJ_READ_INT = this.$t('m.Blockly_Read_Int')
-    Blockly.Msg.OJ_READ_INT_LIST = this.$t('m.Blockly_Read_Int_List')
-    Blockly.Msg.OJ_READ_FLOAT = this.$t('m.Blockly_Read_Float')
-    Blockly.Msg.OJ_READ_FLOAT_LIST = this.$t('m.Blockly_Read_Float_List')
-    Blockly.Msg.OJ_READ_ALL_INTS = this.$t('m.Blockly_Read_All_Ints')
-    Blockly.Msg.OJ_NEXT_WORD = this.$t('m.Blockly_Next_Word')
-    Blockly.Msg.OJ_NEXT_INT = this.$t('m.Blockly_Next_Int')
-    Blockly.Msg.OJ_NEXT_FLOAT = this.$t('m.Blockly_Next_Float')
-    Blockly.Msg.OJ_NEXT_CHAR = this.$t('m.Blockly_Next_Char')
-    Blockly.Msg.OJ_HAS_NEXT = this.$t('m.Blockly_Has_Next')
-    Blockly.Msg.OJ_TOKEN_TIP = this.$t('m.Blockly_Token_Tip')
-    Blockly.Msg.OJ_READ_MATRIX = this.$t('m.Blockly_Read_Matrix')
-    Blockly.Msg.OJ_SPLIT_INTS = this.$t('m.Blockly_Split_Ints')
-    Blockly.Msg.OJ_PRINT_LIST = this.$t('m.Blockly_Print_List')
-    Blockly.Msg.OJ_PRINT_PAIR = this.$t('m.Blockly_Print_Pair')
-    Blockly.Msg.OJ_PRINT_TRIPLE = this.$t('m.Blockly_Print_Triple')
-    Blockly.Msg.OJ_PRINT_NO_NEWLINE = this.$t('m.Blockly_Print_No_Newline')
-    Blockly.Msg.OJ_PRINT_TRAILING_SPACE = this.$t('m.Blockly_Print_Trailing_Space')
-    Blockly.Msg.OJ_PRINT_LINES = this.$t('m.Blockly_Print_Lines')
-    Blockly.Msg.OJ_PRINT_SEPARATOR = this.$t('m.Blockly_Print_Separator')
-    Blockly.Msg.OJ_PRINT_FIXED = this.$t('m.Blockly_Print_Fixed')
-    Blockly.Msg.OJ_PRINT_BLANK = this.$t('m.Blockly_Print_Blank')
-    Blockly.Msg.OJ_CPP_DIV = this.$t('m.Blockly_Cpp_Div')
-    Blockly.Msg.OJ_CPP_MOD = this.$t('m.Blockly_Cpp_Mod')
-    Blockly.Msg.OJ_BITWISE_BINARY = this.$t('m.Blockly_Bitwise_Binary')
-    Blockly.Msg.OJ_BITWISE_NOT = this.$t('m.Blockly_Bitwise_Not')
-    Blockly.Msg.OJ_TO_INT = this.$t('m.Blockly_To_Int')
-    Blockly.Msg.OJ_TO_FLOAT = this.$t('m.Blockly_To_Float')
-    Blockly.Msg.OJ_TO_STRING = this.$t('m.Blockly_To_String')
-    Blockly.Msg.OJ_CHAR_CODE = this.$t('m.Blockly_Char_Code')
-    Blockly.Msg.OJ_CODE_CHAR = this.$t('m.Blockly_Code_Char')
+    this.applyLocale()
     registerOjBlocks()
     this.workspace = markRaw(Blockly.inject(this.$refs.canvas, {
       toolbox: this.toolbox(),
@@ -375,6 +369,7 @@ export default {
     if (!restoreFailed) this.onWorkspaceChange()
     this.resizeObserver = new ResizeObserver(() => Blockly.svgResize(this.workspace))
     this.resizeObserver.observe(this.$refs.canvas)
+    this.$watch(() => i18n.locale.value, this.onLocaleChange)
   },
   beforeUnmount() {
     this.resizeObserver?.disconnect()
@@ -387,6 +382,26 @@ export default {
     },
   },
   methods: {
+    applyLocale() {
+      Blockly.setLocale(BLOCKLY_LOCALES[i18n.locale.value] || en)
+      Object.entries(OJ_BLOCK_MESSAGES).forEach(([msgKey, i18nKey]) => {
+        Blockly.Msg[msgKey] = this.$t(`m.${i18nKey}`)
+      })
+    },
+    onLocaleChange() {
+      if (!this.workspace) return
+      // 积木文字在创建时确定，切换语言后需按当前状态重建积木和工具箱
+      this.applyLocale()
+      const state = Blockly.serialization.workspaces.save(this.workspace)
+      Blockly.Events.disable()
+      try {
+        this.workspace.clear()
+        Blockly.serialization.workspaces.load(state, this.workspace)
+      } finally {
+        Blockly.Events.enable()
+      }
+      this.workspace.updateToolbox(this.toolbox())
+    },
     toolbox() {
       const category = (name, colour, contents) => ({ kind: 'category', name, colour, contents })
       const block = (type) => ({ kind: 'block', type })

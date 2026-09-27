@@ -28,7 +28,12 @@ export default {
   },
   watch: {
     state(newState) {
-      if (this.draftKey) storage.set(this.draftKey, { state: newState })
+      if (!this.draftKey) return
+      try {
+        storage.set(this.draftKey, { state: newState, updatedAt: Date.now() })
+      } catch (error) {
+        console.error('Blockly draft save failed', error)
+      }
     },
   },
 }
