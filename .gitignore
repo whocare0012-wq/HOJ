@@ -32,3 +32,5 @@
 # Root-level visual QA captures are generated artifacts.
 /design-qa-*.png
 /design-qa-*.jpg
+/hoj-vue/design-qa-*.png
+/hoj-vue/design-qa-*.jpg
