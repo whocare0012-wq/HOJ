@@ -1362,3 +1362,13 @@ FROM (
  FROM oj_submission_progress GROUP BY uid,pid,gid
 ) s JOIN problem p ON p.id=s.pid
 LEFT JOIN problem_difficulty_config d ON d.difficulty_value=p.difficulty;
+
+-- Performance indexes (same as hoj-performance-index-update.sql).
+SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='judge' AND index_name='idx_judge_list'), 'SELECT 1', 'CREATE INDEX idx_judge_list ON judge(cid,cpid,gid,submit_time,submit_id)');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='judge' AND index_name='idx_judge_gmt_create'), 'SELECT 1', 'CREATE INDEX idx_judge_gmt_create ON judge(gmt_create)');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='judge' AND index_name='idx_judge_status_modified'), 'SELECT 1', 'CREATE INDEX idx_judge_status_modified ON judge(status,gmt_modified)');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='session' AND index_name='idx_session_gmt_create'), 'SELECT 1', 'CREATE INDEX idx_session_gmt_create ON session(gmt_create)');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;

@@ -31,8 +31,10 @@ Before deploying:
    `hoj-daily-check-in-update.sql`,
    `hoj-daily-fortune-advice-update.sql`,
    `hoj-problem-difficulty-update.sql`,
-   `hoj-learning-resource-update.sql`, and
-   `hoj-ai-assistant-update.sql`.
+   `hoj-learning-resource-update.sql`,
+   `hoj-ai-assistant-update.sql`, and
+   `hoj-performance-index-update.sql` (index-only; builds online but adds I/O
+   on a large `judge` table, so run it outside peak hours).
 4. If the verified migration requires maintenance, schedule a window for the
    affected HOJ services only. Preserve the shared frontend proxy and unrelated
    services. Never run a production migration or restart from these local tests.
