@@ -259,25 +259,17 @@ public class ScheduleServiceImpl implements ScheduleService {
 //    @Scheduled(cron = "0/5 * * * * *")
     @Override
     public void deleteUserSession() {
-        QueryWrapper<Session> sessionQueryWrapper = new QueryWrapper<>();
         DateTime dateTime = DateUtil.offsetMonth(new Date(), -6);
         String strTime = DateFormatUtils.format(dateTime, "yyyy-MM-dd HH:mm:ss");
-        sessionQueryWrapper.select("distinct uid");
-        sessionQueryWrapper.apply("UNIX_TIMESTAMP(gmt_create) >= UNIX_TIMESTAMP('" + strTime + "')");
-        List<Session> sessionList = sessionEntityService.list(sessionQueryWrapper);
-        if (sessionList.size() > 0) {
-            List<String> uidList = sessionList.stream().map(Session::getUid).collect(Collectors.toList());
-            QueryWrapper<Session> queryWrapper = new QueryWrapper<>();
-            queryWrapper.in("uid", uidList)
-                    .apply("UNIX_TIMESTAMP('" + strTime + "') > UNIX_TIMESTAMP(gmt_create)");
-            List<Session> needDeletedSessionList = sessionEntityService.list(queryWrapper);
-            if (needDeletedSessionList.size() > 0) {
-                List<Long> needDeletedIdList = needDeletedSessionList.stream().map(Session::getId).collect(Collectors.toList());
-                boolean isOk = sessionEntityService.removeByIds(needDeletedIdList);
-                if (!isOk) {
-                    log.error("=============数据库session表定时删除用户6个月前的记录失败===============");
-                }
-            }
+        // 只删除近6个月仍有登录记录的用户的旧记录，保留长期未登录用户的最后记录
+        // 子查询需包一层派生表，MySQL 才允许 DELETE 时引用同一张表
+        QueryWrapper<Session> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lt("gmt_create", strTime)
+                .apply("uid IN (SELECT uid FROM (SELECT DISTINCT uid FROM session WHERE gmt_create >= {0}) recent)", strTime);
+        try {
+            sessionEntityService.remove(queryWrapper);
+        } catch (Exception e) {
+            log.error("=============数据库session表定时删除用户6个月前的记录失败===============", e);
         }
     }
 
@@ -298,8 +290,10 @@ public class ScheduleServiceImpl implements ScheduleService {
             return;
         }
 
+        DateTime halfYearAgo = DateUtil.offsetMonth(new Date(), -6);
+        String strTime = DateFormatUtils.format(halfYearAgo, "yyyy-MM-dd HH:mm:ss");
         QueryWrapper<Session> sessionQueryWrapper = new QueryWrapper<>();
-        sessionQueryWrapper.select("DISTINCT uid");
+        sessionQueryWrapper.select("DISTINCT uid").ge("gmt_create", strTime);
         List<Session> sessionList = sessionEntityService.list(sessionQueryWrapper);
         List<String> userIds = sessionList.stream().map(Session::getUid).collect(Collectors.toList());
 
@@ -314,7 +308,9 @@ public class ScheduleServiceImpl implements ScheduleService {
                                 .setSysNoticeId(adminSysNotice.getId());
                         userSysNoticeList.add(userSysNotice);
                     }
-                    boolean isOk1 = userSysNoticeEntityService.saveOrUpdateBatch(userSysNoticeList);
+                    // 半年内无活跃用户时无需推送，saveOrUpdateBatch 也不接受空列表
+                    boolean isOk1 = userSysNoticeList.isEmpty()
+                            || userSysNoticeEntityService.saveOrUpdateBatch(userSysNoticeList);
                     if (isOk1) {
                         adminSysNotice.setState(true);
                     }
@@ -351,7 +347,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         QueryWrapper<Judge> judgeQueryWrapper = new QueryWrapper<>();
         judgeQueryWrapper.select("distinct submit_id");
         judgeQueryWrapper.eq("status", Constants.Judge.STATUS_PENDING.getStatus());
-        judgeQueryWrapper.apply("UNIX_TIMESTAMP('" + strTime + "') > UNIX_TIMESTAMP(gmt_modified)");
+        judgeQueryWrapper.lt("gmt_modified", strTime);
         List<Judge> judgeList = judgeEntityService.list(judgeQueryWrapper);
         if (!CollectionUtils.isEmpty(judgeList)) {
             log.info("Half An Hour Check Pending Submission to Rejudge:" + Arrays.toString(judgeList.toArray()));

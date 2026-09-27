@@ -1,3 +1,11 @@
+# 定时任务线程池：AI 助手队列会长时间占用一个线程，避免阻塞其它定时任务
+spring:
+  task:
+    scheduling:
+      pool:
+        size: 4
+      thread-name-prefix: hoj-schedule-
+
 mybatis-plus:
   mapper-locations: classpath*:top/hcode/hoj/mapper/xml/**Mapper.xml
   type-aliases-package: top.hcode.hoj.pojo.entity

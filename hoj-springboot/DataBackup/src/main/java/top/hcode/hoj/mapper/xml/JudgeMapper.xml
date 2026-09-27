@@ -86,7 +86,7 @@
     </select>
 
     <select id="getTodayJudgeNum" resultType="int">
-        SELECT count(*) FROM judge WHERE DATE(gmt_create) = CURDATE();
+        SELECT count(*) FROM judge WHERE gmt_create >= CURDATE() AND gmt_create &lt; CURDATE() + INTERVAL 1 DAY;
     </select>
 
     <select id="getContestProblemCount" resultType="top.hcode.hoj.pojo.vo.ProblemCountVO">

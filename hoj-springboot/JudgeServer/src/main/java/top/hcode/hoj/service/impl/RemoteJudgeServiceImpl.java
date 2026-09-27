@@ -39,32 +39,10 @@ public class RemoteJudgeServiceImpl implements RemoteJudgeService {
 
         boolean isOk = remoteJudgeAccountEntityService.update(remoteJudgeAccountUpdateWrapper);
 
-        if (!isOk) { // 重试8次
-            tryAgainUpdateAccount(remoteJudgeAccountUpdateWrapper, remoteJudge, username);
+        // 更新条件不匹配时重试同一语句结果不会改变，直接记录
+        if (!isOk) {
+            log.error("Remote Judge：Change Account status to `true` Failed ----------->{}", "oj:" + remoteJudge + ",username:" + username);
         }
-    }
-
-    private void tryAgainUpdateAccount(UpdateWrapper<RemoteJudgeAccount> updateWrapper, String remoteJudge, String username) {
-        boolean retryable;
-        int attemptNumber = 0;
-        do {
-            boolean success = remoteJudgeAccountEntityService.update(updateWrapper);
-            if (success) {
-                return;
-            } else {
-                attemptNumber++;
-                retryable = attemptNumber < 8;
-                if (attemptNumber == 8) {
-                    log.error("Remote Judge：Change Account status to `true` Failed ----------->{}", "oj:" + remoteJudge + ",username:" + username);
-                    break;
-                }
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } while (retryable);
     }
 
     @Override
@@ -80,31 +58,8 @@ public class RemoteJudgeServiceImpl implements RemoteJudgeService {
                 .eq("port", port);
         boolean isOk = judgeServerEntityService.update(judgeServerUpdateWrapper);
 
-        if (!isOk) { // 重试8次
-            tryAgainUpdateServer(judgeServerUpdateWrapper, ip, port);
+        if (!isOk) {
+            log.error("Remote Judge：Change CF Judge Server Status to `true` Failed! =======>{}", "ip:" + ip + ",port:" + port);
         }
-    }
-
-    private void tryAgainUpdateServer(UpdateWrapper<JudgeServer> updateWrapper, String ip, Integer port) {
-        boolean retryable;
-        int attemptNumber = 0;
-        do {
-            boolean success = judgeServerEntityService.update(updateWrapper);
-            if (success) {
-                return;
-            } else {
-                attemptNumber++;
-                retryable = attemptNumber < 8;
-                if (attemptNumber == 8) {
-                    log.error("Remote Judge：Change CF Judge Server Status to `true` Failed! =======>{}", "ip:" + ip + ",port:" + port);
-                    break;
-                }
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } while (retryable);
     }
 }

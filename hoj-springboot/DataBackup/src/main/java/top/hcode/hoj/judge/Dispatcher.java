@@ -300,31 +300,10 @@ public class Dispatcher {
         judgeServerUpdateWrapper.setSql("task_number = task_number-1")
                 .eq("id", judgeServerId);
         boolean isOk = judgeServerEntityService.update(judgeServerUpdateWrapper);
-        if (!isOk) { // 重试八次
-            tryAgainUpdateJudge(judgeServerUpdateWrapper);
+        // UPDATE 返回 false 表示没有匹配的行，重试同一语句结果不会改变
+        if (!isOk) {
+            log.error("[Judge] Failed to release judge server, id:{}", judgeServerId);
         }
-    }
-
-    public void tryAgainUpdateJudge(UpdateWrapper<JudgeServer> updateWrapper) {
-        boolean retryable;
-        int attemptNumber = 0;
-        do {
-            boolean success = judgeServerEntityService.update(updateWrapper);
-            if (success) {
-                return;
-            } else {
-                attemptNumber++;
-                retryable = attemptNumber < 8;
-                if (attemptNumber == 8) {
-                    break;
-                }
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } while (retryable);
     }
 
 
@@ -364,34 +343,12 @@ public class Dispatcher {
 
         boolean isOk = remoteJudgeAccountService.update(remoteJudgeAccountUpdateWrapper);
 
-        if (!isOk) { // 重试8次
-            tryAgainUpdateAccount(remoteJudgeAccountUpdateWrapper, remoteJudge, username);
+        // 账号已是可用状态时不会匹配到行；不重试，避免把刚被其它评测占用的账号误设为可用
+        if (!isOk) {
+            log.error("[Remote Judge] Failed to change the account to be available----------->{}", "oj:" + remoteJudge + ",username:" + username);
         }
     }
 
-
-    private void tryAgainUpdateAccount(UpdateWrapper<RemoteJudgeAccount> updateWrapper, String remoteJudge, String username) {
-        boolean retryable;
-        int attemptNumber = 0;
-        do {
-            boolean success = remoteJudgeAccountService.update(updateWrapper);
-            if (success) {
-                return;
-            } else {
-                attemptNumber++;
-                retryable = attemptNumber < 8;
-                if (attemptNumber == 8) {
-                    log.error("[Remote Judge] Failed to change the account to be available----------->{}", "oj:" + remoteJudge + ",username:" + username);
-                    break;
-                }
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } while (retryable);
-    }
 
     @Deprecated
     public void changeServerSubmitCFStatus(String ip, Integer port) {
@@ -406,32 +363,8 @@ public class Dispatcher {
                 .eq("port", port);
         boolean isOk = judgeServerEntityService.update(judgeServerUpdateWrapper);
 
-        if (!isOk) { // 重试8次
-            tryAgainUpdateServer(judgeServerUpdateWrapper, ip, port);
+        if (!isOk) {
+            log.error("[Remote Judge] Change Codeforces Judge Server Status to `true` Failed! =======>{}", "ip:" + ip + ",port:" + port);
         }
-    }
-
-    @Deprecated
-    private void tryAgainUpdateServer(UpdateWrapper<JudgeServer> updateWrapper, String ip, Integer port) {
-        boolean retryable;
-        int attemptNumber = 0;
-        do {
-            boolean success = judgeServerEntityService.update(updateWrapper);
-            if (success) {
-                return;
-            } else {
-                attemptNumber++;
-                retryable = attemptNumber < 8;
-                if (attemptNumber == 8) {
-                    log.error("[Remote Judge] Change Codeforces Judge Server Status to `true` Failed! =======>{}", "ip:" + ip + ",port:" + port);
-                    break;
-                }
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } while (retryable);
     }
 }

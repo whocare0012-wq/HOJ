@@ -2,7 +2,9 @@ package top.hcode.hoj.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
@@ -688,13 +690,18 @@ public final class RedisUtils {
     }
 
     /**
-     * 获取指定的key集合
+     * 获取指定前缀的key集合，使用 SCAN 分批遍历，避免 KEYS 阻塞 Redis
      *
      * @param key
      * @return
      */
     public Set<String> keys(String key) {
-        return redisTemplate.keys(key + "*");
+        ScanOptions options = ScanOptions.scanOptions().match(key + "*").count(1000).build();
+        Set<String> keys = new HashSet<>();
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
+            cursor.forEachRemaining(keys::add);
+        }
+        return keys;
     }
 
 

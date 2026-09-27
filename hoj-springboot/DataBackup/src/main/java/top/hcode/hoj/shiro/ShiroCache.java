@@ -49,13 +49,8 @@ public class ShiroCache<K, V> implements Cache<K, V> {
      */
     @Override
     public V get(K key) throws CacheException {
-        if (!this.redisUtils.hasKey(this.getKey(key))) {
-            return null;
-        }
-        Object o = this.redisUtils.get(this.getKey(key));
-        V v = (V) o;
-
-        return (V) o;
+        // 不存在时 get 直接返回 null，无需先 hasKey 多一次往返
+        return (V) this.redisUtils.get(this.getKey(key));
     }
 
     /**
@@ -72,9 +67,6 @@ public class ShiroCache<K, V> implements Cache<K, V> {
      */
     @Override
     public V remove(K key) throws CacheException {
-        if (!this.redisUtils.hasKey(this.getKey(key))) {
-            return null;
-        }
         this.redisUtils.del(this.getKey(key));
         return null;
     }
