@@ -339,7 +339,10 @@ export default {
   },
   emits: ['update:state', 'generated'],
   data() {
-    return { code: '', workspace: null, resizeObserver: null, restoring: false }
+    return {
+      code: '', workspace: null, resizeObserver: null, restoring: false,
+      toolboxRefreshFrame: null,
+    }
   },
   mounted() {
     this.applyLocale()
@@ -373,7 +376,10 @@ export default {
   },
   beforeUnmount() {
     this.resizeObserver?.disconnect()
+    cancelAnimationFrame(this.toolboxRefreshFrame)
+    this.toolboxRefreshFrame = null
     this.workspace?.dispose()
+    this.workspace = null
   },
   watch: {
     state(newState) {
@@ -459,8 +465,24 @@ export default {
         ],
       }
     },
+    scheduleToolboxRefresh() {
+      if (this.toolboxRefreshFrame !== null) return
+      this.toolboxRefreshFrame = requestAnimationFrame(() => {
+        this.toolboxRefreshFrame = null
+        if (!this.workspace) return
+        // Blockly 在手势进行中会跳过变量工具箱刷新，结束后需要补刷。
+        if (Blockly.Gesture.inProgress()) {
+          this.scheduleToolboxRefresh()
+          return
+        }
+        this.workspace.getToolbox()?.refreshSelection()
+      })
+    },
     onWorkspaceChange(event) {
       if (this.restoring || event?.isUiEvent || !this.workspace) return
+      if ([Blockly.Events.VAR_CREATE, Blockly.Events.VAR_RENAME, Blockly.Events.VAR_DELETE].includes(event?.type)) {
+        this.scheduleToolboxRefresh()
+      }
       this.code = pythonGenerator.workspaceToCode(this.workspace)
       this.$emit('update:state', Blockly.serialization.workspaces.save(this.workspace))
       this.$emit('generated', this.code)
