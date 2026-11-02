@@ -117,6 +117,10 @@
           <i class="fa fa-comments-o fa-size" aria-hidden="true"></i>
           {{ $t('m.AI_Assistant') }}
         </el-menu-item>
+        <el-menu-item v-if="isSuperAdmin" index="/admin/agent-api">
+          <i class="fa fa-key fa-size" aria-hidden="true"></i>
+          {{ $t('m.Agent_Data_Api') }}
+        </el-menu-item>
       </el-menu>
       <div id="header">
         <el-row>
@@ -297,6 +301,14 @@
           >
             <i class="fa fa-comments-o mobile-drawer-icon"></i>
             {{ $t('m.AI_Assistant') }}
+          </el-menu-item>
+          <el-menu-item
+            v-if="isSuperAdmin"
+            index="/admin/agent-api"
+            @click="closeMobileDrawer"
+          >
+            <i class="fa fa-key mobile-drawer-icon"></i>
+            {{ $t('m.Agent_Data_Api') }}
           </el-menu-item>
         </el-menu>
       </el-drawer>

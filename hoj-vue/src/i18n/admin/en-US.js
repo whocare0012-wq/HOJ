@@ -34,6 +34,7 @@ export const m = {
   Discussion_Admin: 'Admin Discussion',
   Daily_Check_In_Admin: 'Daily Check-In',
   AI_Assistant: 'AI Settings',
+  Agent_Data_Api: 'AI Data API',
   Home_Page: 'Home Page',
   Logout: 'Logout',
   Log_Out_Successfully: 'Log out successfully',

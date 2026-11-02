@@ -1685,6 +1685,22 @@ const adminApi = {
     return ajax(`/api/admin/ai-assistant/api-keys/${id}`, 'delete')
   },
 
+  admin_getAgentTokens(params) {
+    return ajax('/api/admin/agent-tokens', 'get', {
+      params
+    })
+  },
+
+  admin_createAgentToken(data) {
+    return ajax('/api/admin/agent-tokens', 'post', {
+      data
+    })
+  },
+
+  admin_revokeAgentToken(id) {
+    return ajax(`/api/admin/agent-tokens/${id}`, 'delete')
+  },
+
   admin_previewProblemPoints(data) { return ajax('/api/admin/problem-difficulties/preview', 'post', { data }); },
   admin_getProblemPointsHistory() { return ajax('/api/admin/problem-difficulties/history', 'get'); },
   admin_getProblemDifficulties() {

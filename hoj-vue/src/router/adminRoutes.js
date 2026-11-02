@@ -23,6 +23,7 @@ const TrainingCategory= ()=>import('@/views/admin/training/Category')
 const DiscussionList= ()=>import('@/views/admin/discussion/Discussion')
 const DailyCheckInAdmin= ()=>import('@/views/admin/daily-check-in/DailyCheckIn')
 const AiAssistantAdmin= ()=>import('@/views/admin/ai-assistant/AiAssistant')
+const AgentApiAdmin= ()=>import('@/views/admin/agent-api/AgentApi')
 const adminRoutes= [
     {
       path: '/admin/login',
@@ -208,6 +209,12 @@ const adminRoutes= [
           name: 'admin-ai-assistant',
           component: AiAssistantAdmin,
           meta: { requireSuperAdmin: true, title:'AI Assistant'}
+        },
+        {
+          path: 'agent-api',
+          name: 'admin-agent-api',
+          component: AgentApiAdmin,
+          meta: { requireSuperAdmin: true, title:'Agent Data Api'}
         },
       ]
     },

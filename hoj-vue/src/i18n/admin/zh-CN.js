@@ -34,6 +34,7 @@ export const m = {
   Discussion_Admin: '讨论管理',
   Daily_Check_In_Admin: '签到管理',
   AI_Assistant: 'AI 设置',
+  Agent_Data_Api: 'AI 数据接口',
   Home_Page: '主页',
   Logout: '退出登录',
   Log_Out_Successfully: '退出登录成功',
