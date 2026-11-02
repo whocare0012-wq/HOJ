@@ -8,6 +8,20 @@ instance. Never run this destructive seed against an existing database.
 Application startup does not modify the database unless
 `STARTUP_DATABASE_INITIALIZATION_ENABLED=true` is set explicitly.
 
+## 2026-11-02: AI data API
+
+`hoj-agent-api-update.sql` adds the `agent_access_token` and `agent_access_log`
+tables used by `/api/agent/v1` (read-only submission export for AI agents) and
+the `idx_judge_submit_time` index on `judge(submit_time, submit_id)`. It is
+additive and re-runnable; existing data is not modified. The index build adds
+I/O on a large `judge` table, so run it outside peak hours. `hoj.sql` contains
+the same DDL for fresh installs. Until the script is applied, the admin page
+and the API return database errors; the rest of HOJ is unaffected.
+
+Only root accounts can create tokens, and a token stops working as soon as its
+creator is no longer an enabled root account. Submissions from contests that
+have not ended are never returned.
+
 ## 2026-09-05: user titles
 
 `hoj-user-title-utf8mb4-update.sql` widens only `user_info.title_name` to
@@ -32,9 +46,11 @@ Before deploying:
    `hoj-daily-fortune-advice-update.sql`,
    `hoj-problem-difficulty-update.sql`,
    `hoj-learning-resource-update.sql`,
-   `hoj-ai-assistant-update.sql`, and
+   `hoj-ai-assistant-update.sql`,
    `hoj-performance-index-update.sql` (index-only; builds online but adds I/O
-   on a large `judge` table, so run it outside peak hours).
+   on a large `judge` table, so run it outside peak hours), and
+   `hoj-agent-api-update.sql` (two new tables plus one `judge` index; same
+   off-peak advice).
 4. If the verified migration requires maintenance, schedule a window for the
    affected HOJ services only. Preserve the shared frontend proxy and unrelated
    services. Never run a production migration or restart from these local tests.

@@ -192,11 +192,22 @@ public class JwtFilter extends AuthenticatingFilter {
     protected boolean preHandle(ServletRequest request, ServletResponse response) throws Exception {
         HttpServletRequest httpServletRequest = WebUtils.toHttp(request);
         HttpServletResponse httpServletResponse = WebUtils.toHttp(response);
+        // 本过滤器是 @Component，Spring Boot 会把它额外注册为全局 Servlet 过滤器，
+        // 因此 Shiro 中配置为 anon 的路径也会经过这里。AI 数据接口携带的是独立访问令牌，
+        // 由 AgentTokenInterceptor 校验，这里直接放行，避免被当作登录 JWT 解析而拒绝。
+        if (isAgentApiRequest(httpServletRequest)) {
+            return true;
+        }
         // 跨域时会首先发送一个OPTIONS请求，这里我们给OPTIONS请求直接返回正常状态
         if (httpServletRequest.getMethod().equals(RequestMethod.OPTIONS.name())) {
             httpServletResponse.setStatus(org.springframework.http.HttpStatus.OK.value());
             return false;
         }
         return super.preHandle(request, response);
+    }
+
+    static boolean isAgentApiRequest(HttpServletRequest request) {
+        // 使用 Shiro 规范化（解码、去除 ../ 与 ;参数）后的路径判断
+        return WebUtils.getPathWithinApplication(request).startsWith("/api/agent/");
     }
 }

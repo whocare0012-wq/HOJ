@@ -1,0 +1,265 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HOJ AI 数据接口",
+    "version": "1.0.0",
+    "description": "只读接口，供 AI agent 拉取学生提交记录（含代码）、学生名单与统计数据用于分析。\n\n- 鉴权：请求头 `Authorization: Bearer hoj_at_...`，令牌由 root 在后台「AI 数据接口」页面生成。\n- 时间：返回值为带时区的 ISO 8601（站点时区，通常为 +08:00）。参数 `from`/`to` 接受 `YYYY-MM-DD`、`YYYY-MM-DDTHH:mm:ss` 或带时区的时间；`to` 为纯日期时包含当天全天，否则不含该时刻。\n- 分页：按提交 ID 游标分页，把响应中的 `next_cursor` 原样作为下一次请求的 `cursor`，直到 `has_more` 为 false。\n- 大批量：`format=ndjson` 一次流式返回全部匹配记录，每行一条 JSON。\n- 尚未结束的比赛中的提交不会返回。\n- 限流：每个令牌每分钟 120 次，超出返回 429 与 Retry-After。\n- 错误：HTTP 状态码 + `{\"error\": {\"code\", \"message\"}}`；未知参数名会返回 400 并列出可用参数。"
+  },
+  "servers": [{ "url": "/" }],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/api/agent/v1/ping": {
+      "get": {
+        "operationId": "ping",
+        "summary": "检查令牌与连通性",
+        "responses": {
+          "200": {
+            "description": "令牌有效",
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": {
+                "ok": { "type": "boolean" },
+                "api_version": { "type": "string", "example": "v1" },
+                "token_name": { "type": "string" },
+                "timezone": { "type": "string", "example": "Asia/Shanghai" },
+                "server_time": { "type": "string", "format": "date-time" }
+              }
+            } } }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/submissions": {
+      "get": {
+        "operationId": "listSubmissions",
+        "summary": "按学生、日期等条件拉取提交记录（默认含代码）",
+        "description": "不传任何筛选条件即返回全部提交（可配合 cursor 逐页拉取，或 format=ndjson 一次导出）。多个值可重复传参或用英文逗号分隔，如 username=a,b。",
+        "parameters": [
+          { "$ref": "#/components/parameters/username" },
+          { "$ref": "#/components/parameters/uid" },
+          { "$ref": "#/components/parameters/number" },
+          { "$ref": "#/components/parameters/group_id" },
+          { "$ref": "#/components/parameters/problem" },
+          { "$ref": "#/components/parameters/contest_id" },
+          { "$ref": "#/components/parameters/status" },
+          { "$ref": "#/components/parameters/language" },
+          { "$ref": "#/components/parameters/date" },
+          { "$ref": "#/components/parameters/from" },
+          { "$ref": "#/components/parameters/to" },
+          { "name": "include_code", "in": "query", "description": "是否返回代码与编译错误信息，默认 true。只需元数据时设为 false 可减少数据量。", "schema": { "type": "boolean", "default": true } },
+          { "name": "limit", "in": "query", "description": "每页条数，默认 100；include_code=true 时最大 200，false 时最大 500。format=ndjson 时为导出总条数上限，不传表示全部。", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "cursor", "in": "query", "description": "上一页响应中的 next_cursor（提交 ID，结果不含该条）。", "schema": { "type": "string" } },
+          { "name": "order", "in": "query", "description": "按提交 ID 排序：asc 从旧到新（默认，适合增量同步），desc 从新到旧（适合看最近提交）。", "schema": { "type": "string", "enum": ["asc", "desc"], "default": "asc" } },
+          { "name": "format", "in": "query", "description": "json（默认，分页）或 ndjson（流式导出全部匹配记录，每行一个 Submission 对象）。", "schema": { "type": "string", "enum": ["json", "ndjson"], "default": "json" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "提交记录",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SubmissionPage" } },
+              "application/x-ndjson": { "schema": { "$ref": "#/components/schemas/Submission" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/submissions/{submitId}": {
+      "get": {
+        "operationId": "getSubmission",
+        "summary": "获取单条提交（含代码）",
+        "parameters": [
+          { "name": "submitId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "提交详情",
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": { "data": { "$ref": "#/components/schemas/Submission" } }
+            } } }
+          },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/students": {
+      "get": {
+        "operationId": "listStudents",
+        "summary": "查找学生，用姓名、学号、用户名换取 uid/username",
+        "parameters": [
+          { "name": "keyword", "in": "query", "description": "模糊匹配用户名、真实姓名、学号、昵称。不传则列出全部用户。", "schema": { "type": "string" } },
+          { "$ref": "#/components/parameters/group_id" },
+          { "name": "limit", "in": "query", "description": "每页条数，默认 100，最大 500。", "schema": { "type": "integer", "minimum": 1, "maximum": 500 } },
+          { "name": "cursor", "in": "query", "description": "上一页响应中的 next_cursor。", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "学生列表",
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": {
+                "data": { "type": "array", "items": { "$ref": "#/components/schemas/Student" } },
+                "has_more": { "type": "boolean" },
+                "next_cursor": { "type": "string", "nullable": true }
+              }
+            } } }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/stats": {
+      "get": {
+        "operationId": "getStats",
+        "summary": "提交统计汇总：先看整体情况，再按需拉代码",
+        "parameters": [
+          { "name": "group_by", "in": "query", "description": "分组维度：user（每个学生，默认）、problem（每道题）、day（每天）、status（评测结果分布）、language（语言分布）。", "schema": { "type": "string", "enum": ["user", "problem", "day", "status", "language"], "default": "user" } },
+          { "name": "limit", "in": "query", "description": "最多返回的分组行数，默认 200，最大 5000；超出时 truncated=true。", "schema": { "type": "integer", "minimum": 1, "maximum": 5000 } },
+          { "$ref": "#/components/parameters/username" },
+          { "$ref": "#/components/parameters/uid" },
+          { "$ref": "#/components/parameters/number" },
+          { "$ref": "#/components/parameters/group_id" },
+          { "$ref": "#/components/parameters/problem" },
+          { "$ref": "#/components/parameters/contest_id" },
+          { "$ref": "#/components/parameters/status" },
+          { "$ref": "#/components/parameters/language" },
+          { "$ref": "#/components/parameters/date" },
+          { "$ref": "#/components/parameters/from" },
+          { "$ref": "#/components/parameters/to" }
+        ],
+        "responses": {
+          "200": {
+            "description": "统计结果。rows 的字段随 group_by 变化：user → uid, username, realname, number, submissions, accepted_submissions, attempted_problems, solved_problems, first_submit_at, last_submit_at；problem → id, problem_id, title, submissions, accepted_submissions, users_attempted, users_solved；day → day, submissions, accepted_submissions, active_users；status → status, status_code, submissions；language → language, submissions, accepted_submissions, users。",
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": {
+                "group_by": { "type": "string" },
+                "totals": {
+                  "type": "object",
+                  "properties": {
+                    "submissions": { "type": "integer" },
+                    "accepted_submissions": { "type": "integer" },
+                    "users": { "type": "integer" },
+                    "problems": { "type": "integer" },
+                    "first_submit_at": { "type": "string", "format": "date-time", "nullable": true },
+                    "last_submit_at": { "type": "string", "format": "date-time", "nullable": true }
+                  }
+                },
+                "rows": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+                "truncated": { "type": "boolean" }
+              }
+            } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "形如 hoj_at_xxxxxxxx 的访问令牌" }
+    },
+    "parameters": {
+      "username": { "name": "username", "in": "query", "description": "学生用户名，可多个。", "schema": { "type": "string" } },
+      "uid": { "name": "uid", "in": "query", "description": "学生 uid，可多个。", "schema": { "type": "string" } },
+      "number": { "name": "number", "in": "query", "description": "学号，可多个（精确匹配）。", "schema": { "type": "string" } },
+      "group_id": { "name": "group_id", "in": "query", "description": "团队（班级）ID：只返回该团队成员的提交，不限于团队内题目。", "schema": { "type": "integer" } },
+      "problem": { "name": "problem", "in": "query", "description": "题库题号（如 P1001），可多个。", "schema": { "type": "string" } },
+      "contest_id": { "name": "contest_id", "in": "query", "description": "只返回该比赛中的提交（比赛需已结束）。", "schema": { "type": "integer" } },
+      "status": { "name": "status", "in": "query", "description": "评测结果，可多个：AC, WA, CE, TLE, MLE, RE, PE, PA, SE, CA，或完整英文名、数字状态码。", "schema": { "type": "string" } },
+      "language": { "name": "language", "in": "query", "description": "提交语言，可多个，如 C++、Python3、Java。", "schema": { "type": "string" } },
+      "date": { "name": "date", "in": "query", "description": "某一天（YYYY-MM-DD，站点时区），等价于 from=当天&to=当天；不能与 from/to 同时使用。", "schema": { "type": "string", "format": "date" } },
+      "from": { "name": "from", "in": "query", "description": "起始时间（包含）。", "schema": { "type": "string" }, "example": "2026-11-01" },
+      "to": { "name": "to", "in": "query", "description": "结束时间。纯日期表示包含当天全天；带时刻时不包含该时刻。", "schema": { "type": "string" }, "example": "2026-11-07" }
+    },
+    "responses": {
+      "Error": {
+        "description": "错误",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "description": "missing_token, invalid_token, token_revoked, token_expired, creator_not_root, invalid_parameter, not_found, rate_limited, internal_error" },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      },
+      "Student": {
+        "type": "object",
+        "properties": {
+          "uid": { "type": "string" },
+          "username": { "type": "string" },
+          "realname": { "type": "string", "nullable": true, "description": "真实姓名" },
+          "number": { "type": "string", "nullable": true, "description": "学号" },
+          "nickname": { "type": "string", "nullable": true },
+          "school": { "type": "string", "nullable": true },
+          "course": { "type": "string", "nullable": true, "description": "专业" },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "Submission": {
+        "type": "object",
+        "properties": {
+          "submit_id": { "type": "integer" },
+          "submitted_at": { "type": "string", "format": "date-time" },
+          "student": {
+            "type": "object",
+            "properties": {
+              "uid": { "type": "string" },
+              "username": { "type": "string" },
+              "realname": { "type": "string", "nullable": true },
+              "number": { "type": "string", "nullable": true },
+              "nickname": { "type": "string", "nullable": true }
+            }
+          },
+          "problem": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "problem_id": { "type": "string", "description": "题库题号" },
+              "title": { "type": "string" }
+            }
+          },
+          "contest": {
+            "type": "object",
+            "nullable": true,
+            "description": "非比赛提交为 null",
+            "properties": {
+              "id": { "type": "integer" },
+              "title": { "type": "string" },
+              "problem_display_id": { "type": "string", "description": "比赛内题号，如 A" }
+            }
+          },
+          "group_id": { "type": "integer", "nullable": true, "description": "团队内提交时为团队 ID" },
+          "language": { "type": "string" },
+          "status": { "type": "string", "example": "Wrong Answer" },
+          "status_code": { "type": "integer", "example": -1 },
+          "score": { "type": "integer", "nullable": true },
+          "time_ms": { "type": "integer", "nullable": true },
+          "memory_kb": { "type": "integer", "nullable": true },
+          "code_length": { "type": "integer", "nullable": true },
+          "code": { "type": "string", "description": "include_code=true 时返回" },
+          "error_message": { "type": "string", "nullable": true, "description": "编译错误等信息，超过 4000 字符时截断；include_code=true 时返回" }
+        }
+      },
+      "SubmissionPage": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Submission" } },
+          "count": { "type": "integer" },
+          "has_more": { "type": "boolean" },
+          "next_cursor": { "type": "string", "nullable": true }
+        }
+      }
+    }
+  }
+}

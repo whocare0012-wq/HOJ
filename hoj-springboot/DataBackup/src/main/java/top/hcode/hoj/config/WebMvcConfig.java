@@ -14,6 +14,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import top.hcode.hoj.interceptor.AccessInterceptor;
+import top.hcode.hoj.interceptor.AgentTokenInterceptor;
 import top.hcode.hoj.interceptor.ShiroAuthorizationInterceptor;
 import top.hcode.hoj.security.PublicFileSecurityHeaderFilter;
 import top.hcode.hoj.utils.Constants;
@@ -38,6 +39,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Autowired
     private ShiroAuthorizationInterceptor shiroAuthorizationInterceptor;
+
+    @Autowired
+    private AgentTokenInterceptor agentTokenInterceptor;
 
     @Value("${cors-allowed-origins:http://localhost,http://127.0.0.1}")
     private String corsAllowedOrigins;
@@ -109,5 +113,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(accessInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(EXCLUDE_PATH_PATTERNS);
+        registry.addInterceptor(agentTokenInterceptor)
+                .addPathPatterns("/api/agent/**")
+                .excludePathPatterns("/api/agent/v1/openapi.json");
     }
 }
