@@ -51,6 +51,22 @@ npm run build
 3. 保留既有 Nginx 虚拟主机、HTTPS 证书和所有网络连接。若必须重建前端，只针对该服务操作，并在执行前逐项对比挂载与网络。
 4. 检查主站、同机其他域名和前端功能；出错时恢复原 `index.html` 与旧静态资源。不要清理仍被旧页面引用的资源。
 
+### 启用静态资源压缩（推荐）
+
+前端构建会为 10 KB 以上的 JS/CSS 预生成 `.gz` 文件。若 Nginx 未开启压缩，首次访问需下载约 5 MB 的原始脚本；开启后约降到 1/3。在站点的 `server` 块中加入（示例见 `scripts/local-stack.nginx.conf`）：
+
+```nginx
+gzip on;
+gzip_static on;
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 5;
+gzip_min_length 1024;
+gzip_types text/plain text/css application/javascript application/json application/x-ndjson image/svg+xml;
+```
+
+先 `nginx -t` 检查语法再 `nginx -s reload`。验证：`curl -sI -H "Accept-Encoding: gzip" https://<域名>/assets/<任一 index-*.js>` 应返回 `Content-Encoding: gzip`。
+
 ### 后端、JudgeServer 或数据库
 
 1. **先创建新的 MySQL 全库备份**，使用唯一文件名，不覆盖旧备份；校验哈希并在隔离环境验证可恢复。比赛进行中不要把题目移出比赛。
