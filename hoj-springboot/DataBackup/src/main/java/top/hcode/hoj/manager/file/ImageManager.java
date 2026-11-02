@@ -23,6 +23,7 @@ import top.hcode.hoj.pojo.entity.user.UserInfo;
 import top.hcode.hoj.pojo.vo.UserRolesVO;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
+import top.hcode.hoj.utils.ImageResizer;
 import top.hcode.hoj.utils.UploadFileTypes;
 import top.hcode.hoj.validator.GroupValidator;
 
@@ -37,6 +38,20 @@ import java.util.Map;
 @Component
 @Slf4j(topic = "hoj")
 public class ImageManager {
+
+    /** 头像上传后长边缩到 512 像素以内，列表中再按需取更小的缩略图 */
+    static final int AVATAR_MAX_SIDE = 512;
+    /** 轮播图上传后长边缩到 1920 像素以内 */
+    static final int CAROUSEL_MAX_SIDE = 1920;
+
+    /** 压缩失败不影响上传，保留原图 */
+    private static void shrinkUploadedImage(java.io.File file, int maxSide, String suffix) {
+        try {
+            ImageResizer.shrinkInPlace(file, maxSide, ImageResizer.outputFormat(suffix));
+        } catch (java.io.IOException | RuntimeException e) {
+            log.warn("上传图片压缩失败，保留原图: {}", file, e);
+        }
+    }
 
     @Autowired
     private FileEntityService fileEntityService;
@@ -73,6 +88,8 @@ public class ImageManager {
         try {
             //将文件保存指定目录
             image.transferTo(FileUtil.file(Constants.File.USER_AVATAR_FOLDER.getPath() + File.separator + filename));
+            shrinkUploadedImage(FileUtil.file(Constants.File.USER_AVATAR_FOLDER.getPath() + File.separator + filename),
+                    AVATAR_MAX_SIDE, suffix);
         } catch (Exception e) {
             log.error("头像文件上传异常-------------->", e);
             throw new StatusSystemErrorException("服务器异常：头像上传失败！");
@@ -147,6 +164,8 @@ public class ImageManager {
         String filename = IdUtil.simpleUUID() + "." + suffix;
         try {
             image.transferTo(FileUtil.file(Constants.File.GROUP_AVATAR_FOLDER.getPath() + File.separator + filename));
+            shrinkUploadedImage(FileUtil.file(Constants.File.GROUP_AVATAR_FOLDER.getPath() + File.separator + filename),
+                    AVATAR_MAX_SIDE, suffix);
         } catch (Exception e) {
             log.error("头像文件上传异常-------------->", e);
             throw new StatusSystemErrorException("服务器异常：头像上传失败！");
@@ -191,6 +210,8 @@ public class ImageManager {
         try {
             //将文件保存指定目录
             image.transferTo(FileUtil.file(Constants.File.HOME_CAROUSEL_FOLDER.getPath() + File.separator + filename));
+            shrinkUploadedImage(FileUtil.file(Constants.File.HOME_CAROUSEL_FOLDER.getPath() + File.separator + filename),
+                    CAROUSEL_MAX_SIDE, suffix);
         } catch (Exception e) {
             log.error("图片文件上传异常-------------->{}", e.getMessage());
             throw new StatusSystemErrorException("服务器异常：图片上传失败！");

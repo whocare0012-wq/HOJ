@@ -226,6 +226,9 @@ public class Constants {
 
         CONTEST_TEXT_PRINT_FOLDER("/hoj/file/contest_print"),
 
+        // 按需生成的图片缩略图缓存，不直接对外提供
+        IMG_THUMBNAIL_FOLDER("/hoj/file/thumbnail"),
+
         IMG_API("/api/public/img/"),
 
         FILE_API("/api/public/file/"),

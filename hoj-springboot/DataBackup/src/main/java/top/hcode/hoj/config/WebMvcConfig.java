@@ -7,6 +7,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.http.CacheControl;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -21,7 +22,9 @@ import top.hcode.hoj.utils.Constants;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -93,16 +96,36 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .collect(Collectors.toList());
     }
 
+    /** /api/public/img/** 与 /api/public/file/** 对应的磁盘目录，按顺序查找 */
+    static final List<String> PUBLIC_FILE_FOLDERS = Collections.unmodifiableList(Arrays.asList(
+            Constants.File.USER_AVATAR_FOLDER.getPath(),
+            Constants.File.GROUP_AVATAR_FOLDER.getPath(),
+            Constants.File.MARKDOWN_FILE_FOLDER.getPath(),
+            Constants.File.HOME_CAROUSEL_FOLDER.getPath(),
+            Constants.File.PROBLEM_FILE_FOLDER.getPath()));
+
+    @Bean
+    public FilterRegistrationBean<PublicImageThumbnailFilter> publicImageThumbnailFilterRegistration() {
+        FilterRegistrationBean<PublicImageThumbnailFilter> registration =
+                new FilterRegistrationBean<>(new PublicImageThumbnailFilter(
+                        Constants.File.IMG_API.getPath(),
+                        PUBLIC_FILE_FOLDERS,
+                        Constants.File.IMG_THUMBNAIL_FOLDER.getPath()));
+        registration.addUrlPatterns(Constants.File.IMG_API.getPath() + "*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 2);
+        return registration;
+    }
+
     // 前端直接通过/public/img/图片名称即可拿到
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // /api/public/img/** /api/public/file/**
+        // 上传文件都以 UUID 命名、内容不会变，可长期缓存（只作用于成功返回的文件）
         registry.addResourceHandler(Constants.File.IMG_API.getPath() + "**", Constants.File.FILE_API.getPath() + "**")
-                .addResourceLocations("file:" + Constants.File.USER_AVATAR_FOLDER.getPath() + File.separator,
-                        "file:" + Constants.File.GROUP_AVATAR_FOLDER.getPath() + File.separator,
-                        "file:" + Constants.File.MARKDOWN_FILE_FOLDER.getPath() + File.separator,
-                        "file:" + Constants.File.HOME_CAROUSEL_FOLDER.getPath() + File.separator,
-                        "file:" + Constants.File.PROBLEM_FILE_FOLDER.getPath() + File.separator);
+                .addResourceLocations(PUBLIC_FILE_FOLDERS.stream()
+                        .map(folder -> "file:" + folder + File.separator)
+                        .toArray(String[]::new))
+                .setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic());
     }
 
     @Override
