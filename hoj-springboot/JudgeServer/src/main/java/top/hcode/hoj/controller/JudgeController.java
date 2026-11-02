@@ -19,7 +19,6 @@ import top.hcode.hoj.service.JudgeService;
 import top.hcode.hoj.security.JudgeAccessVerifier;
 
 import java.util.HashMap;
-import java.util.Objects;
 
 
 /**
@@ -33,9 +32,6 @@ public class JudgeController {
 
     @Autowired
     private JudgeService judgeService;
-
-    @Value("${hoj.judge.token:no_judge_token}")
-    private String judgeToken;
 
     @Value("${hoj-judge-server.remote-judge.open}")
     private Boolean openRemoteJudge;
@@ -57,7 +53,7 @@ public class JudgeController {
     @PostMapping(value = "/judge")
     public CommonResult<Void> submitProblemJudge(@RequestBody ToJudgeDTO toJudgeDTO) {
 
-        if (!Objects.equals(toJudgeDTO.getToken(), judgeToken)) {
+        if (!judgeAccessVerifier.isValidToken(toJudgeDTO.getToken())) {
             return CommonResult.errorResponse("对不起！您使用的判题服务调用凭证不正确！访问受限！", ResultStatus.ACCESS_DENIED);
         }
 
@@ -86,7 +82,7 @@ public class JudgeController {
             return CommonResult.errorResponse("调用参数错误！请检查您的调用参数！");
         }
 
-        if (!Objects.equals(testJudgeReq.getToken(), judgeToken)) {
+        if (!judgeAccessVerifier.isValidToken(testJudgeReq.getToken())) {
             return CommonResult.errorResponse("对不起！您使用的判题服务调用凭证不正确！访问受限！", ResultStatus.ACCESS_DENIED);
         }
         return CommonResult.successResponse(judgeService.testJudge(testJudgeReq));
@@ -96,7 +92,7 @@ public class JudgeController {
     @PostMapping(value = "/compile-spj")
     public CommonResult<Void> compileSpj(@RequestBody CompileDTO compileDTO) {
 
-        if (!Objects.equals(compileDTO.getToken(), judgeToken)) {
+        if (!judgeAccessVerifier.isValidToken(compileDTO.getToken())) {
             return CommonResult.errorResponse("对不起！您使用的判题服务调用凭证不正确！访问受限！", ResultStatus.ACCESS_DENIED);
         }
 
@@ -111,7 +107,7 @@ public class JudgeController {
     @PostMapping(value = "/compile-interactive")
     public CommonResult<Void> compileInteractive(@RequestBody CompileDTO compileDTO) {
 
-        if (!Objects.equals(compileDTO.getToken(), judgeToken)) {
+        if (!judgeAccessVerifier.isValidToken(compileDTO.getToken())) {
             return CommonResult.errorResponse("对不起！您使用的判题服务调用凭证不正确！访问受限！", ResultStatus.ACCESS_DENIED);
         }
 
@@ -130,7 +126,7 @@ public class JudgeController {
             return CommonResult.errorResponse("对不起！该判题服务器未开启远程虚拟判题功能！", ResultStatus.ACCESS_DENIED);
         }
 
-        if (!Objects.equals(toJudgeDTO.getToken(), judgeToken)) {
+        if (!judgeAccessVerifier.isValidToken(toJudgeDTO.getToken())) {
             return CommonResult.errorResponse("对不起！您使用的判题服务调用凭证不正确！访问受限！", ResultStatus.ACCESS_DENIED);
         }
 

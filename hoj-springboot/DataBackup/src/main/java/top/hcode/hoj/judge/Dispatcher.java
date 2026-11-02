@@ -343,9 +343,10 @@ public class Dispatcher {
 
         boolean isOk = remoteJudgeAccountService.update(remoteJudgeAccountUpdateWrapper);
 
-        // 账号已是可用状态时不会匹配到行；不重试，避免把刚被其它评测占用的账号误设为可用
+        // 账号已是可用状态时不会匹配到行，属于正常情况，不记为错误；
+        // 也不重试，避免把刚被其它评测占用的账号误设为可用
         if (!isOk) {
-            log.error("[Remote Judge] Failed to change the account to be available----------->{}", "oj:" + remoteJudge + ",username:" + username);
+            log.info("[Remote Judge] Account is already available or not found, no change made----------->{}", "oj:" + remoteJudge + ",username:" + username);
         }
     }
 

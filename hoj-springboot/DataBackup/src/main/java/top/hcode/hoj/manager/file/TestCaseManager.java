@@ -94,10 +94,11 @@ public class TestCaseManager {
                 outputData.put(tmpPreName, tmp.getName());
             } else if (tmp.getName().endsWith(".txt")) {
                 tmpPreName = tmp.getName().substring(0, tmp.getName().lastIndexOf(".txt"));
+                // 用字面量替换：replaceAll 会把替换串里的 $ 当作分组引用，"$*$" 会直接抛出异常
                 if (tmpPreName.contains("input")) {
-                    inputData.put(tmpPreName.replaceAll("input", "$*$"), tmp.getName());
+                    inputData.put(tmpPreName.replace("input", "$*$"), tmp.getName());
                 } else if (tmpPreName.contains("output")) {
-                    outputData.put(tmpPreName.replaceAll("output", "$*$"), tmp.getName());
+                    outputData.put(tmpPreName.replace("output", "$*$"), tmp.getName());
                 }
             }
         }

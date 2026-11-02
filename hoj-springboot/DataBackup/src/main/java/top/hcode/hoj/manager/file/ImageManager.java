@@ -23,6 +23,7 @@ import top.hcode.hoj.pojo.entity.user.UserInfo;
 import top.hcode.hoj.pojo.vo.UserRolesVO;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
+import top.hcode.hoj.utils.UploadFileTypes;
 import top.hcode.hoj.validator.GroupValidator;
 
 import java.io.File;
@@ -61,8 +62,8 @@ public class ImageManager {
             throw new StatusFailException("上传的头像图片文件大小不能大于2M！");
         }
         //获取文件后缀
-        String suffix = image.getOriginalFilename().substring(image.getOriginalFilename().lastIndexOf(".") + 1);
-        if (!"jpg,jpeg,gif,png,webp".toUpperCase().contains(suffix.toUpperCase())) {
+        String suffix = UploadFileTypes.getSuffix(image.getOriginalFilename());
+        if (!UploadFileTypes.isAllowed(suffix, UploadFileTypes.IMAGE_SUFFIXES)) {
             throw new StatusFailException("请选择jpg,jpeg,gif,png,webp格式的头像图片！");
         }
         //若不存在该目录，则创建目录
@@ -136,8 +137,8 @@ public class ImageManager {
             throw new StatusFailException("上传的头像图片文件大小不能大于2M！");
         }
 
-        String suffix = image.getOriginalFilename().substring(image.getOriginalFilename().lastIndexOf(".") + 1);
-        if (!"jpg,jpeg,gif,png,webp".toUpperCase().contains(suffix.toUpperCase())) {
+        String suffix = UploadFileTypes.getSuffix(image.getOriginalFilename());
+        if (!UploadFileTypes.isAllowed(suffix, UploadFileTypes.IMAGE_SUFFIXES)) {
             throw new StatusFailException("请选择jpg,jpeg,gif,png,webp格式的头像图片！");
         }
 
@@ -179,8 +180,8 @@ public class ImageManager {
         }
 
         //获取文件后缀
-        String suffix = image.getOriginalFilename().substring(image.getOriginalFilename().lastIndexOf(".") + 1);
-        if (!"jpg,jpeg,gif,png,webp,jfif,svg".toUpperCase().contains(suffix.toUpperCase())) {
+        String suffix = UploadFileTypes.getSuffix(image.getOriginalFilename());
+        if (!UploadFileTypes.isAllowed(suffix, UploadFileTypes.CAROUSEL_SUFFIXES)) {
             throw new StatusFailException("请选择jpg,jpeg,gif,png,webp,jfif,svg格式的头像图片！");
         }
         //若不存在该目录，则创建目录

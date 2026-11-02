@@ -25,6 +25,7 @@ import top.hcode.hoj.pojo.entity.problem.Problem;
 import top.hcode.hoj.pojo.entity.problem.ProblemCase;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
+import top.hcode.hoj.utils.UploadFileTypes;
 
 import javax.annotation.Resource;
 import javax.xml.XMLConstants;
@@ -73,8 +74,7 @@ public class ImportFpsProblemManager {
      * @Since 2021/10/06
      */
     public void importFPSProblem(MultipartFile file) throws IOException, StatusFailException {
-        String suffix = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".") + 1);
-        if (!"xml".toUpperCase().contains(suffix.toUpperCase())) {
+        if (!"xml".equals(UploadFileTypes.getSuffix(file.getOriginalFilename()))) {
             throw new StatusFailException("请上传xml后缀格式的fps题目文件！");
         }
         // 获取当前登录的用户
@@ -178,10 +178,15 @@ public class ImportFpsProblemManager {
                 }
                 String src = srcElement.getTextContent();
                 String base64 = XmlUtil.getElement(img, "base64").getTextContent();
-                String[] split = src.split("\\.");
+                // 扩展名来自导入文件，只保留常见图片类型，避免写出可被浏览器执行的 html/svg 等文件
+                String imageSuffix = UploadFileTypes.getSuffix(src);
+                if (!UploadFileTypes.isAllowed(imageSuffix, UploadFileTypes.IMAGE_SUFFIXES)
+                        && !"bmp".equals(imageSuffix)) {
+                    imageSuffix = "png";
+                }
 
                 byte[] decode = Base64.getDecoder().decode(base64);
-                String fileName = IdUtil.fastSimpleUUID() + "." + split[split.length - 1];
+                String fileName = IdUtil.fastSimpleUUID() + "." + imageSuffix;
 
                 FileUtil.writeBytes(decode, Constants.File.MARKDOWN_FILE_FOLDER.getPath() + File.separator + fileName);
                 srcMapUrl.put(src, Constants.File.IMG_API.getPath() + fileName);
@@ -190,7 +195,7 @@ public class ImportFpsProblemManager {
             Element descriptionElement = XmlUtil.getElement(item, "description");
             String description = descriptionElement.getTextContent();
             for (Map.Entry<String, String> entry : srcMapUrl.entrySet()) {
-                description = description.replaceAll(entry.getKey(), entry.getValue());
+                description = description.replace(entry.getKey(), entry.getValue());
             }
             // 题目描述
             problem.setDescription(description);
@@ -198,7 +203,7 @@ public class ImportFpsProblemManager {
             Element inputElement = XmlUtil.getElement(item, "input");
             String input = inputElement.getTextContent();
             for (Map.Entry<String, String> entry : srcMapUrl.entrySet()) {
-                input = input.replaceAll(entry.getKey(), entry.getValue());
+                input = input.replace(entry.getKey(), entry.getValue());
             }
             // 输入描述
             problem.setInput(input);
@@ -206,7 +211,7 @@ public class ImportFpsProblemManager {
             Element outputElement = XmlUtil.getElement(item, "output");
             String output = outputElement.getTextContent();
             for (Map.Entry<String, String> entry : srcMapUrl.entrySet()) {
-                output = output.replaceAll(entry.getKey(), entry.getValue());
+                output = output.replace(entry.getKey(), entry.getValue());
             }
             // 输出描述
             problem.setOutput(output);
@@ -215,7 +220,7 @@ public class ImportFpsProblemManager {
             Element hintElement = XmlUtil.getElement(item, "hint");
             String hint = hintElement.getTextContent();
             for (Map.Entry<String, String> entry : srcMapUrl.entrySet()) {
-                hint = hint.replaceAll(entry.getKey(), entry.getValue());
+                hint = hint.replace(entry.getKey(), entry.getValue());
             }
             problem.setHint(hint);
 

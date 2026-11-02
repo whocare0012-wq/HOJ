@@ -14,6 +14,7 @@ import top.hcode.hoj.common.exception.StatusSystemErrorException;
 import top.hcode.hoj.dao.common.FileEntityService;
 import top.hcode.hoj.shiro.AccountProfile;
 import top.hcode.hoj.utils.Constants;
+import top.hcode.hoj.utils.UploadFileTypes;
 import top.hcode.hoj.validator.GroupValidator;
 
 import javax.annotation.Resource;
@@ -56,8 +57,8 @@ public class MarkDownFileManager {
             throw new StatusFailException("上传的图片文件大小不能大于4M！");
         }
         //获取文件后缀
-        String suffix = image.getOriginalFilename().substring(image.getOriginalFilename().lastIndexOf(".") + 1);
-        if (!"jpg,jpeg,gif,png,webp".toUpperCase().contains(suffix.toUpperCase())) {
+        String suffix = UploadFileTypes.getSuffix(image.getOriginalFilename());
+        if (!UploadFileTypes.isAllowed(suffix, UploadFileTypes.IMAGE_SUFFIXES)) {
             throw new StatusFailException("请选择jpg,jpeg,gif,png,webp格式的图片！");
         }
 
@@ -140,16 +141,13 @@ public class MarkDownFileManager {
         if (file.getSize() >= 1024 * 1024 * 128) {
             throw new StatusFailException("上传的文件大小不能大于128M！");
         }
-        //获取文件后缀
-        String suffix = "";
-        String filename = "";
-        if (file.getOriginalFilename() != null && file.getOriginalFilename().contains(".")) {
-            suffix = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".") + 1);
-            //通过UUID生成唯一文件名
-            filename = IdUtil.simpleUUID() + "." + suffix;
-        } else {
-            filename = IdUtil.simpleUUID();
+        //获取文件后缀；文件与站点同源提供，禁止上传可被浏览器执行的页面和脚本类型
+        String suffix = UploadFileTypes.getSuffix(file.getOriginalFilename());
+        if (UploadFileTypes.isActiveContent(suffix)) {
+            throw new StatusFailException("出于安全考虑，不允许上传 " + suffix + " 类型的文件，请压缩后再上传！");
         }
+        //通过UUID生成唯一文件名
+        String filename = suffix.isEmpty() ? IdUtil.simpleUUID() : IdUtil.simpleUUID() + "." + suffix;
         //若不存在该目录，则创建目录
         FileUtil.mkdir(Constants.File.MARKDOWN_FILE_FOLDER.getPath());
 

@@ -15,6 +15,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import top.hcode.hoj.interceptor.AccessInterceptor;
 import top.hcode.hoj.interceptor.ShiroAuthorizationInterceptor;
+import top.hcode.hoj.security.PublicFileSecurityHeaderFilter;
 import top.hcode.hoj.utils.Constants;
 
 import java.io.File;
@@ -67,6 +68,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
         FilterRegistrationBean<CorsFilter> registration =
                 new FilterRegistrationBean<>(new CorsFilter(source));
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<PublicFileSecurityHeaderFilter> publicFileSecurityHeaderFilterRegistration() {
+        FilterRegistrationBean<PublicFileSecurityHeaderFilter> registration =
+                new FilterRegistrationBean<>(new PublicFileSecurityHeaderFilter());
+        registration.addUrlPatterns(
+                Constants.File.IMG_API.getPath() + "*",
+                Constants.File.FILE_API.getPath() + "*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
         return registration;
     }
 
