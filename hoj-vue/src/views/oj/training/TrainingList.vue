@@ -124,14 +124,18 @@
         :loading="loading"
         :show-header="false"
       >
+        <!-- rank 是后台的排序权重（默认都为 1000），对学生没有意义，这里显示按当前排序的序号 -->
         <vxe-table-column
-          field="rank"
+          field="seq"
           :title="$t('m.Number')"
           width="9%"
           min-width="60"
           show-overflow
           :visible="!mobileView"
         >
+          <template v-slot="{ rowIndex }">
+            {{ (currentPage - 1) * limit + rowIndex + 1 }}
+          </template>
         </vxe-table-column>
         <vxe-table-column
           field="title"
@@ -205,9 +209,9 @@
                 placement="top"
               >
                 <el-progress
-                  :text-inside="true"
-                  :stroke-width="20"
-                  :percentage="getPassingRate(row.acCount, row.problemCount)"
+                  :stroke-width="8"
+                  :percentage="Number(getPassingRate(row.acCount, row.problemCount))"
+                  :format="(p) => `${Math.round(p)}%`"
                 ></el-progress>
               </el-tooltip>
             </span>
@@ -563,5 +567,17 @@ section {
 }
 .training-data-table :deep(.el-progress-bar__innerText) {
   color: #606266;
+}
+@media screen and (max-width: 767px) {
+  /* 手机端加大筛选标签的点击区域 */
+  .training-list-page section :deep(.el-tag) {
+    height: 32px;
+    line-height: 30px;
+    padding: 0 12px;
+  }
+  section {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
 }
 </style>

@@ -137,9 +137,11 @@
           align="left"
         >
           <template v-slot="{ row }">
-            <span v-katex class="rank-signature-body" v-if="row.signature">{{
-              row.signature
-            }}</span>
+            <span
+              class="rank-signature-preview"
+              v-if="signaturePreview(row.signature)"
+              :title="signaturePreview(row.signature, 200)"
+            >{{ signaturePreview(row.signature) }}</span>
           </template>
         </vxe-table-column>
       </vxe-table>
@@ -393,6 +395,10 @@ export default {
         'acm-rank.png'
       );
     },
+    // 签名只显示一行纯文本：去掉代码片段和 Markdown，避免排名表被代码、表情刷屏
+    signaturePreview(text, maxLength = 40) {
+      return utils.signaturePreview(text, maxLength);
+    },
     getACRate(ac, total) {
       return utils.getACRate(ac, total);
     },
@@ -409,6 +415,10 @@ export default {
 </script>
 
 <style scoped>
+.rank-signature-preview {
+  color: #909399;
+  font-size: 13px;
+}
 .echarts {
   margin: 0 auto;
   position: relative;

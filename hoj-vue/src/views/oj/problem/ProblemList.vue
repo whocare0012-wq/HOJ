@@ -125,7 +125,59 @@
             </template>
           </div>
         </template>
+        <!-- 手机端：卡片列表，标题完整显示（最多两行），难度与通过率不再被挤出屏幕 -->
+        <div
+          v-if="mobileView"
+          class="problem-card-list"
+          v-loading="loadings.table"
+        >
+          <div
+            v-for="row in problemList"
+            :key="row.pid"
+            class="problem-card"
+            role="link"
+            tabindex="0"
+            @click="getProblemUri(row.problemId)"
+            @keydown.enter="getProblemUri(row.problemId)"
+          >
+            <div class="problem-card-head">
+              <i
+                v-if="isAuthenticated && isGetStatusOk && row.myStatus != null && row.myStatus != -10"
+                :class="row.myStatus == 0 ? 'el-icon-check' : 'el-icon-minus'"
+                :style="getIconColor(row.myStatus)"
+                :aria-label="JUDGE_STATUS[row.myStatus] && JUDGE_STATUS[row.myStatus]['name']"
+              ></i>
+              <span class="problem-card-id">{{ row.problemId }}</span>
+              <span
+                class="el-tag el-tag--small problem-card-level"
+                :style="getLevelColor(row.difficulty)"
+              >{{ getLevelName(row.difficulty) }}</span>
+            </div>
+            <div class="problem-card-title">{{ row.title }}</div>
+            <div class="problem-card-meta">
+              <span>{{ $t('m.Total') }} {{ row.total }}</span>
+              <span>{{ $t('m.AC_Rate') }} {{ getPassingRate(row.ac, row.total) }}%</span>
+            </div>
+            <div
+              v-if="tagVisible && row.tags && row.tags.length"
+              class="problem-card-tags"
+            >
+              <span
+                class="el-tag el-tag--small"
+                :style="'color:#FFF;background-color:' + (tag.color ? tag.color : '#409eff')"
+                v-for="tag in row.tags"
+                :key="tag.id"
+                @click.stop="addTag(tag)"
+              >{{ tag.name }}</span>
+            </div>
+          </div>
+          <el-empty
+            v-if="!loadings.table && problemList.length === 0"
+            :description="$t('m.No_Data')"
+          ></el-empty>
+        </div>
         <vxe-table
+          v-show="!mobileView"
           border="inner"
           stripe
           ref="problemList"
@@ -223,11 +275,13 @@
                   placement="top"
                   style="margin-top:0"
                 >
+                  <!-- 数字放在进度条外，低通过率时不会被截断 -->
                   <el-progress
-                    :text-inside="true"
-                    :stroke-width="20"
+                    class="ac-rate-progress"
+                    :stroke-width="8"
                     :color="customColors"
-                    :percentage="getPassingRate(row.ac, row.total)"
+                    :percentage="Number(getPassingRate(row.ac, row.total))"
+                    :format="formatRate"
                   ></el-progress>
                 </el-tooltip>
               </span>
@@ -246,8 +300,13 @@
     </el-col>
 
     <el-col :sm="24" :md="6" :lg="6">
-      <el-card style="text-align:center">
+      <!-- 悬停题目时显示其评测结果分布；手机无法悬停，不显示 -->
+      <el-card v-if="!mobileView" style="text-align:center">
         <span class="panel-title">{{ currentProblemTitle }}</span>
+        <p
+          v-if="problemRecord.length === 0"
+          class="problem-record-hint"
+        >{{ $t('m.Touch_Get_Status') }}</p>
         <el-row
           v-for="(record, index) in problemRecord"
           :key="index"
@@ -284,7 +343,7 @@
           </el-col>
         </el-row>
       </el-card>
-      <el-card :padding="10" style="margin-top:20px">
+      <el-card :padding="10" :style="mobileView ? '' : 'margin-top:20px'" class="tag-panel">
         <template #header>
           <div style="text-align: center;">
             <span class="taglist-title">{{ OJName + ' ' + $t('m.Tags') }}</span>
@@ -399,8 +458,12 @@ export default {
       ],
       searchTag: '',
       searchTagClassificationList: [],
-      activeTagClassificationIdList:[]
+      activeTagClassificationIdList:[],
+      mobileView: false,
     };
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateMobileView);
   },
   created() {
     this.init();
@@ -410,18 +473,11 @@ export default {
     this.JUDGE_STATUS_RESERVE = Object.assign({}, JUDGE_STATUS_RESERVE);
     this.JUDGE_STATUS = Object.assign({}, JUDGE_STATUS);
     this.REMOTE_OJ = Object.assign({}, REMOTE_OJ);
-    this.currentProblemTitle = this.$t('m.Touch_Get_Status');
-    // 初始化
-    this.problemRecord = [
-      { status: 0, count: 100 },
-      { status: -1, count: 100 },
-      { status: 1, count: 100 },
-      { status: 2, count: 100 },
-      { status: 3, count: 100 },
-      { status: -3, count: 100 },
-      { status: -2, count: 100 },
-      { status: 4, count: 100 },
-    ];
+    this.updateMobileView();
+    window.addEventListener('resize', this.updateMobileView);
+    // 未悬停任何题目前不显示占位的 100% 色条，只显示提示文字
+    this.currentProblemTitle = this.$t('m.Statistic');
+    this.problemRecord = [];
     this.getTagList(this.query.oj);
     this.loadings.table = true;
     setTimeout(() => {
@@ -433,6 +489,12 @@ export default {
     this.getData();
   },
   methods: {
+    updateMobileView() {
+      this.mobileView = window.innerWidth < 768;
+    },
+    formatRate(percentage) {
+      return `${Number(percentage).toFixed(2)}%`;
+    },
     init() {
       this.routeName = this.$route.name;
       let query = this.$route.query;
@@ -879,6 +941,87 @@ ul {
 @media screen and (min-width: 1050px) {
   :deep(.vxe-table--body-wrapper) {
     overflow-x: hidden !important;
+  }
+}
+
+.problem-record-hint {
+  color: #909399;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 12px 0 4px;
+}
+:deep(.ac-rate-progress) {
+  margin-top: 0;
+}
+:deep(.ac-rate-progress .el-progress__text) {
+  font-size: 12px !important;
+  min-width: 52px;
+  text-align: right;
+}
+
+/* 手机端题目卡片 */
+.problem-card-list {
+  min-height: 120px;
+}
+.problem-card {
+  border-bottom: 1px solid #ebeef5;
+  cursor: pointer;
+  padding: 12px 4px;
+}
+.problem-card:active {
+  background: #f5f7fa;
+}
+.problem-card-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+.problem-card-id {
+  color: #606266;
+  font-size: 13px;
+  font-weight: 600;
+}
+.problem-card-level {
+  margin-left: auto;
+}
+.problem-card-title {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #303133;
+  display: -webkit-box;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  margin-top: 6px;
+  overflow: hidden;
+  word-break: break-word;
+}
+.problem-card-meta {
+  color: #909399;
+  display: flex;
+  font-size: 12px;
+  gap: 16px;
+  margin-top: 6px;
+}
+.problem-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.problem-card-tags .el-tag {
+  cursor: pointer;
+}
+@media screen and (max-width: 767px) {
+  /* 手机端加大筛选标签的点击区域 */
+  .filter-item {
+    height: 32px;
+    line-height: 30px;
+    margin-right: 0.6em;
+    padding: 0 12px;
+  }
+  .tag-panel {
+    margin-top: 16px;
   }
 }
 

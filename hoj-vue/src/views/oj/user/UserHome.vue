@@ -82,7 +82,7 @@
         </span>
         <hr id="split" />
         <el-row :gutter="12">
-          <el-col :md="6" :sm="24">
+          <el-col :md="6" :sm="12" :xs="12">
             <el-card shadow="always" class="submission">
               <p>
                 <i class="fa fa-th" aria-hidden="true"></i>
@@ -91,7 +91,7 @@
               <p class="data-number">{{ profile.total }}</p>
             </el-card>
           </el-col>
-          <el-col :md="6" :sm="24">
+          <el-col :md="6" :sm="12" :xs="12">
             <el-card shadow="always" class="solved">
               <p>
                 <i class="fa fa-check-circle" aria-hidden="true"></i>
@@ -100,7 +100,7 @@
               <p class="data-number">{{ profile.solvedCount == null ? profile.solvedList.length : profile.solvedCount }}</p>
             </el-card>
           </el-col>
-          <el-col :md="6" :sm="24">
+          <el-col :md="6" :sm="12" :xs="12">
             <el-card shadow="always" class="score">
               <p>
                 <i class="fa fa-star" aria-hidden="true"></i>
@@ -109,8 +109,8 @@
               <p class="data-number">{{ getSumScore(profile.scoreList) }}</p>
             </el-card>
           </el-col>
-          <el-col :md="6" :sm="24">
-            <el-card shadow="always" class="rating">
+          <el-col :md="6" :sm="12" :xs="12">
+            <el-card shadow="always" class="rating" :class="{ 'is-empty': !profile.rating }">
               <p>
                 <i class="fa fa-user-secret" aria-hidden="true"></i>
                 {{ $t('m.UserHome_Rating') }}
@@ -394,6 +394,18 @@ export default {
   background: #dd6161;
   color: #fff;
   font-size: 14px;
+}
+/* 未绑定 Codeforces 时用中性灰，避免红色卡片被误认为出错 */
+.rating.is-empty {
+  background: #c0c4cc;
+}
+@media screen and (max-width: 767px) {
+  .submission,
+  .solved,
+  .score,
+  .rating {
+    margin-bottom: 12px;
+  }
 }
 .default-info {
   font-size: 13px;

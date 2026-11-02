@@ -1,11 +1,12 @@
 <template>
   <div>
-    <el-row :gutter="20">
+    <el-row :gutter="20" class="home-layout">
       <el-col
         :md="15"
         :sm="24"
+        class="home-col"
       >
-        <el-card>
+        <el-card class="home-block order-carousel">
           <template #header>
             <div
                 class="content-center"
@@ -20,12 +21,15 @@
             class="img-carousel"
             arrow="always"
             indicator-position="outside"
+            @change="onCarouselChange"
           >
             <el-carousel-item
               v-for="(item, index) in carouselImgList"
               :key="index"
             >
+              <!-- 只加载当前和下一张，其余等轮播到再加载 -->
               <el-image
+                v-if="carouselLoaded[index]"
                 :src="item.url"
                 fit="fill"
               >
@@ -40,9 +44,9 @@
             </el-carousel-item>
           </el-carousel>
         </el-card>
-        <Announcements class="card-top"></Announcements>
-        <SubmissionStatistic class="card-top"></SubmissionStatistic>
-        <el-card class="card-top">
+        <Announcements class="card-top home-block order-announcements"></Announcements>
+        <SubmissionStatistic class="card-top home-block order-statistic"></SubmissionStatistic>
+        <el-card class="card-top home-block order-latest">
           <template #header>
             <div
                 class="clearfix"
@@ -111,9 +115,9 @@
       <el-col
         :md="9"
         :sm="24"
-        class="phone-margin"
+        class="phone-margin home-col"
       >
-        <el-card class="daily-check-in-card">
+        <el-card class="daily-check-in-card home-block order-checkin">
           <template #header>
             <div class="daily-check-in-header">
               <span class="panel-title home-title">
@@ -238,7 +242,7 @@
         </el-card>
 
         <template v-if="contests.length">
-          <el-card class="recent-contests-card card-top">
+          <el-card class="recent-contests-card card-top home-block order-contests">
             <template #header>
               <div
                   class="clearfix title content-center"
@@ -378,7 +382,7 @@
             </div>
           </el-card>
         </template>
-        <el-card class="weekly-rank-card card-top">
+        <el-card class="weekly-rank-card card-top home-block order-rank">
           <template #header>
             <div
                 class="clearfix"
@@ -451,7 +455,7 @@
             </vxe-table-column>
           </vxe-table>
         </el-card>
-        <el-card class="card-top">
+        <el-card class="card-top home-block order-remote">
           <template #header>
             <div
                 class="clearfix title"
@@ -467,7 +471,8 @@
           >
             <el-col
               :md="8"
-              :sm="24"
+              :sm="8"
+              :xs="8"
               v-for="(oj, index) in remoteJudgeList"
               :key="index"
             >
@@ -579,11 +584,10 @@ export default {
         practiceScore: 85,
         examScore: 82,
       },
-      carouselImgList: [
-        {
-          url: homeImage,
-        },
-      ],
+      // 先为空，等接口返回；没有配置轮播图时才使用内置默认图，避免默认图和真实轮播图都下载
+      carouselImgList: [],
+      // 已允许加载的轮播图下标：首屏只加载当前和下一张
+      carouselLoaded: { 0: true, 1: true },
       srcHight: "440px",
       remoteJudgeList: [
         {
@@ -670,11 +674,30 @@ export default {
   },
   methods: {
     getHomeCarousel() {
-      api.getHomeCarousel().then((res) => {
-        if (res.data.data != null && res.data.data.length > 0) {
-          this.carouselImgList = res.data.data;
-        }
-      });
+      const useDefault = () => {
+        this.carouselImgList = [{ url: homeImage }];
+      };
+      api.getHomeCarousel().then(
+        (res) => {
+          if (res.data.data != null && res.data.data.length > 0) {
+            this.carouselImgList = res.data.data;
+          } else {
+            useDefault();
+          }
+        },
+        useDefault
+      );
+    },
+    onCarouselChange(current) {
+      const total = this.carouselImgList.length;
+      if (!total) {
+        return;
+      }
+      this.carouselLoaded = {
+        ...this.carouselLoaded,
+        [current]: true,
+        [(current + 1) % total]: true,
+      };
     },
 
     getRecentContests() {
@@ -1242,7 +1265,50 @@ li {
   height: 490px;
 }
 
+/*
+ * 手机/平板（< 992px，左右两栏会上下堆叠）：把两栏拆平后按重要程度重新排序，
+ * 避免签到、比赛、过题榜被提交统计和题目列表挤到页面最底部。
+ */
+@media screen and (max-width: 991px) {
+  .home-layout {
+    flex-direction: column;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .home-layout > .home-col {
+    display: contents;
+  }
+  .home-block {
+    margin-top: 16px;
+  }
+  .order-carousel { order: 1; margin-top: 0; }
+  .order-checkin { order: 2; }
+  .order-announcements { order: 3; }
+  .order-contests { order: 4; }
+  .order-rank { order: 5; }
+  .order-statistic { order: 6; }
+  .order-latest { order: 7; }
+  .order-remote { order: 8; }
+}
+
 @media screen and (max-width: 768px) {
+  /* 远程评测平台：每行 3 个小 logo，而不是每个撑满屏宽 */
+  :deep(.remote-judge-grid > .el-col) {
+    height: 48px;
+  }
+  .remote-judge-grid {
+    margin-left: -5px !important;
+    margin-right: -5px !important;
+  }
+  :deep(.remote-judge-grid > .el-col) {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+  }
+  .oj-logo {
+    margin-bottom: 8px;
+    min-height: 38px;
+    padding: 4px 6px;
+  }
   .daily-check-in-card > :deep(.el-card__body) {
     padding: 14px 12px;
   }

@@ -126,7 +126,72 @@
             </el-row>
           </div>
         </template>
+        <!-- 手机端：卡片列表，评测结果与关键数据一屏可见，点击查看提交详情 -->
+        <div
+          v-if="mobileView"
+          class="submission-card-list"
+          v-loading="loadingTable"
+        >
+          <div
+            v-for="row in submissions"
+            :key="row.submitId"
+            class="submission-card"
+            role="link"
+            tabindex="0"
+            @click="showSubmitDetail(row)"
+            @keydown.enter="showSubmitDetail(row)"
+          >
+            <div class="submission-card-head">
+              <span
+                class="submission-card-status"
+                :class="getStatusColor(row.status)"
+              >
+                <i
+                  class="el-icon-loading"
+                  v-if="
+                    row.status == JUDGE_STATUS_RESERVE['Pending'] ||
+                      row.status == JUDGE_STATUS_RESERVE['Compiling'] ||
+                      row.status == JUDGE_STATUS_RESERVE['Judging']
+                  "
+                ></i>
+                {{ JUDGE_STATUS[row.status] ? JUDGE_STATUS[row.status].name : row.status }}
+              </span>
+              <span
+                v-if="scoreColumnVisible && row.score != null"
+                class="submission-card-score"
+              >{{ row.score }} {{ $t('m.Score') }}</span>
+              <span class="submission-card-id">#{{ row.submitId }}</span>
+            </div>
+            <div class="submission-card-problem">
+              <a @click.stop="getProblemUri(contestID ? row.displayId : row.displayPid)">
+                {{ (contestID ? row.displayId : row.displayPid) + ' ' + row.title }}
+              </a>
+            </div>
+            <div class="submission-card-meta">
+              <span>{{ row.language }}</span>
+              <span>{{ submissionTimeFormat(row.time) }}</span>
+              <span>{{ submissionMemoryFormat(row.memory) }}</span>
+            </div>
+            <div class="submission-card-foot">
+              <a @click.stop="goUserHome(row.username, row.uid)">{{ row.username }}</a>
+              <span>{{ $filters.fromNow(row.submitTime) }}</span>
+            </div>
+            <vxe-button
+              v-if="rejudgeColumnVisible"
+              class="submission-card-rejudge"
+              status="primary"
+              size="mini"
+              :loading="row.loading"
+              @click.stop="handleRejudge(row)"
+            >{{ $t('m.Rejudge') }}</vxe-button>
+          </div>
+          <el-empty
+            v-if="!loadingTable && submissions.length === 0"
+            :description="$t('m.No_Data')"
+          ></el-empty>
+        </div>
         <vxe-table
+          v-show="!mobileView"
           border="inner"
           stripe
           keep-source
@@ -550,7 +615,11 @@ export default {
         status: null,
         score: null,
       },
+      mobileView: false,
     };
+  },
+  beforeUnmount() {
+    window.removeEventListener("resize", this.updateMobileView);
   },
   created() {
     this.init();
@@ -573,9 +642,14 @@ export default {
     delete this.CHANGE_JUDGE_STATUS_LIST["5"];
     delete this.CHANGE_JUDGE_STATUS_LIST["6"];
     delete this.CHANGE_JUDGE_STATUS_LIST["7"];
+    this.updateMobileView();
+    window.addEventListener("resize", this.updateMobileView);
     this.getData();
   },
   methods: {
+    updateMobileView() {
+      this.mobileView = window.innerWidth < 768;
+    },
     init() {
       this.checkStatusNum = 0;
       this.contestID = this.$route.params.contestID;
@@ -1095,8 +1169,63 @@ export default {
 <style scoped>
 @media only screen and (max-width: 767px) {
   .search {
-    margin-top: 20px;
+    margin-top: 12px;
   }
+}
+
+/* 手机端提交卡片 */
+.submission-card-list {
+  min-height: 120px;
+}
+.submission-card {
+  border-bottom: 1px solid #ebeef5;
+  cursor: pointer;
+  padding: 12px 4px;
+  position: relative;
+}
+.submission-card:active {
+  background: #f5f7fa;
+}
+.submission-card-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+.submission-card-status {
+  font-size: 13px;
+}
+.submission-card-score {
+  color: #606266;
+  font-size: 13px;
+}
+.submission-card-id {
+  color: #909399;
+  font-size: 12px;
+  margin-left: auto;
+}
+.submission-card-problem {
+  font-size: 15px;
+  line-height: 1.45;
+  margin-top: 8px;
+  word-break: break-word;
+}
+.submission-card-problem a {
+  color: #2d8cf0;
+}
+.submission-card-meta,
+.submission-card-foot {
+  color: #909399;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 4px 14px;
+  margin-top: 6px;
+}
+.submission-card-foot a {
+  color: #57a3f3;
+}
+.submission-card-rejudge {
+  margin-top: 8px;
 }
 
 .flex-container #main {

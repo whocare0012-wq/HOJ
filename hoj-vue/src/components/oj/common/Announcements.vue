@@ -189,41 +189,35 @@ export default {
   margin-bottom: 10px;
 }
 .announcements-container li {
-  padding-top: 15px;
   list-style: none;
-  padding-bottom: 15px;
-  margin-left: 20px;
   margin-top: 10px;
-  font-size: 16px;
-  border: 1px solid rgba(187, 187, 187, 0.5);
-  border-left: 2px solid #409eff;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 1px solid #ebeef5;
+  border-left: 3px solid #409eff;
+  border-radius: 4px;
 }
-/* .announcements-container li:last-child {
-  border-bottom: none;
-} */
+/* 左对齐、正常字重，便于扫读 */
 .flex-container {
-  text-align: center;
+  text-align: left;
 }
-.flex-container .info {
-  margin-top: 5px;
-}
-
 .flex-container .title .entry {
-  color: #495060;
-  font-style: oblique;
+  color: #303133;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1.5;
+  word-break: break-word;
 }
 .flex-container .title a:hover {
   color: #2d8cf0;
-  border-bottom: 1px solid #2d8cf0;
 }
-.creator {
-  width: 200px;
-  text-align: center;
-}
-.date {
-  width: 200px;
-  text-align: center;
-  margin-right: 5px;
+.flex-container .info {
+  color: #909399;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  gap: 4px 16px;
+  margin-top: 6px;
 }
 
 .content-container {

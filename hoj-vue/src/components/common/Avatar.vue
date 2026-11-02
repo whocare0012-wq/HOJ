@@ -9,15 +9,21 @@
     <img
       v-if="src && !imageFailed"
       class="hoj-avatar__image"
-      :src="src"
+      :src="displaySrc"
       :alt="username || 'avatar'"
-      @error="imageFailed = true"
+      loading="lazy"
+      decoding="async"
+      @error="onImageError"
     />
     <span v-else class="hoj-avatar__initials">{{ initials }}</span>
   </span>
 </template>
 
 <script>
+// 站内上传的图片（UUID 文件名）支持 ?w= 缩略图，见后端 PublicImageThumbnailFilter
+const THUMBNAIL_SOURCE = /^\/api\/public\/img\/[A-Za-z0-9_-]+\.(jpe?g|png)$/i
+const THUMBNAIL_WIDTHS = [64, 128, 256]
+
 const backgroundPalette = [
   '#F44336', '#FF4081', '#9C27B0', '#673AB7',
   '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4',
@@ -39,10 +45,20 @@ export default {
   },
   data() {
     return {
-      imageFailed: false
+      imageFailed: false,
+      thumbnailFailed: false
     }
   },
   computed: {
+    displaySrc() {
+      if (this.thumbnailFailed || !THUMBNAIL_SOURCE.test(this.src || '')) {
+        return this.src
+      }
+      const ratio = typeof window !== 'undefined' && window.devicePixelRatio > 1 ? 2 : 1
+      const needed = (Number.parseFloat(this.size) || 50) * ratio
+      const width = THUMBNAIL_WIDTHS.find((w) => w >= needed) || THUMBNAIL_WIDTHS[THUMBNAIL_WIDTHS.length - 1]
+      return `${this.src}?w=${width}`
+    },
     avatarStyle() {
       const size = typeof this.size === 'number' ? `${this.size}px` : this.size
       return {
@@ -65,9 +81,20 @@ export default {
       return value.slice(0, 3).toUpperCase()
     }
   },
+  methods: {
+    onImageError() {
+      // 缩略图失败（如后端尚未升级）先退回原图，原图也失败才显示首字母
+      if (this.displaySrc !== this.src) {
+        this.thumbnailFailed = true
+      } else {
+        this.imageFailed = true
+      }
+    }
+  },
   watch: {
     src() {
       this.imageFailed = false
+      this.thumbnailFailed = false
     }
   }
 }

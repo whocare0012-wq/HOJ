@@ -200,7 +200,47 @@ function getSwitchFoceusModeRouteName(routeName){
   }
 }
 
+// 代码的常见开头：从这里起的内容视为代码片段，不在列表中展示
+const SIGNATURE_CODE_START = /(#\s*include|#\s*pragma|using\s+namespace|int\s+main\s*\(|import\s+\w|def\s+\w+\s*\(|public\s+static|ios::sync)/i;
+
+/**
+ * 把个人签名（Markdown，常夹杂代码）转成适合在列表中显示的一行纯文本。
+ * 去掉代码块、行内代码、图片、链接语法和 Markdown 符号，从疑似代码处截断，并限制长度。
+ */
+function signaturePreview(text, maxLength = 40) {
+  if (!text) {
+    return '';
+  }
+  let plain = String(text)
+    .replace(/```[\s\S]*?(```|$)/g, ' ')
+    .replace(/`[^`]*`/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\$\$?[^$]*\$\$?/g, ' ');
+  const codeAt = plain.search(SIGNATURE_CODE_START);
+  if (codeAt >= 0) {
+    plain = plain.slice(0, codeAt);
+  }
+  plain = plain
+    .replace(/:::\s*[\w-]*/g, ' ')
+    .replace(/==/g, ' ')
+    .replace(/^\s*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, '')
+    // 连续的分隔符（如 "- - - -"、"====="）
+    .replace(/(?:[-=_~.·•*]\s*){3,}/g, ' ')
+    .replace(/[*_~#>|]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // 去掉符号后没有任何文字、数字或表情时不显示
+  if (!/[\p{L}\p{N}\p{Extended_Pictographic}]/u.test(plain)) {
+    return '';
+  }
+  const chars = Array.from(plain);
+  return chars.length > maxLength ? chars.slice(0, maxLength).join('') + '…' : plain;
+}
+
 export default {
+  signaturePreview: signaturePreview,
   submissionMemoryFormat: submissionMemoryFormat,
   submissionTimeFormat: submissionTimeFormat,
   submissionLengthFormat:submissionLengthFormat,

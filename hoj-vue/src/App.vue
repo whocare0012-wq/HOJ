@@ -15,7 +15,7 @@
           <el-row>
             <el-col
               :md="6"
-              :xs="24"
+              :xs="12"
             >
               <h1>{{ websiteConfig.name }}</h1>
               <span
@@ -31,7 +31,7 @@
             </el-col>
             <el-col
               :md="6"
-              :xs="24"
+              :xs="12"
             >
               <h1>{{ $t('m.Service') }}</h1>
               <p>
@@ -43,7 +43,7 @@
             </el-col>
             <el-col
               :md="6"
-              :xs="24"
+              :xs="12"
             >
               <h1>{{ $t('m.Development') }}</h1>
               <p class="mb-1">
@@ -60,7 +60,7 @@
             </el-col>
             <el-col
               :md="6"
-              :xs="24"
+              :xs="12"
             >
               <h1>{{ $t('m.Support') }}</h1>
               <p>
@@ -829,9 +829,20 @@ footer h1 {
   font-size: 1rem;
   line-height: 1;
 }
-@media (min-width: 768px) {
-  .hr-none {
-    display: none !important;
+/* 页脚各栏在手机上改为两列网格，不再需要分隔线 */
+.hr-none {
+  display: none !important;
+}
+@media (max-width: 767px) {
+  .mundb-footer {
+    padding: 0.75rem 1rem;
+  }
+  footer h1 {
+    font-size: 1.15rem;
+    margin: 0.6rem 0 0.4rem;
+  }
+  footer p {
+    margin: 0.3rem 0;
   }
 }
 .el-empty {

@@ -2,7 +2,7 @@
   <div class="page" :class="{ 'legacy-pagination': legacySize }">
     <el-pagination
       background
-      :size="mobilePagination ? 'small' : 'default'"
+      size="default"
       :total="total"
       :pager-count="5"
       :page-size="pageSize"
@@ -56,11 +56,6 @@ export default {
       default: false,
     },
   },
-  computed: {
-    mobilePagination() {
-      return this.isMobile || window.screen.width < 768;
-    },
-  },
   methods: {
     onChange(page) {
       if (page < 1) {
@@ -104,6 +99,14 @@ export default {
   .page,
   :deep(.el-pagination) {
     justify-content: center;
+    row-gap: 8px;
+  }
+  /* 手机端分页按钮不小于 32px，便于点击 */
+  :deep(.el-pager li),
+  :deep(.el-pagination button) {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
   }
 }
 
