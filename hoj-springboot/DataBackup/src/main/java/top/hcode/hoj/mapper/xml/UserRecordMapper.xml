@@ -36,22 +36,55 @@
     </select>
 
     <select id="getOIRankList" resultType="top.hcode.hoj.pojo.vo.OIRankVO" useCache="false">
-        SELECT ranked.* FROM (
-          SELECT ui.uuid AS uid,ui.nickname,ui.username,LEFT(ui.signature,100) AS signature,
-            ui.avatar,ui.title_name,ui.title_color,COALESCE(ss.score,0) AS score,
-            COALESCE(ss.ac,0) AS ac,
-            (SELECT COUNT(*) FROM judge WHERE uid=ui.uuid AND cid=0 AND gid IS NULL) AS total,
-            RANK() OVER (ORDER BY COALESCE(ss.score,0) DESC,COALESCE(ss.ac,0) DESC) AS rank_position
-          FROM user_info ui LEFT JOIN (
-            SELECT uid,SUM(points) AS score,SUM(accepted) AS ac
-            FROM oj_problem_points WHERE gid IS NULL GROUP BY uid
-          ) ss ON ss.uid=ui.uuid WHERE ui.status=0
-        ) ranked
-        <if test="uidList!=null and uidList.size()>0">
-          WHERE ranked.uid IN
-          <foreach collection="uidList" item="uid" open="(" separator="," close=")">#{uid}</foreach>
-        </if>
-        ORDER BY rank_position ASC,uid ASC
+        <!-- LIMIT is inside the derived table: count submissions only for this page,
+             after computing global ranks and applying the optional user filter. -->
+        SELECT paged.*,
+          (SELECT COUNT(*) FROM judge cnt USE INDEX (idx_oj_points)
+           WHERE cnt.cid=0 AND cnt.gid IS NULL AND cnt.uid=paged.uid) AS total
+        FROM (
+          SELECT ranked.* FROM (
+            SELECT ui.uuid AS uid,ui.nickname,ui.username,LEFT(ui.signature,100) AS signature,
+              ui.avatar,ui.title_name,ui.title_color,COALESCE(ss.score,0) AS score,
+              COALESCE(ss.ac,0) AS ac,
+              RANK() OVER (ORDER BY COALESCE(ss.score,0) DESC,COALESCE(ss.ac,0) DESC) AS rank_position
+            FROM user_info ui LEFT JOIN (
+              SELECT best.uid,
+                SUM(ROUND(COALESCE(d.base_points,0)*best.completion_ratio,2)) AS score,
+                SUM(best.accepted) AS ac
+              FROM (
+                <!-- Same progress formula as oj_submission_progress. The existing
+                     covering index keeps code/text rows out of this global-only scan.
+                     Zero-only groups contribute neither points nor accepted problems. -->
+                SELECT j.uid,j.pid,
+                  MAX(CASE WHEN j.status=0 THEN CAST(1 AS DECIMAL(30,16))
+                    WHEN j.score_type=1 AND j.score_max&gt;0 AND j.score IS NOT NULL
+                      AND j.status IN (-3,-1,1,2,3,8)
+                    THEN LEAST(1,GREATEST(0,CAST(j.score AS DECIMAL(30,16))/j.score_max))
+                    ELSE CAST(0 AS DECIMAL(30,16)) END) AS completion_ratio,
+                  MAX(j.status=0) AS accepted
+                FROM judge j USE INDEX (idx_oj_points)
+                WHERE j.cid=0 AND j.gid IS NULL AND
+                  (j.status=0 OR (j.score_type=1 AND j.score_max&gt;0 AND j.score&gt;0
+                    AND j.status IN (-3,-1,1,2,3,8)))
+                GROUP BY j.uid,j.pid
+              ) best JOIN problem p ON p.id=best.pid
+              LEFT JOIN problem_difficulty_config d ON d.difficulty_value=p.difficulty
+              GROUP BY best.uid
+            ) ss ON ss.uid=ui.uuid WHERE ui.status=0
+          ) ranked
+          <if test="uidList!=null">
+            <choose>
+              <when test="uidList.size()>0">
+                WHERE ranked.uid IN
+                <foreach collection="uidList" item="uid" open="(" separator="," close=")">#{uid}</foreach>
+              </when>
+              <otherwise>WHERE 1=0</otherwise>
+            </choose>
+          </if>
+          ORDER BY rank_position ASC,uid ASC
+          LIMIT #{offset},#{limit}
+        ) paged
+        ORDER BY paged.rank_position ASC,paged.uid ASC
     </select>
 
     <resultMap id="map_UserHomeVo" type="top.hcode.hoj.pojo.vo.UserHomeVO">

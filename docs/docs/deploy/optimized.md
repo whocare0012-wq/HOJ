@@ -75,6 +75,27 @@ gzip_types text/plain text/css application/javascript application/json applicati
 4. 只更新涉及的 HOJ 服务。执行 Compose 操作前先确认目标项目、现有容器、挂载、网络、Nginx 配置和其他项目状态；不要在共享主机直接全栈 `pull/up -d`，也不要停止、重建无关项目容器。
 5. 发布后重复第 3 节的检查，另核对新增功能的 API、数据库错误日志和提交评测。失败时按预先保存的镜像/产物和备份执行回滚。
 
+### 后端就绪、功能与榜单性能校验
+
+后端启动后、原子切换前端 `index.html` 前，执行只读校验：
+
+```bash
+python scripts/hoj_release_checks.py --base-url https://<域名> --output output/release-check-<发布号>.json
+```
+
+脚本只发送 GET 请求、生成本地诊断文件，不会发布、重启、改配置或回滚。保留原发布流程中的数据库备份、容器/挂载/网络核验、其他站点连续探测以及回滚步骤。
+
+- 就绪阶段仅检查轻量网站配置接口，默认总期限 210 秒、每次请求超时 5 秒，需要连续两次成功。
+- 功能阶段检查难度与积分榜响应结构，榜单分别记录首次和重复请求的耗时；断线等暂时故障最多额外尝试一次。
+- 网络读取超时默认 30 秒，榜单性能预算仍为 10 秒。超时后重试成功也会保留首次失败并阻止自动切换前端，避免掩盖性能问题。可通过 `--request-timeout`、`--ranking-budget` 显式设置，报告会保留预算与实测数据。
+- 返回码 `0` 表示全部通过，`2` 表示就绪/功能失败，`3` 表示功能已恢复但性能不达标。报告包含接口路径、HTTP/应用状态、失败分类和耗时，不输出响应正文或令牌。
+
+积分榜查询复用积分迁移中已有的 `judge.idx_oj_points` 覆盖索引，上线前只读确认该索引存在。先算全站名次并筛选、分页，再统计当前页用户的提交数；积分按当前难度分值实时计算。SQL 变化可用显式启用的 `OjRankQueryIntegrationTest` 在本地一次性 MySQL 副本验证，覆盖并列、搜索、翻页、积分变更及真实量级数据；测试会核对本地数据库的 server UUID。发布校验自身的测试可运行：
+
+```bash
+python -m unittest discover -s scripts/tests -p 'test_hoj_release_checks*.py' -v
+```
+
 ## 5. 公开仓库提交前检查
 
 ```bash

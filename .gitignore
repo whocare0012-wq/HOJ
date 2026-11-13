@@ -1,5 +1,6 @@
 # Local runtime state, copied uploads, generated reports, and disposable browser data.
 /output/
+__pycache__/
 /.codex-tmp/
 /.playwright-cli/
 **/.playwright-cli/

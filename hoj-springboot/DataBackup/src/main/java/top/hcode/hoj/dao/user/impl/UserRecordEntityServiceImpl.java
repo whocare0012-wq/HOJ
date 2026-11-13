@@ -58,7 +58,8 @@ public class UserRecordEntityServiceImpl extends ServiceImpl<UserRecordMapper, U
 
     @Override
     public IPage<OIRankVO> getOIRankList(Page<OIRankVO> page, List<String> uidList) {
-        return userRecordMapper.getOIRankList(page, uidList);
+        page.setRecords(userRecordMapper.getOIRankList(page.offset(), page.getSize(), uidList));
+        return page;
     }
 
     @Override

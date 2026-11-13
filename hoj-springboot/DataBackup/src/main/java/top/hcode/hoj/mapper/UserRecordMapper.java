@@ -28,7 +28,10 @@ public interface UserRecordMapper extends BaseMapper<UserRecord> {
 
     List<ACMRankVO> getRecent7ACRank();
 
-    IPage<OIRankVO> getOIRankList(Page<OIRankVO> page, @Param("uidList") List<String> uidList);
+    // Pagination happens before the per-user submission count, in the SQL itself.
+    // No IPage argument: PaginationInterceptor must not add a second LIMIT.
+    List<OIRankVO> getOIRankList(@Param("offset") long offset, @Param("limit") long limit,
+                               @Param("uidList") List<String> uidList);
 
     UserHomeVO getUserHomeInfo(@Param("uid") String uid, @Param("username") String username);
 
