@@ -43,13 +43,30 @@ public class AgentTokenAdminController {
     @GetMapping
     @RequiresRoles("root")
     public CommonResult<Map<String, Object>> getOverview(
-            @RequestParam(defaultValue = "50") Integer logLimit) {
+            @RequestParam(defaultValue = "50") Integer logLimit,
+            @RequestParam(defaultValue = "true") boolean includeHistory) {
         int limit = logLimit == null ? 50 : Math.max(1, Math.min(200, logLimit));
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("tokens", tokenService.list());
-        result.put("logs", tokenService.recentLogs(limit));
-        result.put("changes", changeLogService.recent(limit));
+        result.put("logs", includeHistory ? tokenService.recentLogs(limit) : Collections.emptyList());
+        result.put("changes", includeHistory ? changeLogService.recent(limit) : Collections.emptyList());
         return CommonResult.successResponse(result);
+    }
+
+    @GetMapping("/logs")
+    @RequiresRoles("root")
+    public CommonResult<Map<String, Object>> getLogs(
+            @RequestParam(defaultValue = "1") int currentPage,
+            @RequestParam(defaultValue = "20") int limit) {
+        return CommonResult.successResponse(tokenService.logPage(currentPage, limit));
+    }
+
+    @GetMapping("/changes")
+    @RequiresRoles("root")
+    public CommonResult<Map<String, Object>> getChanges(
+            @RequestParam(defaultValue = "1") int currentPage,
+            @RequestParam(defaultValue = "20") int limit) {
+        return CommonResult.successResponse(changeLogService.page(currentPage, limit));
     }
 
     @PostMapping

@@ -6,6 +6,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import top.hcode.hoj.agent.AgentJson;
+import top.hcode.hoj.agent.AgentAuditPage;
 import top.hcode.hoj.agent.AgentTokenService;
 import top.hcode.hoj.shiro.AccountProfile;
 
@@ -54,7 +55,21 @@ public class AgentChangeLogService {
 
     public List<Map<String, Object>> recent(int limit) {
         try {
-            return tokenService.toInstants(jdbcTemplate.queryForList(
+            return queryChanges(limit, 0);
+        } catch (DataAccessException e) {
+            log.warn("[Agent API] agent_change_log is not readable (not migrated yet?)", e);
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    public Map<String, Object> page(int currentPage, int pageSize) {
+        Long total = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM agent_change_log", Long.class);
+        AgentAuditPage page = new AgentAuditPage(currentPage, pageSize, total == null ? 0 : total);
+        return page.result(queryChanges(page.getPageSize(), page.getOffset()));
+    }
+
+    private List<Map<String, Object>> queryChanges(int limit, long offset) {
+        return tokenService.toInstants(jdbcTemplate.queryForList(
                     "SELECT c.id, c.token_id AS tokenId, t.token_name AS tokenName, "
                             + "c.operator_username AS operatorUsername, c.action, c.target_type AS targetType, "
                             + "c.target_id AS targetId, c.summary, LEFT(c.before_json, ?) AS beforeJson, "
@@ -62,12 +77,8 @@ public class AgentChangeLogService {
                             + "(CHAR_LENGTH(c.before_json) > ? OR CHAR_LENGTH(c.after_json) > ?) AS truncated, "
                             + "c.gmt_create AS gmtCreate "
                             + "FROM agent_change_log c LEFT JOIN agent_access_token t ON t.id = c.token_id "
-                            + "ORDER BY c.id DESC LIMIT ?",
-                    LIST_JSON_CHARS, LIST_JSON_CHARS, LIST_JSON_CHARS, LIST_JSON_CHARS, limit));
-        } catch (DataAccessException e) {
-            log.warn("[Agent API] agent_change_log is not readable (not migrated yet?)", e);
-            return java.util.Collections.emptyList();
-        }
+                            + "ORDER BY c.id DESC LIMIT ? OFFSET ?",
+                    LIST_JSON_CHARS, LIST_JSON_CHARS, LIST_JSON_CHARS, LIST_JSON_CHARS, limit, offset));
     }
 
     static String toJson(Object value) {

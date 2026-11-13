@@ -161,13 +161,23 @@ public class AgentTokenService {
     }
 
     public List<Map<String, Object>> recentLogs(int limit) {
+        return queryLogs(limit, 0);
+    }
+
+    public Map<String, Object> logPage(int currentPage, int pageSize) {
+        Long total = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM agent_access_log", Long.class);
+        AgentAuditPage page = new AgentAuditPage(currentPage, pageSize, total == null ? 0 : total);
+        return page.result(queryLogs(page.getPageSize(), page.getOffset()));
+    }
+
+    private List<Map<String, Object>> queryLogs(int limit, long offset) {
         return toInstants(jdbcTemplate.queryForList(
                 "SELECT l.id, l.token_id AS tokenId, t.token_name AS tokenName, l.endpoint, "
                         + "l.query_string AS queryString, l.result_count AS resultCount, "
                         + "l.status_code AS statusCode, l.ip, l.gmt_create AS gmtCreate "
                         + "FROM agent_access_log l LEFT JOIN agent_access_token t ON t.id = l.token_id "
-                        + "ORDER BY l.id DESC LIMIT ?",
-                limit));
+                        + "ORDER BY l.id DESC LIMIT ? OFFSET ?",
+                limit, offset));
     }
 
     /**

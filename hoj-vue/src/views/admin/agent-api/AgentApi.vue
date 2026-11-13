@@ -111,7 +111,8 @@
       <template #header>
         <span class="panel-title home-title">最近变更（题目与训练管理）</span>
       </template>
-      <el-table :data="changes" border size="small">
+      <p class="muted history-note">变更与调用记录持续保留，当前未设置自动清理，可通过分页查看历史记录。</p>
+      <el-table :data="changes" v-loading="history.changes.loading" border size="small">
         <el-table-column type="expand">
           <template #default="{ row }">
             <div v-if="row.truncated" class="muted change-truncated">内容较长，以下只显示前 20000 个字符</div>
@@ -142,13 +143,29 @@
           <el-empty description="暂无通过接口进行的修改" />
         </template>
       </el-table>
+      <el-config-provider :locale="paginationLocale">
+        <el-pagination
+          class="history-pagination"
+          size="small"
+          background
+          layout="total, sizes, prev, pager, next, jumper"
+          :current-page="history.changes.currentPage"
+          :page-size="history.changes.pageSize"
+          :total="history.changes.total"
+          :page-sizes="[10, 20, 50, 100]"
+          :pager-count="5"
+          :disabled="history.changes.loading"
+          @current-change="page => loadHistory('changes', page)"
+          @size-change="size => changeHistorySize('changes', size)"
+        />
+      </el-config-provider>
     </el-card>
 
     <el-card class="agent-card">
       <template #header>
         <span class="panel-title home-title">最近调用记录</span>
       </template>
-      <el-table :data="logs" border size="small">
+      <el-table :data="logs" v-loading="history.logs.loading" border size="small">
         <el-table-column label="时间" min-width="170">
           <template #default="{ row }">{{ formatTime(row.gmtCreate, '-') }}</template>
         </el-table-column>
@@ -168,6 +185,22 @@
           <el-empty description="暂无调用记录" />
         </template>
       </el-table>
+      <el-config-provider :locale="paginationLocale">
+        <el-pagination
+          class="history-pagination"
+          size="small"
+          background
+          layout="total, sizes, prev, pager, next, jumper"
+          :current-page="history.logs.currentPage"
+          :page-size="history.logs.pageSize"
+          :total="history.logs.total"
+          :page-sizes="[10, 20, 50, 100]"
+          :pager-count="5"
+          :disabled="history.logs.loading"
+          @current-change="page => loadHistory('logs', page)"
+          @size-change="size => changeHistorySize('logs', size)"
+        />
+      </el-config-provider>
     </el-card>
 
     <el-dialog v-model="createDialogVisible" title="生成访问令牌" width="440px">
@@ -241,11 +274,13 @@
 
 <script>
 import { Delete, DocumentCopy, Plus, Refresh } from '@element-plus/icons-vue';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import api from '@/common/api';
 import myMessage from '@/common/message';
 import time from '@/common/time';
 
 const defaultCreateForm = () => ({ tokenName: '', expiresInDays: 90, scopes: ['read'] });
+const defaultHistoryPage = () => ({ currentPage: 1, pageSize: 20, total: 0, loading: false, requestId: 0 });
 
 const SCOPE_LABELS = { read: '读取提交数据', manage: '题目与训练管理' };
 const ACTION_LABELS = {
@@ -273,6 +308,8 @@ export default {
       tokens: [],
       logs: [],
       changes: [],
+      history: { logs: defaultHistoryPage(), changes: defaultHistoryPage() },
+      paginationLocale: zhCn,
       createDialogVisible: false,
       createForm: defaultCreateForm(),
       tokenDialogVisible: false,
@@ -348,17 +385,40 @@ export default {
   methods: {
     loadOverview() {
       this.loading = true;
-      return api
-        .admin_getAgentTokens({ logLimit: 50 })
+      const tokens = api
+        .admin_getAgentTokens({ includeHistory: false })
         .then((response) => {
           const data = response.data.data || {};
           this.tokens = data.tokens || [];
-          this.logs = data.logs || [];
-          this.changes = data.changes || [];
-        })
+        });
+      return Promise.all([tokens, this.loadHistory('changes'), this.loadHistory('logs')])
         .finally(() => {
           this.loading = false;
         });
+    },
+    loadHistory(type, currentPage = this.history[type].currentPage) {
+      const pager = this.history[type];
+      const requestId = ++pager.requestId;
+      pager.loading = true;
+      const request = type === 'changes' ? api.admin_getAgentChangeLogs : api.admin_getAgentAccessLogs;
+      return request({ currentPage, limit: pager.pageSize })
+        .then((response) => {
+          if (requestId !== pager.requestId) return;
+          const data = response.data.data;
+          this[type] = data.records;
+          pager.currentPage = data.currentPage;
+          pager.pageSize = data.pageSize;
+          pager.total = data.total;
+        })
+        .finally(() => {
+          if (requestId === pager.requestId) pager.loading = false;
+        });
+    },
+    changeHistorySize(type, size) {
+      const pager = this.history[type];
+      pager.currentPage = 1;
+      pager.pageSize = size;
+      return this.loadHistory(type, 1);
     },
     openCreateDialog() {
       this.createForm = defaultCreateForm();
@@ -511,6 +571,17 @@ code {
   font-size: 12px;
   padding: 0 12px 6px;
 }
+.history-note {
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+.history-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
 .change-detail {
   display: grid;
   gap: 12px;
@@ -545,6 +616,9 @@ code {
   word-break: break-all;
 }
 @media (max-width: 700px) {
+  .history-pagination {
+    justify-content: flex-start;
+  }
   .page-heading {
     align-items: flex-start;
     flex-direction: column;

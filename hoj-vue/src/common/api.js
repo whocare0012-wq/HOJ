@@ -1691,6 +1691,14 @@ const adminApi = {
     })
   },
 
+  admin_getAgentAccessLogs(params) {
+    return ajax('/api/admin/agent-tokens/logs', 'get', { params })
+  },
+
+  admin_getAgentChangeLogs(params) {
+    return ajax('/api/admin/agent-tokens/changes', 'get', { params })
+  },
+
   admin_createAgentToken(data) {
     return ajax('/api/admin/agent-tokens', 'post', {
       data
