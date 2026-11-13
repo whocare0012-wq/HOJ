@@ -8,6 +8,21 @@ instance. Never run this destructive seed against an existing database.
 Application startup does not modify the database unless
 `STARTUP_DATABASE_INITIALIZATION_ENABLED=true` is set explicitly.
 
+## 2026-11-13: AI management API
+
+`hoj-agent-manage-update.sql` (apply after `hoj-agent-api-update.sql`) adds
+the `agent_access_token.scopes` column and the `agent_change_log` table used by
+`/api/agent/v1/admin/**`, which lets AI agents create and edit problems, test
+data and trainings. It is additive and re-runnable; existing tokens keep
+read-only access (`scopes = 'read'`). `hoj.sql` contains the same DDL for fresh
+installs. Until the script is applied, every token is treated as read-only and
+the admin page cannot create tokens with the management scope; nothing else
+changes.
+
+The management API runs as the token's creator (an enabled root account),
+supports `dry_run` previews and never deletes problems or trainings. Every write
+is recorded in `agent_change_log` with before/after snapshots.
+
 ## 2026-11-02: AI data API
 
 `hoj-agent-api-update.sql` adds the `agent_access_token` and `agent_access_log`
@@ -50,7 +65,8 @@ Before deploying:
    `hoj-performance-index-update.sql` (index-only; builds online but adds I/O
    on a large `judge` table, so run it outside peak hours), and
    `hoj-agent-api-update.sql` (two new tables plus one `judge` index; same
-   off-peak advice).
+   off-peak advice), then `hoj-agent-manage-update.sql` (one column plus one
+   new table).
 4. If the verified migration requires maintenance, schedule a window for the
    affected HOJ services only. Preserve the shared frontend proxy and unrelated
    services. Never run a production migration or restart from these local tests.

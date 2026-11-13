@@ -11,7 +11,7 @@ import javax.annotation.Resource;
 
 /**
  * 仅在显式开启启动时数据库初始化时创建 AI 数据接口所需的表；
- * 生产环境请执行 sqlAndsetting/hoj-agent-api-update.sql（含 judge 索引）。
+ * 生产环境请执行 sqlAndsetting/hoj-agent-api-update.sql（含 judge 索引）与 hoj-agent-manage-update.sql。
  */
 @Component
 @ConditionalOnProperty(
@@ -31,6 +31,7 @@ public class AgentApiSchemaInitializer implements ApplicationRunner {
                         "`token_name` varchar(80) NOT NULL," +
                         "`token_prefix` varchar(20) NOT NULL," +
                         "`token_hash` char(64) NOT NULL," +
+                        "`scopes` varchar(100) NOT NULL DEFAULT 'read'," +
                         "`expires_at` datetime DEFAULT NULL," +
                         "`revoked` tinyint(1) NOT NULL DEFAULT 0," +
                         "`created_by` varchar(32) NOT NULL," +
@@ -53,6 +54,30 @@ public class AgentApiSchemaInitializer implements ApplicationRunner {
                         "`gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
                         "PRIMARY KEY (`id`)," +
                         "KEY `idx_agent_log_token` (`token_id`,`gmt_create`)" +
+                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        Integer scopesColumn = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() "
+                        + "AND table_name = 'agent_access_token' AND column_name = 'scopes'", Integer.class);
+        if (scopesColumn == null || scopesColumn == 0) {
+            jdbcTemplate.execute("ALTER TABLE agent_access_token "
+                    + "ADD COLUMN `scopes` varchar(100) NOT NULL DEFAULT 'read' AFTER `token_hash`");
+        }
+        jdbcTemplate.execute(
+                "CREATE TABLE IF NOT EXISTS `agent_change_log` (" +
+                        "`id` bigint unsigned NOT NULL AUTO_INCREMENT," +
+                        "`token_id` bigint unsigned NOT NULL," +
+                        "`operator_uid` varchar(32) DEFAULT NULL," +
+                        "`operator_username` varchar(100) DEFAULT NULL," +
+                        "`action` varchar(50) NOT NULL," +
+                        "`target_type` varchar(20) NOT NULL," +
+                        "`target_id` varchar(64) DEFAULT NULL," +
+                        "`summary` varchar(500) DEFAULT NULL," +
+                        "`before_json` mediumtext," +
+                        "`after_json` mediumtext," +
+                        "`gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+                        "PRIMARY KEY (`id`)," +
+                        "KEY `idx_agent_change_target` (`target_type`,`target_id`)," +
+                        "KEY `idx_agent_change_token` (`token_id`,`gmt_create`)" +
                         ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         log.info("[Agent API] Schema is ready.");
     }

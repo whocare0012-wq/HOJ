@@ -55,6 +55,7 @@ public class AgentDataController {
         body.put("ok", true);
         body.put("api_version", "v1");
         body.put("token_name", request.getAttribute(AgentTokenInterceptor.TOKEN_NAME_ATTR));
+        body.put("scopes", request.getAttribute(AgentTokenInterceptor.SCOPES_ATTR));
         body.put("timezone", dataService.zone().getId());
         body.put("server_time", ZonedDateTime.now(dataService.zone()).withNano(0).toOffsetDateTime()
                 .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
@@ -141,13 +142,18 @@ public class AgentDataController {
         AgentJson.write(response, 200, body);
     }
 
-    /** OpenAPI 文档，无需令牌，便于各类 agent 平台直接导入 */
+    /** OpenAPI 文档，无需令牌，便于各类 agent 平台直接导入；管理接口的定义单独维护在 openapi-admin.json 中 */
     @GetMapping("/openapi.json")
     public void openApi(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ObjectNode spec;
         try (InputStream input = new ClassPathResource("agent-api/openapi.json").getInputStream()) {
             spec = (ObjectNode) AgentJson.MAPPER.readTree(input);
         }
+        ObjectNode admin;
+        try (InputStream input = new ClassPathResource("agent-api/openapi-admin.json").getInputStream()) {
+            admin = (ObjectNode) AgentJson.MAPPER.readTree(input);
+        }
+        mergeOpenApi(spec, admin);
         ArrayNode servers = spec.putArray("servers");
         servers.addObject().put("url", baseUrl(request));
         AgentJson.write(response, 200, spec);
@@ -166,6 +172,22 @@ public class AgentDataController {
         log.error("[Agent API] {} failed", request.getRequestURI(), error);
         if (!response.isCommitted()) {
             AgentJson.write(response, 500, AgentJson.errorBody("internal_error", "服务器内部错误，请稍后重试"));
+        }
+    }
+
+    /** 把管理接口的 paths、components 与说明合并进主文档 */
+    static void mergeOpenApi(ObjectNode spec, ObjectNode admin) {
+        ((ObjectNode) spec.with("paths")).setAll((ObjectNode) admin.path("paths"));
+        ObjectNode components = spec.with("components");
+        admin.path("components").fields().forEachRemaining(entry ->
+                components.with(entry.getKey()).setAll((ObjectNode) entry.getValue()));
+        String extra = admin.path("info").path("description").asText("");
+        if (!extra.isEmpty()) {
+            ObjectNode info = spec.with("info");
+            info.put("description", info.path("description").asText("") + "\n\n" + extra);
+        }
+        if (admin.has("tags")) {
+            spec.withArray("tags").addAll((com.fasterxml.jackson.databind.node.ArrayNode) admin.get("tags"));
         }
     }
 

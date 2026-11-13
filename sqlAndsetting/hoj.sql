@@ -1373,13 +1373,14 @@ PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='session' AND index_name='idx_session_gmt_create'), 'SELECT 1', 'CREATE INDEX idx_session_gmt_create ON session(gmt_create)');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- AI data API tables and index (same as hoj-agent-api-update.sql).
+-- AI data API tables and index (same as hoj-agent-api-update.sql plus hoj-agent-manage-update.sql).
 -- Access tokens for /api/agent/v1. Only the SHA-256 digest of each token is stored.
 CREATE TABLE IF NOT EXISTS `agent_access_token` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `token_name` varchar(80) NOT NULL,
   `token_prefix` varchar(20) NOT NULL,
   `token_hash` char(64) NOT NULL,
+  `scopes` varchar(100) NOT NULL DEFAULT 'read',
   `expires_at` datetime DEFAULT NULL,
   `revoked` tinyint(1) NOT NULL DEFAULT 0,
   `created_by` varchar(32) NOT NULL,
@@ -1403,6 +1404,24 @@ CREATE TABLE IF NOT EXISTS `agent_access_log` (
   `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_agent_log_token` (`token_id`,`gmt_create`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Change audit of the AI management API (/api/agent/v1/admin/**), with before/after snapshots.
+CREATE TABLE IF NOT EXISTS `agent_change_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `token_id` bigint unsigned NOT NULL,
+  `operator_uid` varchar(32) DEFAULT NULL,
+  `operator_username` varchar(100) DEFAULT NULL,
+  `action` varchar(50) NOT NULL,
+  `target_type` varchar(20) NOT NULL,
+  `target_id` varchar(64) DEFAULT NULL,
+  `summary` varchar(500) DEFAULT NULL,
+  `before_json` mediumtext,
+  `after_json` mediumtext,
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_agent_change_target` (`target_type`,`target_id`),
+  KEY `idx_agent_change_token` (`token_id`,`gmt_create`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Date-range lookups of the AI data API: resolves the submit_id range of a period.

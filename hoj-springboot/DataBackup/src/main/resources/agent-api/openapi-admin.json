@@ -1,0 +1,484 @@
+{
+  "info": {
+    "description": "## 题目与训练管理接口（/api/agent/v1/admin/**）\n\n- 需要勾选了「题目与训练管理（manage）」的令牌，否则返回 403 `insufficient_scope`。以令牌创建者（root）的身份执行，修改人记为该账号。\n- 写操作都支持 `dry_run=true`（查询参数或请求体字段）：只做校验并返回 `changes`（逐字段 before/after）与 `warnings`，不写入。建议先演练、给用户确认，再去掉 dry_run 执行。\n- 并发保护：读取得到的 `version` 可在修改时作为 `expected_version` 传回；期间若被他人修改返回 409 `version_conflict`。\n- 不提供删除：下线题目把 `auth` 设为 `private`，停用训练把 `status` 设为 false。远程 OJ 题目、团队题目与团队训练只读。\n- 题目用题号 `problem_id`（如 P1001）定位，训练用数字 ID 定位。\n- 每次实际写入都会记录变更前后的内容，root 可在后台「AI 数据接口」页面查看。\n- 测试数据：少量可直接在 JSON 的 `test_cases` 中给出 input/output 文本（手动模式）；较大的数据打包成 zip（1.in/1.out…）以 multipart/form-data 上传，`file` 字段放 zip，`data` 字段放 JSON 字符串。"
+  },
+  "tags": [
+    { "name": "manage", "description": "题目与训练管理（需要 manage 权限）" }
+  ],
+  "paths": {
+    "/api/agent/v1/admin/meta": {
+      "get": {
+        "tags": ["manage"],
+        "operationId": "getManageMeta",
+        "summary": "可选值：语言、标签、训练分类、难度与各枚举字段",
+        "description": "新建或修改题目、训练前先调用，用于确定 languages、tags、difficulty、category 的合法取值。",
+        "responses": {
+          "200": { "description": "可选值", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "403": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/problems": {
+      "get": {
+        "tags": ["manage"],
+        "operationId": "listProblems",
+        "summary": "题目列表（按 ID 倒序）",
+        "parameters": [
+          { "name": "keyword", "in": "query", "description": "按标题、题号、来源、作者模糊搜索", "schema": { "type": "string" } },
+          { "name": "auth", "in": "query", "schema": { "type": "string", "enum": ["public", "private", "contest"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "分页结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PageResult" } } } },
+          "403": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "tags": ["manage"],
+        "operationId": "createProblem",
+        "summary": "新建题目（必须同时提供测试数据）",
+        "description": "JSON 请求体：题目字段 + `test_cases`（手动测试数据）。或 multipart/form-data：`data` 为题目字段的 JSON 字符串，`file` 为测试数据 zip，可用 `case_scores` 指定各测试点分数/分组。未给的字段取后台页面默认值：ACM、公开、1000ms/256MB/128MB、全部语言、难度取第一档。OI 题目未给分数时平均分配 100 分。",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProblemCreate" } },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": { "type": "string", "description": "ProblemCreate 的 JSON 字符串（不含 test_cases）" },
+                  "file": { "type": "string", "format": "binary", "description": "测试数据 zip：1.in/1.out（或 .ans）、input1.txt/output1.txt" },
+                  "dry_run": { "type": "boolean" }
+                },
+                "required": ["data", "file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "结果（dry_run 时为预览）", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/problems/{problem_id}": {
+      "parameters": [ { "$ref": "#/components/parameters/problem_id" } ],
+      "get": {
+        "tags": ["manage"],
+        "operationId": "getProblem",
+        "summary": "题目完整信息（题面、限制、样例、标签、语言、代码模板、特判程序、测试数据概况、version）",
+        "responses": {
+          "200": { "description": "题目", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/Problem" } } } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "tags": ["manage"],
+        "operationId": "updateProblem",
+        "summary": "修改题目（只传要改的字段）",
+        "description": "tags、languages、code_templates、examples 传入时整体替换。不能修改 type；测试数据请用 PUT .../testcases。修改特判/交互程序时会先交给判题机编译，失败返回 422 `spj_compile_error`。",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemUpdate" } } } },
+        "responses": {
+          "200": { "description": "结果；没有任何变化时 changed=false", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/problems/{problem_id}/testcases": {
+      "parameters": [ { "$ref": "#/components/parameters/problem_id" } ],
+      "get": {
+        "tags": ["manage"],
+        "operationId": "listTestCases",
+        "summary": "测试点列表，可选返回内容",
+        "parameters": [
+          { "name": "include_content", "in": "query", "description": "是否返回输入输出内容，默认 false", "schema": { "type": "boolean", "default": false } },
+          { "name": "max_chars", "in": "query", "description": "每个输入/输出最多返回的字符数，默认 2000；超出时带 *_truncated=true", "schema": { "type": "integer", "minimum": 1, "maximum": 1000000, "default": 2000 } }
+        ],
+        "responses": {
+          "200": { "description": "测试点", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "put": {
+        "tags": ["manage"],
+        "operationId": "replaceTestCases",
+        "summary": "整体替换测试数据",
+        "description": "JSON：`{\"test_cases\": [{\"input\",\"output\",\"score\",\"group_num\"}]}`（手动模式）。或 multipart/form-data：`file` 为 zip，`data` 为可选 JSON（`case_scores`、`expected_version`）。原有测试点全部被替换，评测数据版本号随之更新。",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "test_cases": { "type": "array", "items": { "$ref": "#/components/schemas/TestCase" } },
+                  "expected_version": { "type": "integer" },
+                  "dry_run": { "type": "boolean" }
+                },
+                "required": ["test_cases"],
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "data": { "type": "string", "description": "可选 JSON：{\"case_scores\": [...], \"expected_version\": 0}" },
+                  "dry_run": { "type": "boolean" }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "结果，changes.test_cases 为替换前后的测试点概况", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/trainings": {
+      "get": {
+        "tags": ["manage"],
+        "operationId": "listTrainings",
+        "summary": "训练列表（按 rank 升序）",
+        "parameters": [
+          { "name": "keyword", "in": "query", "description": "按标题、作者模糊搜索", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "分页结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PageResult" } } } }
+        }
+      },
+      "post": {
+        "tags": ["manage"],
+        "operationId": "createTraining",
+        "summary": "新建训练，可同时加入题目",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TrainingCreate" } } } },
+        "responses": {
+          "200": { "description": "结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/trainings/{training_id}": {
+      "parameters": [ { "$ref": "#/components/parameters/training_id" } ],
+      "get": {
+        "tags": ["manage"],
+        "operationId": "getTraining",
+        "summary": "训练详情（含题目列表与顺序、version）",
+        "responses": {
+          "200": { "description": "训练", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "tags": ["manage"],
+        "operationId": "updateTraining",
+        "summary": "修改训练（只传要改的字段；status=false 即停用）",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TrainingUpdate" } } } },
+        "responses": {
+          "200": { "description": "结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/trainings/{training_id}/problems": {
+      "parameters": [ { "$ref": "#/components/parameters/training_id" } ],
+      "post": {
+        "tags": ["manage"],
+        "operationId": "addTrainingProblems",
+        "summary": "向训练添加题目（默认追加到末尾）",
+        "description": "训练中题目的展示 ID 固定为题号。隐藏题目也能加入，但会给出 warning：学生可能无法查看。",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "problems": { "type": "array", "items": { "$ref": "#/components/schemas/TrainingProblemInput" }, "maxItems": 200 },
+                  "dry_run": { "type": "boolean" }
+                },
+                "required": ["problems"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/trainings/{training_id}/problems/order": {
+      "parameters": [ { "$ref": "#/components/parameters/training_id" } ],
+      "put": {
+        "tags": ["manage"],
+        "operationId": "reorderTrainingProblems",
+        "summary": "按给定顺序重排训练中的全部题目（rank 依次设为 1..n）",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "problem_ids": { "type": "array", "items": { "type": "string" }, "description": "训练中全部题目的题号，按新顺序排列" },
+                  "dry_run": { "type": "boolean" }
+                },
+                "required": ["problem_ids"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent/v1/admin/trainings/{training_id}/problems/{problem_id}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/training_id" },
+        { "$ref": "#/components/parameters/problem_id" }
+      ],
+      "patch": {
+        "tags": ["manage"],
+        "operationId": "updateTrainingProblem",
+        "summary": "修改训练中某道题的排序 rank",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "rank": { "type": "integer", "minimum": 0 }, "dry_run": { "type": "boolean" } },
+                "required": ["rank"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["manage"],
+        "operationId": "removeTrainingProblem",
+        "summary": "把题目移出训练（题目本身与提交记录保留）",
+        "parameters": [ { "$ref": "#/components/parameters/dry_run" } ],
+        "responses": {
+          "200": { "description": "结果", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteResult" } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "dry_run": { "name": "dry_run", "in": "query", "description": "true 时只校验并返回变更预览，不写入", "schema": { "type": "boolean", "default": false } },
+      "problem_id": { "name": "problem_id", "in": "path", "required": true, "description": "题号，如 P1001（不区分大小写）", "schema": { "type": "string" } },
+      "training_id": { "name": "training_id", "in": "path", "required": true, "description": "训练 ID", "schema": { "type": "integer" } }
+    },
+    "schemas": {
+      "PageResult": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "type": "object" } },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "has_more": { "type": "boolean" }
+        }
+      },
+      "WriteResult": {
+        "type": "object",
+        "properties": {
+          "dry_run": { "type": "boolean" },
+          "action": { "type": "string" },
+          "changed": { "type": "boolean", "description": "仅在没有任何变化时出现，值为 false" },
+          "changes": { "type": "object", "description": "{字段: {before, after}}" },
+          "warnings": { "type": "array", "items": { "type": "string" } },
+          "data": { "type": "object", "description": "写入后（或演练时预计）的对象" },
+          "message": { "type": "string" }
+        }
+      },
+      "Example": {
+        "type": "object",
+        "properties": { "input": { "type": "string" }, "output": { "type": "string" } },
+        "additionalProperties": false
+      },
+      "TestCase": {
+        "type": "object",
+        "properties": {
+          "input": { "type": "string", "description": "输入内容" },
+          "output": { "type": "string", "description": "期望输出内容" },
+          "score": { "type": "integer", "minimum": 0, "description": "OI 题目的测试点分数；全部不给则平均分配 100 分" },
+          "group_num": { "type": "integer", "minimum": 1, "description": "子任务分组（judge_case_mode 为 subtask_* 时），默认 1" }
+        },
+        "additionalProperties": false
+      },
+      "CaseScore": {
+        "type": "object",
+        "properties": {
+          "input": { "type": "string", "description": "zip 中的输入文件名，如 3.in" },
+          "score": { "type": "integer", "minimum": 0 },
+          "group_num": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["input"],
+        "additionalProperties": false
+      },
+      "ProblemFields": {
+        "type": "object",
+        "properties": {
+          "problem_id": { "type": "string", "description": "题号，字母数字 - _，自动转大写" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "description": "题目描述，Markdown（支持 $LaTeX$）" },
+          "input": { "type": "string", "description": "输入格式描述" },
+          "output": { "type": "string", "description": "输出格式描述" },
+          "examples": { "type": "array", "items": { "$ref": "#/components/schemas/Example" }, "description": "题面展示的样例，整体替换" },
+          "hint": { "type": "string" },
+          "source": { "type": "string" },
+          "difficulty": { "type": "integer", "description": "难度值，见 /meta 的 difficulties" },
+          "auth": { "type": "string", "enum": ["public", "private"] },
+          "time_limit": { "type": "integer", "description": "毫秒" },
+          "memory_limit": { "type": "integer", "description": "MB" },
+          "stack_limit": { "type": "integer", "description": "MB" },
+          "judge_mode": { "type": "string", "enum": ["default", "spj", "interactive"] },
+          "judge_case_mode": { "type": "string", "enum": ["default", "ergodic_without_error", "subtask_lowest", "subtask_average"] },
+          "spj_language": { "type": "string", "description": "特判/交互程序语言，见 /meta 中 can_be_spj_language 的语言" },
+          "spj_code": { "type": "string" },
+          "code_share": { "type": "boolean" },
+          "remove_end_blank": { "type": "boolean", "description": "评测前是否去掉用户输出末尾空白" },
+          "open_case_result": { "type": "boolean", "description": "是否向学生展示各测试点结果" },
+          "file_io": { "type": "boolean" },
+          "io_read_file_name": { "type": "string" },
+          "io_write_file_name": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" }, "description": "标签名称，整体替换；不存在的标签会新建" },
+          "languages": { "type": "array", "items": { "type": "string" }, "description": "允许的语言名称，整体替换" },
+          "code_templates": {
+            "type": "array",
+            "description": "代码模板，整体替换；语言必须在 languages 中",
+            "items": { "type": "object", "properties": { "language": { "type": "string" }, "code": { "type": "string" } }, "required": ["language", "code"] }
+          }
+        }
+      },
+      "ProblemCreate": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ProblemFields" },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["ACM", "OI"], "default": "ACM" },
+              "test_cases": { "type": "array", "items": { "$ref": "#/components/schemas/TestCase" }, "maxItems": 1000 },
+              "case_scores": { "type": "array", "items": { "$ref": "#/components/schemas/CaseScore" }, "description": "仅 multipart 上传 zip 时使用" },
+              "dry_run": { "type": "boolean" }
+            },
+            "required": ["problem_id", "title"]
+          }
+        ]
+      },
+      "ProblemUpdate": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ProblemFields" },
+          {
+            "type": "object",
+            "properties": {
+              "expected_version": { "type": "integer", "description": "读取时得到的 version，用于防止覆盖他人的修改" },
+              "dry_run": { "type": "boolean" }
+            }
+          }
+        ]
+      },
+      "Problem": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ProblemFields" },
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "type": { "type": "string", "enum": ["ACM", "OI"] },
+              "author": { "type": "string" },
+              "test_cases": { "type": "object", "properties": { "mode": { "type": "string", "enum": ["upload", "manual"] }, "count": { "type": "integer" }, "total_score": { "type": "integer" } } },
+              "is_remote": { "type": "boolean" },
+              "is_group": { "type": "boolean" },
+              "modified_user": { "type": "string" },
+              "version": { "type": "integer" },
+              "gmt_create": { "type": "string", "format": "date-time" },
+              "gmt_modified": { "type": "string", "format": "date-time" }
+            }
+          }
+        ]
+      },
+      "TrainingProblemInput": {
+        "type": "object",
+        "properties": {
+          "problem_id": { "type": "string" },
+          "rank": { "type": "integer", "minimum": 0, "description": "排序（升序），默认追加到末尾" }
+        },
+        "required": ["problem_id"],
+        "additionalProperties": false
+      },
+      "TrainingFields": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string", "description": "Markdown" },
+          "auth": { "type": "string", "enum": ["Public", "Private"] },
+          "private_pwd": { "type": "string", "description": "私有训练的密码；修改会清空已报名用户" },
+          "rank": { "type": "integer", "description": "训练列表中的排序（升序）" },
+          "status": { "type": "boolean", "description": "是否启用（false 即停用、对学生隐藏）" },
+          "category": { "type": "string", "description": "训练分类名称，见 /meta；不存在时新建" }
+        }
+      },
+      "TrainingCreate": {
+        "allOf": [
+          { "$ref": "#/components/schemas/TrainingFields" },
+          {
+            "type": "object",
+            "properties": {
+              "problems": { "type": "array", "items": { "$ref": "#/components/schemas/TrainingProblemInput" } },
+              "dry_run": { "type": "boolean" }
+            },
+            "required": ["title", "category"]
+          }
+        ]
+      },
+      "TrainingUpdate": {
+        "allOf": [
+          { "$ref": "#/components/schemas/TrainingFields" },
+          {
+            "type": "object",
+            "properties": {
+              "expected_version": { "type": "integer" },
+              "dry_run": { "type": "boolean" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

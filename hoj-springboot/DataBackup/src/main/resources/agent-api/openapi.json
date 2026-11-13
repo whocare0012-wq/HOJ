@@ -3,7 +3,7 @@
   "info": {
     "title": "HOJ AI 数据接口",
     "version": "1.0.0",
-    "description": "只读接口，供 AI agent 拉取学生提交记录（含代码）、学生名单与统计数据用于分析。\n\n- 鉴权：请求头 `Authorization: Bearer hoj_at_...`，令牌由 root 在后台「AI 数据接口」页面生成。\n- 时间：返回值为带时区的 ISO 8601（站点时区，通常为 +08:00）。参数 `from`/`to` 接受 `YYYY-MM-DD`、`YYYY-MM-DDTHH:mm:ss` 或带时区的时间；`to` 为纯日期时包含当天全天，否则不含该时刻。\n- 分页：按提交 ID 游标分页，把响应中的 `next_cursor` 原样作为下一次请求的 `cursor`，直到 `has_more` 为 false。\n- 大批量：`format=ndjson` 一次流式返回全部匹配记录，每行一条 JSON。\n- 尚未结束的比赛中的提交不会返回。\n- 限流：每个令牌每分钟 120 次，超出返回 429 与 Retry-After。\n- 错误：HTTP 状态码 + `{\"error\": {\"code\", \"message\"}}`；未知参数名会返回 400 并列出可用参数。"
+    "description": "供 AI agent 拉取学生提交记录（含代码）、学生名单与统计数据用于分析（只读，需要 read 权限），以及管理题目与训练（需要 manage 权限，见文末）。\n\n- 鉴权：请求头 `Authorization: Bearer hoj_at_...`，令牌由 root 在后台「AI 数据接口」页面生成，生成时选择权限范围 read / manage；权限不足返回 403 `insufficient_scope`。\n- 时间：返回值为带时区的 ISO 8601（站点时区，通常为 +08:00）。参数 `from`/`to` 接受 `YYYY-MM-DD`、`YYYY-MM-DDTHH:mm:ss` 或带时区的时间；`to` 为纯日期时包含当天全天，否则不含该时刻。\n- 分页：按提交 ID 游标分页，把响应中的 `next_cursor` 原样作为下一次请求的 `cursor`，直到 `has_more` 为 false。\n- 大批量：`format=ndjson` 一次流式返回全部匹配记录，每行一条 JSON。\n- 尚未结束的比赛中的提交不会返回。\n- 限流：每个令牌每分钟 120 次，超出返回 429 与 Retry-After。\n- 错误：HTTP 状态码 + `{\"error\": {\"code\", \"message\"}}`；未知参数名会返回 400 并列出可用参数。"
   },
   "servers": [{ "url": "/" }],
   "security": [{ "bearerAuth": [] }],
@@ -21,6 +21,7 @@
                 "ok": { "type": "boolean" },
                 "api_version": { "type": "string", "example": "v1" },
                 "token_name": { "type": "string" },
+                "scopes": { "type": "array", "items": { "type": "string", "enum": ["read", "manage"] }, "description": "该令牌的权限范围" },
                 "timezone": { "type": "string", "example": "Asia/Shanghai" },
                 "server_time": { "type": "string", "format": "date-time" }
               }

@@ -11,12 +11,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import top.hcode.hoj.agent.AgentScope;
 import top.hcode.hoj.agent.AgentTokenService;
+import top.hcode.hoj.agent.manage.AgentChangeLogService;
 import top.hcode.hoj.common.result.CommonResult;
 import top.hcode.hoj.shiro.AccountProfile;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,6 +37,9 @@ public class AgentTokenAdminController {
     @Resource
     private AgentTokenService tokenService;
 
+    @Resource
+    private AgentChangeLogService changeLogService;
+
     @GetMapping
     @RequiresRoles("root")
     public CommonResult<Map<String, Object>> getOverview(
@@ -39,6 +48,7 @@ public class AgentTokenAdminController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("tokens", tokenService.list());
         result.put("logs", tokenService.recentLogs(limit));
+        result.put("changes", changeLogService.recent(limit));
         return CommonResult.successResponse(result);
     }
 
@@ -51,7 +61,8 @@ public class AgentTokenAdminController {
             return CommonResult.successResponse(tokenService.create(
                     name == null ? null : String.valueOf(name),
                     parseExpireDays(body.get("expiresInDays")),
-                    profile.getUid()));
+                    profile.getUid(),
+                    parseScopes(body.get("scopes"))));
         } catch (IllegalArgumentException e) {
             return CommonResult.errorResponse(e.getMessage());
         }
@@ -64,6 +75,26 @@ public class AgentTokenAdminController {
             return CommonResult.errorResponse("令牌不存在或已吊销");
         }
         return CommonResult.successResponse();
+    }
+
+    /** 未传时保持旧行为：只读令牌 */
+    private static List<String> parseScopes(Object value) {
+        if (value == null) {
+            return Collections.singletonList(AgentScope.READ);
+        }
+        List<String> scopes = new ArrayList<>();
+        if (value instanceof Collection) {
+            for (Object item : (Collection<?>) value) {
+                scopes.add(String.valueOf(item));
+            }
+        } else {
+            for (String item : String.valueOf(value).split(",")) {
+                if (!item.trim().isEmpty()) {
+                    scopes.add(item.trim());
+                }
+            }
+        }
+        return scopes;
     }
 
     private static Integer parseExpireDays(Object value) {
