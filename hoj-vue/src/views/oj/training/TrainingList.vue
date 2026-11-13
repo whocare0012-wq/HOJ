@@ -130,6 +130,7 @@
           :title="$t('m.Number')"
           width="9%"
           min-width="60"
+          align="center"
           show-overflow
           :visible="!mobileView"
         >
